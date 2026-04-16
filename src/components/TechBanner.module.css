@@ -1,0 +1,85 @@
+.techBanner {
+    width: 100%;
+    padding: 3rem 0;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.title {
+    text-align: center;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2rem;
+    color: #888;
+    margin-bottom: 2rem;
+    font-weight: 600;
+}
+
+.marquee {
+    display: flex;
+    white-space: nowrap;
+    width: max-content;
+    animation: scroll 30s linear infinite;
+}
+
+.techItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 2rem;
+    opacity: 0.7;
+    transition: all 0.3s ease;
+    filter: grayscale(1);
+}
+
+.techItem:hover {
+    opacity: 1;
+    filter: grayscale(0);
+    transform: translateY(-2px);
+}
+
+.logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.name {
+    color: #fff;
+    font-weight: 500;
+    font-size: 1.1rem;
+}
+
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* Glassmorphism gradient overlays */
+.techBanner::before,
+.techBanner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    width: 100px;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.techBanner::before {
+    left: 0;
+    background: linear-gradient(to right, #000 0%, rgba(0,0,0,0) 100%);
+}
+
+.techBanner::after {
+    right: 0;
+    background: linear-gradient(to left, #000 0%, rgba(0,0,0,0) 100%);
+}

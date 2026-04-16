@@ -1,0 +1,356 @@
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 60px 24px;
+    min-height: 100vh;
+    position: relative;
+    /* Add subtle background pattern or gradient glow */
+    background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent 40%),
+        radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.1), transparent 40%);
+}
+
+.title {
+    font-size: 3rem;
+    font-weight: 900;
+    margin-bottom: 60px;
+    text-transform: uppercase;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #6366f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-shadow: 0 10px 30px rgba(168, 85, 247, 0.2);
+    /* Glow effect */
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 450px;
+    gap: 80px;
+}
+
+/* Glass Panels with enhanced blur and border */
+.formSection,
+.summaryCard {
+    background: rgba(20, 20, 25, 0.6);
+    /* Slightly more opaque for readability */
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    border-radius: 24px;
+    padding: 40px;
+    transition: transform 0.3s ease;
+}
+
+/* Form Styles */
+.sectionHeader {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--primary);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.formGroup {
+    margin-bottom: 28px;
+    position: relative;
+}
+
+.label {
+    display: block;
+    margin-bottom: 10px;
+    color: #ccc;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-left: 4px;
+}
+
+.input {
+    width: 100%;
+    padding: 18px 20px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.input:focus {
+    outline: none;
+    background: rgba(0, 0, 0, 0.6);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    transform: translateY(-2px);
+}
+
+.row {
+    display: flex;
+    gap: 24px;
+}
+
+/* Summary Card */
+.summarySection {
+    position: relative;
+}
+
+.summaryCard {
+    position: sticky;
+    top: 40px;
+    background: rgba(255, 255, 255, 0.03);
+    /* Lighter contrast */
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.summaryTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 32px;
+    letter-spacing: -0.5px;
+}
+
+.summaryItem {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 1rem;
+    color: #d4d4d8;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.summaryItem:last-of-type {
+    border-bottom: none;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 32px;
+    padding-top: 32px;
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
+    font-size: 2rem;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -1px;
+}
+
+@keyframes subtleGlow {
+    0% {
+        box-shadow: 0 0 5px rgba(99, 102, 241, 0.3), 0 0 10px rgba(168, 85, 247, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    50% {
+        box-shadow: 0 0 15px rgba(99, 102, 241, 0.5), 0 0 25px rgba(168, 85, 247, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    100% {
+        box-shadow: 0 0 5px rgba(99, 102, 241, 0.3), 0 0 10px rgba(168, 85, 247, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+}
+
+.payButton {
+    width: 100%;
+    margin-top: 40px;
+    padding: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    color: white;
+    cursor: pointer;
+    animation: subtleGlow 3s infinite ease-in-out;
+    transition: all 0.3s ease;
+}
+
+.payButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px -10px rgba(168, 85, 247, 0.5);
+}
+
+.payButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+/* Trust Badge */
+.trustBadge {
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: #888;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+}
+
+/* Payment Methods */
+.paymentMethodsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 16px;
+    margin-bottom: 40px;
+}
+
+.paymentMethodCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    position: relative;
+    overflow: hidden;
+}
+
+.paymentMethodCard::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.paymentMethodCard:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-4px);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.paymentMethodCard.active {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary);
+}
+
+.paymentIcon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.paymentName {
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.paymentInstruction {
+    background: rgba(20, 20, 30, 0.8);
+    padding: 32px;
+    border-radius: 16px;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    margin-bottom: 24px;
+    font-size: 1rem;
+    line-height: 1.8;
+    color: #ccc;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.backButton {
+    background: transparent;
+    border: none;
+    color: #888;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 24px;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+.backButton:hover {
+    color: white;
+    text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 48px;
+    }
+
+    .summaryCard {
+        position: static;
+        order: -1;
+        /* Show summary first on tablets/mobile? Or maybe keep it below form? Let's keep distinct */
+    }
+}
+
+@media (max-width: 640px) {
+    .title {
+        font-size: 2rem;
+        /* Smaller title */
+        flex-direction: column;
+        /* Stack icon and text */
+        gap: 12px;
+        margin-bottom: 40px;
+        text-align: center;
+    }
+
+    .container {
+        padding: 24px 16px;
+        /* Less padding */
+    }
+
+    .formSection,
+    .summaryCard {
+        padding: 24px;
+        /* Less internal padding */
+        border-radius: 16px;
+    }
+
+    .row {
+        flex-direction: column;
+        /* Stack side-by-side inputs */
+        gap: 24px;
+    }
+
+    .paymentMethodsGrid {
+        grid-template-columns: repeat(3, 1fr);
+        /* 3 cols on mobile */
+    }
+
+    .totalRow {
+        font-size: 1.5rem;
+    }
+}

@@ -1,0 +1,129 @@
+.main {
+  min-height: 100vh;
+  padding-bottom: 80px;
+}
+
+.hero {
+  height: 60vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  background: radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.1) 0%, transparent 40%);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.heroContent {
+  z-index: 10;
+  max-width: 800px;
+  padding: 0 24px;
+}
+
+.title {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 24px;
+  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: -2px;
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: #a1a1aa;
+  margin-bottom: 40px;
+}
+
+/* Store Layout */
+.storeSection {
+  padding: 60px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.storeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 40px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 20px;
+}
+
+.storeTitle {
+  font-size: 2.5rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -1px;
+  position: relative;
+  line-height: 1;
+}
+
+.filterBar {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.filterItem {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.filterItem.active {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 32px 24px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .hero {
+    height: 50vh;
+  }
+
+  .title {
+    font-size: 2.2rem;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    /* 1 column on mobile */
+    gap: 24px;
+  }
+
+  .storeSection {
+    padding: 40px 20px;
+  }
+
+  .storeHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .filterBar {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    /* Touch target space */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .filterItem {
+    white-space: nowrap;
+    padding: 4px 0;
+  }
+}

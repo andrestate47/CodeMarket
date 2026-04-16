@@ -1,0 +1,161 @@
+.section {
+    padding: 80px 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 60px;
+}
+
+.card {
+    padding: 32px;
+    border-radius: var(--radius);
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #333, #555);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: white;
+}
+
+.userInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.userName {
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.userRole {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.text {
+    color: var(--text-description);
+    line-height: 1.6;
+    font-style: italic;
+}
+
+.stars {
+    color: #fbbf24;
+    /* Amber 400 */
+    display: flex;
+    gap: 4px;
+}
+
+.formSection {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 40px;
+    border-radius: var(--radius);
+}
+
+.formTitle {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.inputGroup {
+    display: flex;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .inputGroup {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+.input,
+.textarea {
+    width: 100%;
+    padding: 16px;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--input-text);
+    font-family: inherit;
+    transition: var(--transition);
+}
+
+.input:focus,
+.textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.submitBtn {
+    width: 100%;
+    margin-top: 8px;
+}
+
+/* Star Rating Styles in Form */
+.ratingLabel {
+    display: block;
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.starRating {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.starBtn {
+    background: none;
+    border: none;
+    color: #555;
+    /* Default unselected color */
+    font-size: 1.5rem;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+.starBtn:hover,
+.starBtn.active {
+    color: #fbbf24;
+    /* Amber 400 */
+    transform: scale(1.1);
+}

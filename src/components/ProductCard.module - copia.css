@@ -1,0 +1,177 @@
+.card {
+    background: transparent;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.card:active {
+    transform: scale(0.98);
+    /* Feedback on tap */
+}
+
+.imageContainer {
+    height: 280px;
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 16px;
+    background-color: #1a1a1a;
+}
+
+.productImage {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.2, 1, 0.4, 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 800;
+    font-size: 4rem;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    opacity: 0.9;
+}
+
+.card:hover .productImage {
+    transform: scale(1.05);
+}
+
+.priceTag {
+    background: var(--foreground);
+    color: var(--background);
+    position: absolute;
+    top: 12px;
+    left: 0;
+    padding: 4px 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+    z-index: 2;
+}
+
+.details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--foreground);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    flex: 1;
+}
+
+.category {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: capitalize;
+}
+
+.ctaButton {
+    margin-top: 12px;
+    background: transparent;
+    border: 1px solid var(--btn-outline-color);
+    color: var(--btn-outline-text);
+    padding: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.8rem;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card:hover .ctaButton {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.ctaButton:hover {
+    background: var(--btn-outline-hover-bg);
+    color: var(--btn-outline-hover-text);
+    border-color: var(--btn-outline-hover-bg);
+}
+
+/* Heart Button Styles */
+.heartButton {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--btn-outline-text);
+    /* Default color */
+    z-index: 10;
+
+    /* Animation implementation */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+}
+
+.card:hover .heartButton {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.heartButton:hover {
+    transform: scale(1.2) !important;
+    /* Override translate */
+}
+
+.heartIcon {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+    transition: all 0.3s ease;
+}
+
+.heartIcon.selected {
+    fill: #ef4444;
+    stroke: #ef4444;
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.5));
+}
+
+.heartIcon.unselected {
+    fill: transparent;
+    stroke: currentColor;
+}
+
+
+/* Mobile & Touch Optimizations */
+@media (max-width: 768px) {
+    .imageContainer {
+        height: 240px;
+        /* Slightly shorter on mobile */
+    }
+
+    .ctaButton,
+    .heartButton {
+        /* Always visible on mobile, no hover needed */
+        opacity: 1;
+        transform: translateY(0);
+        border-color: rgba(255, 255, 255, 0.15);
+    }
+}
