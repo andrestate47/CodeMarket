@@ -11,7 +11,6 @@
 
 .card:active {
     transform: scale(0.98);
-    /* Feedback on tap */
 }
 
 .imageContainer {
@@ -80,12 +79,13 @@
 }
 
 .title {
-    font-size: 1rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 700;
     color: var(--foreground);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
     text-transform: uppercase;
     flex: 1;
+    line-height: 1.3;
 }
 
 .category {
@@ -146,7 +146,6 @@
     border-color: var(--foreground);
 }
 
-/* Heart Button Styles */
 .heartButton {
     background: transparent;
     border: none;
@@ -156,10 +155,7 @@
     align-items: center;
     justify-content: center;
     color: var(--btn-outline-text);
-    /* Default color */
     z-index: 10;
-
-    /* Animation implementation */
     opacity: 0;
     transform: translateY(10px);
     transition: all 0.3s ease;
@@ -172,7 +168,6 @@
 
 .heartButton:hover {
     transform: scale(1.2) !important;
-    /* Override translate */
 }
 
 .heartIcon {
@@ -193,28 +188,37 @@
     stroke: currentColor;
 }
 
-
 /* Mobile & Touch Optimizations */
 @media (max-width: 768px) {
     .imageContainer {
-        height: 240px;
-        /* Slightly shorter on mobile */
+        height: 180px;
+    }
+
+    .title {
+        font-size: 0.82rem;
+        letter-spacing: 0;
+        line-height: 1.2;
+    }
+
+    .category {
+        font-size: 0.7rem;
     }
 
     .buttonGroup {
         opacity: 1;
         transform: translateY(0);
+        margin-top: 8px;
+        gap: 4px;
     }
     
     .viewButton, .ctaButton {
-        padding: 12px;
+        padding: 8px;
+        font-size: 0.62rem;
     }
 
-    .ctaButton,
     .heartButton {
-        /* Always visible on mobile, no hover needed */
+        padding: 4px;
         opacity: 1;
         transform: translateY(0);
-        border-color: rgba(255, 255, 255, 0.15);
     }
 }
