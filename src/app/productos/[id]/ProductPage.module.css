@@ -293,28 +293,22 @@
     }
 
     .actions {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(15, 16, 20, 0.85);
-        backdrop-filter: blur(20px);
-        padding: 16px 20px env(safe-area-inset-bottom);
-        margin-bottom: 0;
-        z-index: 100;
-        border-top: 1px solid var(--glass-border);
+        position: static;
+        background: transparent;
+        backdrop-filter: none;
+        padding: 0;
+        margin: 24px 0;
+        border-top: none;
         display: flex;
-        flex-direction: column; /* Stacked usually feels more premium on small phones */
-        gap: 10px;
+        flex-direction: column;
+        gap: 12px;
     }
 
     .buyButton, .dynamicCheckoutBtn {
         width: 100%;
         padding: 16px;
-        font-size: 0.85rem;
-        margin-top: 0;
-        border-radius: 12px;
-        letter-spacing: 0.5px;
+        font-size: 1rem;
+        border-radius: 8px;
     }
 
     .dynamicCheckoutBtn {
@@ -329,7 +323,7 @@
     }
 
     .content {
-        padding-bottom: 180px; /* Room for stacked buttons */
+        padding-bottom: 40px;
     }
 
     .breadcrumb {
