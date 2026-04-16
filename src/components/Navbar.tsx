@@ -6,6 +6,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { useCart } from "@/context/CartContext";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from 'next/navigation';
+import styles from './Navbar.module.css';
 
 export default function Navbar() {
   const { toggleCart, items } = useCart();
@@ -33,32 +34,24 @@ export default function Navbar() {
   }, []);
 
   return (
-    <header className="glass" style={{ padding: '20px 0', borderBottom: '1px solid var(--glass-border)', position: 'sticky', top: 0, zIndex: 100 }}>
-      <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div style={{ fontWeight: 900, fontSize: '1.5rem', letterSpacing: '-1px' }}>CODEMARKET ///</div>
+    <header className={`${styles.header} glass`}>
+      <div className={styles.container}>
+        <Link href="/" className={styles.brand}>
+          CODEMARKET ///
         </Link>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        
+        <nav className={styles.nav}>
           {/* Animated Search Bar */}
           <form 
             onSubmit={handleSearch} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              background: isSearchOpen ? 'var(--background)' : 'transparent',
-              border: isSearchOpen ? '1px solid var(--glass-border)' : '1px solid transparent',
-              borderRadius: '20px',
-              padding: isSearchOpen ? '2px 12px' : '2px',
-              transition: 'all 0.3s ease',
-              marginRight: '8px'
-            }}
+            className={`${styles.searchForm} ${isSearchOpen ? styles.searchFormOpen : ''}`}
           >
             <button 
               type={isSearchOpen ? "submit" : "button"}
               onClick={() => {
                 if (!isSearchOpen) setIsSearchOpen(true);
               }}
-              style={{ background: 'none', border: 'none', color: 'var(--foreground)', cursor: 'pointer', padding: '6px', display: 'flex' }}
+              className={styles.searchButton}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
             </button>
@@ -68,16 +61,10 @@ export default function Navbar() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onBlur={() => !searchQuery && setIsSearchOpen(false)}
+              className={styles.searchInput}
               style={{
                 width: isSearchOpen ? '150px' : '0px',
                 opacity: isSearchOpen ? 1 : 0,
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--foreground)',
-                outline: 'none',
-                transition: 'all 0.3s ease',
-                padding: 0,
-                fontSize: '0.9rem'
               }}
             />
           </form>
@@ -85,7 +72,7 @@ export default function Navbar() {
           {/* Theme Toggle */}
           <button
             onClick={toggleTheme}
-            style={{ background: 'none', border: 'none', color: 'var(--foreground)', cursor: 'pointer', padding: '8px', display: 'flex' }}
+            className={styles.themeToggle}
             aria-label="Toggle Theme"
           >
             {theme === 'dark' ? (
@@ -108,27 +95,29 @@ export default function Navbar() {
           </button>
 
           {user ? (
-            <Link href="/dashboard" style={{ textDecoration: 'none', color: 'var(--foreground)', fontSize: '0.9rem', fontWeight: 600, marginRight: '12px' }}>
+            <Link href="/dashboard" className={styles.accountLink}>
               Mi Cuenta
             </Link>
           ) : (
-            <Link href="/login" style={{ textDecoration: 'none', color: 'var(--foreground)', fontSize: '0.9rem', fontWeight: 600, marginRight: '12px' }}>
+            <Link href="/login" className={styles.accountLink}>
               Acceder
             </Link>
           )}
 
-          <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>CARRITO ({items.length})</span>
-          <button
-            onClick={toggleCart}
-            style={{ background: 'none', border: 'none', color: 'var(--foreground)', cursor: 'pointer', padding: '8px' }}
-            aria-label="Cart"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-          </button>
+          <div className={styles.cartWrapper}>
+            <span className={styles.cartLabel}>CARRITO ({items.length})</span>
+            <button
+              onClick={toggleCart}
+              className={styles.cartButton}
+              aria-label="Cart"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+            </button>
+          </div>
         </nav>
       </div>
     </header>

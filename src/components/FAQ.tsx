@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import styles from './FAQ.module.css';
 
 const faqs = [
   {
@@ -17,7 +18,7 @@ const faqs = [
   },
   {
     question: "¿Qué pasa si el código o plantilla no me funciona?",
-    answer: "Nuestros productos pasan por rigurosas pruebas de calidad para evitar errores. Sin embargo, si encuentras alguna incompatibilidad insalvable, cuentas con nuestra protección total y garantía de funcionamiento. Queremos que tu inversión esté siempre segura."
+    answer: " nuestros productos pasan por rigurosas pruebas de calidad para evitar errores. Sin embargo, si encuentras alguna incompatibilidad insalvable, cuentas con nuestra protección total y garantía de funcionamiento. Queremos que tu inversión esté siempre segura."
   }
 ];
 
@@ -29,62 +30,32 @@ export default function FAQ() {
   };
 
   return (
-    <section style={{ padding: '80px 24px', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-        <h2 style={{ fontSize: '2.5rem', fontWeight: 800, marginBottom: '16px', color: 'var(--foreground)' }}>
+    <section className={styles.section}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>
           Resolvemos tus <span className="text-gradient">dudas</span>
         </h2>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.1rem' }}>
+        <p className={styles.subtitle}>
           Queremos que tengas total tranquilidad y confianza plena antes de dar el siguiente paso.
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className={styles.list}>
         {faqs.map((faq, idx) => (
-          <div 
-            key={idx} 
-            style={{ 
-              background: 'var(--glass-bg)', 
-              border: '1px solid var(--glass-border)', 
-              borderRadius: '12px', 
-              overflow: 'hidden',
-              transition: 'all 0.3s ease'
-            }}
-          >
+          <div key={idx} className={styles.item}>
             <button 
               onClick={() => toggle(idx)}
-              style={{
-                width: '100%',
-                padding: '24px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--foreground)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                fontSize: '1.1rem',
-                fontWeight: 600
-              }}
+              className={styles.questionButton}
             >
-              <span style={{ paddingRight: '20px' }}>{faq.question}</span>
-              <span style={{ 
-                transform: openIndex === idx ? 'rotate(180deg)' : 'rotate(0deg)', 
-                transition: 'transform 0.3s ease',
-                color: '#ef4444'
-              }}>
+              <span>{faq.question}</span>
+              <span className={styles.arrow} style={{ transform: openIndex === idx ? 'rotate(180deg)' : 'rotate(0deg)' }}>
                 ▼
               </span>
             </button>
-            <div style={{ 
+            <div className={styles.answer} style={{ 
               maxHeight: openIndex === idx ? '300px' : '0', 
-              overflow: 'hidden', 
-              transition: 'all 0.3s ease',
               opacity: openIndex === idx ? 1 : 0,
               padding: openIndex === idx ? '0 24px 24px 24px' : '0 24px',
-              color: 'var(--text-muted)',
-              lineHeight: 1.6
             }}>
               {faq.answer}
             </div>
@@ -92,37 +63,16 @@ export default function FAQ() {
         ))}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: '56px' }}>
-        <h3 style={{ marginBottom: '24px', fontSize: '1.3rem', fontWeight: 600, color: 'var(--foreground)' }}>¿Listo para llevar tu proyecto al siguiente nivel?</h3>
+      <div className={styles.ctaWrapper}>
+        <h3 className={styles.ctaTitle}>¿Listo para llevar tu proyecto al siguiente nivel?</h3>
         <button 
           onClick={() => {
             const section = document.querySelector('section:nth-of-type(3)');
             if (section) section.scrollIntoView({ behavior: 'smooth' });
           }}
-          style={{
-            background: 'linear-gradient(90deg, #ef4444 0%, #f97316 100%)',
-            color: 'white',
-            border: 'none',
-            padding: '16px 36px',
-            borderRadius: '50px',
-            fontSize: '1.1rem',
-            fontWeight: 800,
-            cursor: 'pointer',
-            boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4)',
-            transition: 'all 0.2s ease',
-            textTransform: 'uppercase',
-            letterSpacing: '1px'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.transform = 'scale(1.03) translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 12px 30px rgba(239, 68, 68, 0.6)';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.transform = 'scale(1) translateY(0)';
-            e.currentTarget.style.boxShadow = '0 8px 25px rgba(239, 68, 68, 0.4)';
-          }}
+          className={styles.ctaButton}
         >
-          Explorar Colección de Productos
+          Explorar Colección
         </button>
       </div>
     </section>

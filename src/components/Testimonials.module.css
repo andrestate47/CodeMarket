@@ -93,9 +93,18 @@
 }
 
 @media (max-width: 768px) {
+    .section {
+        padding: 60px 0;
+    }
     .inputGroup {
         flex-direction: column;
         gap: 16px;
+    }
+    .formSection {
+        padding: 24px 16px;
+    }
+    .card {
+        padding: 24px 16px;
     }
 }
 

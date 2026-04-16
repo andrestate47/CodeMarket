@@ -134,6 +134,30 @@ button {
   font-size: 1.1rem;
 }
 
+/* ─── Responsive Utilities ─────────────────────────── */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+  .section-title {
+    font-size: 1.8rem;
+  }
+  .section-subtitle {
+    font-size: 0.95rem;
+  }
+}
+
+/* Touch-friendly minimum tap targets */
+button, a {
+  min-height: 44px;
+}
+
+/* Prevent text overflow on small screens */
+h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

@@ -1,0 +1,131 @@
+.header {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--glass-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.brand {
+  font-weight: 900;
+  font-size: 1.5rem;
+  letter-spacing: -1px;
+  text-decoration: none;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  margin-right: 8px;
+}
+
+.searchFormOpen {
+  background: var(--background);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 2px 12px;
+}
+
+.searchButton {
+  background: none;
+  border: none;
+  color: var(--foreground);
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+}
+
+.searchInput {
+  background: transparent;
+  border: none;
+  color: var(--foreground);
+  outline: none;
+  transition: all 0.3s ease;
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.themeToggle, .cartButton {
+  background: none;
+  border: none;
+  color: var(--foreground);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.accountLink {
+  text-decoration: none;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.cartWrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cartLabel {
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* 📱 Mobile Adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .brand {
+    font-size: 1.2rem;
+  }
+
+  .cartLabel {
+    display: none; /* Hide label, keep icon/count */
+  }
+
+  .accountLink {
+    display: none; /* Often hidden in mobile menu, or simplified */
+  }
+
+  .searchInputOpen {
+    width: 120px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand {
+    font-size: 1.1rem;
+    letter-spacing: -0.5px;
+  }
+  
+  .searchForm {
+    margin-right: 4px;
+  }
+  
+  .nav {
+    gap: 4px;
+  }
+}
