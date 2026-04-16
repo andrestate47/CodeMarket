@@ -297,25 +297,39 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background: var(--background);
-        padding: 16px;
+        background: rgba(15, 16, 20, 0.85);
+        backdrop-filter: blur(20px);
+        padding: 16px 20px env(safe-area-inset-bottom);
         margin-bottom: 0;
         z-index: 100;
         border-top: 1px solid var(--glass-border);
-        box-shadow: 0 -10px 20px rgba(0,0,0,0.2);
-        flex-direction: row;
-        gap: 12px;
+        display: flex;
+        flex-direction: column; /* Stacked usually feels more premium on small phones */
+        gap: 10px;
     }
 
     .buyButton, .dynamicCheckoutBtn {
-        flex: 1;
-        padding: 14px;
-        font-size: 0.9rem;
+        width: 100%;
+        padding: 16px;
+        font-size: 0.85rem;
         margin-top: 0;
+        border-radius: 12px;
+        letter-spacing: 0.5px;
+    }
+
+    .dynamicCheckoutBtn {
+        background: var(--foreground);
+        color: var(--background);
+    }
+
+    .buyButton {
+        background: transparent;
+        color: var(--foreground);
+        border: 1px solid var(--glass-border);
     }
 
     .content {
-        padding-bottom: 120px; /* Room for fixed actions */
+        padding-bottom: 180px; /* Room for stacked buttons */
     }
 
     .breadcrumb {
