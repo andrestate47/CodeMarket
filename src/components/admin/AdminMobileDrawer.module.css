@@ -14,13 +14,14 @@
   left: 0;
   width: 280px;
   max-width: 85vw;
-  background: #0a0a0f;
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card-bg);
+  border-right: 1px solid var(--glass-border);
   z-index: 101;
   display: flex;
   flex-direction: column;
-  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 8px 0 24px rgba(0, 0, 0, 0.3);
   animation: slideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: var(--transition);
 }
 
 .drawerInner {
@@ -34,9 +35,9 @@
   position: absolute;
   top: 16px;
   right: 16px;
-  background: rgba(255, 255, 255, 0.08);
-  border: none;
-  color: white;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--foreground);
   width: 32px;
   height: 32px;
   border-radius: 50%;

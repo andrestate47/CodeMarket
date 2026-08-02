@@ -100,8 +100,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return (
             <div style={{
                 minHeight: '100vh',
-                background: '#050507',
-                color: 'white',
+                background: 'var(--background)',
+                color: 'var(--foreground)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -111,8 +111,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <div style={{
                         width: '40px',
                         height: '40px',
-                        border: '3px solid rgba(168, 85, 247, 0.2)',
-                        borderTopColor: '#a855f7',
+                        border: '3px solid rgba(255, 107, 0, 0.2)',
+                        borderTopColor: 'var(--robotina-orange)',
                         borderRadius: '50%',
                         animation: 'spin 1s linear infinite',
                         margin: '0 auto 16px auto',
@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: '#050507', color: '#f4f4f5', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', transition: 'var(--transition)' }}>
             {/* Desktop Fixed Sidebar */}
             <AdminSidebar
                 onLogout={handleLogout}

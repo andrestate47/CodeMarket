@@ -45,39 +45,59 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
 
     const sections: NavSection[] = [
         {
-            title: 'Principal',
+            title: 'PRINCIPAL',
             items: [
                 { label: 'Inicio', href: '/admin', exact: true, icon: '📊' },
-                { label: 'Pedidos', href: '/admin/pedidos', icon: '💰', badge: pendingOrdersCount && pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
-                { label: 'Productos', href: '/admin/productos', icon: '📦' },
-                { label: 'Categorías', href: '/admin/categorias', icon: '🏷️' },
-                { label: 'Inventario', href: '/admin/inventario', icon: '🏬' },
-                { label: 'Clientes', href: '/admin/clientes', icon: '👥' },
+                { label: 'Pedidos', href: '/admin/pedidos', icon: '📦', badge: pendingOrdersCount && pendingOrdersCount > 0 ? pendingOrdersCount : undefined },
             ],
         },
         {
-            title: 'Tienda',
+            title: 'CATÁLOGO',
+            items: [
+                { label: 'Productos', href: '/admin/productos', icon: '🏷️' },
+                { label: 'Categorías', href: '/admin/categorias', icon: '🔖' },
+                { label: 'Inventario', href: '/admin/inventario', icon: '🏬' },
+            ],
+        },
+        {
+            title: 'VENTAS',
+            items: [
+                { label: 'Clientes', href: '/admin/clientes', icon: '👥' },
+                { label: 'Descuentos', href: '/admin/descuentos', icon: '🎟️' },
+                { label: 'Reportes', href: '/admin/reportes', icon: '📈' },
+            ],
+        },
+        {
+            title: 'TIENDA',
             items: [
                 { label: 'Apariencia', href: '/admin/apariencia', icon: '🎨' },
                 { label: 'Métodos de pago', href: '/admin/configuracion/pagos', icon: '💳' },
                 { label: 'Envíos', href: '/admin/configuracion/envios', icon: '🚚' },
+                { label: 'Dominio y SEO', href: '/admin/configuracion/dominio-seo', icon: '🌐' },
+                { label: 'Integraciones', href: '/admin/configuracion/integraciones', icon: '🔌' },
                 { label: 'Configuración', href: '/admin/configuracion', exact: true, icon: '⚙️' },
             ],
         },
         {
-            title: 'Cuenta',
+            title: 'CUENTA',
             items: [
                 { label: 'Mi perfil', href: '/admin/perfil', icon: '👤' },
-                { label: 'Ver tienda', href: '/', icon: '🌐' },
+                { label: 'Ver tienda', href: '/', icon: '🛍️' },
             ],
         },
     ];
 
     const isLinkActive = (href: string, exact?: boolean) => {
+        if (href === '/admin') {
+            return pathname === '/admin';
+        }
+        if (href === '/admin/configuracion') {
+            return pathname === '/admin/configuracion';
+        }
         if (exact) {
             return pathname === href;
         }
-        return pathname.startsWith(href);
+        return pathname === href || pathname.startsWith(href + '/');
     };
 
     return (
@@ -106,6 +126,25 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
                         {!collapsed && <div className={styles.sectionTitle}>{section.title}</div>}
                         {section.items.map((item, iIdx) => {
                             const active = isLinkActive(item.href, item.exact);
+                            const isExternal = item.href === '/';
+
+                            if (isExternal) {
+                                return (
+                                    <a
+                                        key={iIdx}
+                                        href={item.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={onNavItemClick}
+                                        className={styles.navItem}
+                                        title={collapsed ? item.label : undefined}
+                                    >
+                                        <span className={styles.itemIcon}>{item.icon}</span>
+                                        {!collapsed && <span className={styles.itemLabel}>{item.label} ↗</span>}
+                                    </a>
+                                );
+                            }
+
                             return (
                                 <Link
                                     key={iIdx}
@@ -132,7 +171,7 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
                     <button
                         onClick={onLogout}
                         className={styles.navItem}
-                        style={{ background: 'transparent', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left' }}
+                        style={{ background: 'transparent', border: 'none', width: '100%', cursor: 'pointer', textAlign: 'left', color: 'var(--foreground)' }}
                         title={collapsed ? 'Cerrar sesión' : undefined}
                     >
                         <span className={styles.itemIcon}>🚪</span>

@@ -59,7 +59,7 @@ export default function CheckoutPage() {
                 <div style={{ background: 'var(--glass-bg)', padding: '48px', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
                     <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📝</div>
                     <h1 style={{ fontSize: '2rem', marginBottom: '12px', fontWeight: 800 }}>¡Pedido Registrado con Éxito!</h1>
-                    <div style={{ display: 'inline-block', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '1.1rem', marginBottom: '24px' }}>
+                    <div style={{ display: 'inline-block', background: 'rgba(255, 107, 0, 0.12)', color: 'var(--robotina-orange)', padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '1.1rem', marginBottom: '24px' }}>
                         Número de Pedido: {orderResult.orderNumber}
                     </div>
 

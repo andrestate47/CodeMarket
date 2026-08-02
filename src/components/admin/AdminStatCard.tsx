@@ -15,12 +15,12 @@ export default function AdminStatCard({
     icon,
     subtitle,
     trend,
-    accentColor = '#a855f7',
+    accentColor = '#ff6b00',
 }: AdminStatCardProps) {
     return (
         <div style={{
-            background: '#0e0e14',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--glass-border)',
             borderRadius: '16px',
             padding: '24px',
             display: 'flex',
@@ -28,9 +28,10 @@ export default function AdminStatCard({
             gap: '12px',
             position: 'relative',
             overflow: 'hidden',
+            transition: 'var(--transition)',
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: '#a1a1aa' }}>{title}</span>
+                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-muted)' }}>{title}</span>
                 <div style={{
                     width: '40px',
                     height: '40px',
@@ -46,13 +47,13 @@ export default function AdminStatCard({
                 </div>
             </div>
 
-            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'white', letterSpacing: '-0.5px' }}>
+            <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)', letterSpacing: '-0.5px' }}>
                 {value}
             </div>
 
             {(subtitle || trend) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: '#71717a' }}>
-                    {trend && <span style={{ color: '#4ade80', fontWeight: 600 }}>{trend}</span>}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.82rem', color: 'var(--text-description)' }}>
+                    {trend && <span style={{ color: '#22c55e', fontWeight: 600 }}>{trend}</span>}
                     {subtitle && <span>{subtitle}</span>}
                 </div>
             )}

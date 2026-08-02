@@ -65,7 +65,7 @@ export default function AdminOrdersPage() {
         {
             header: 'Nº Pedido',
             cell: (order: DBOrder) => (
-                <Link href={`/admin/pedidos/${order.id}`} style={{ color: '#c084fc', fontWeight: 700, textDecoration: 'none' }}>
+                <Link href={`/admin/pedidos/${order.id}`} style={{ color: 'var(--robotina-orange)', fontWeight: 700, textDecoration: 'none' }}>
                     {order.order_number}
                 </Link>
             ),

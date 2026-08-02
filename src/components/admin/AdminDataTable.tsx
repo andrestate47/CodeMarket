@@ -24,23 +24,24 @@ export default function AdminDataTable<T>({
 }: AdminDataTableProps<T>) {
     return (
         <div style={{
-            background: '#0e0e14',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            background: 'var(--card-bg)',
+            border: '1px solid var(--glass-border)',
             borderRadius: '16px',
             overflow: 'hidden',
             width: '100%',
+            transition: 'var(--transition)',
         }}>
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                     <thead>
-                        <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <tr style={{ background: 'var(--glass-bg)', borderBottom: '1px solid var(--glass-border)' }}>
                             {columns.map((col, idx) => (
                                 <th
                                     key={idx}
                                     style={{
                                         padding: '14px 18px',
                                         fontWeight: 700,
-                                        color: '#a1a1aa',
+                                        color: 'var(--text-muted)',
                                         fontSize: '0.8rem',
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.5px',
@@ -55,13 +56,13 @@ export default function AdminDataTable<T>({
                     <tbody>
                         {loading ? (
                             <tr>
-                                <td colSpan={columns.length} style={{ padding: '32px', textAlign: 'center', color: '#71717a' }}>
+                                <td colSpan={columns.length} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-description)' }}>
                                     Cargando datos...
                                 </td>
                             </tr>
                         ) : data.length === 0 ? (
                             <tr>
-                                <td colSpan={columns.length} style={{ padding: '32px', textAlign: 'center', color: '#71717a' }}>
+                                <td colSpan={columns.length} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-description)' }}>
                                     {emptyText}
                                 </td>
                             </tr>
@@ -70,12 +71,12 @@ export default function AdminDataTable<T>({
                                 <tr
                                     key={keyExtractor(item)}
                                     style={{
-                                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                                        borderBottom: '1px solid var(--glass-border)',
                                         transition: 'background 0.15s ease',
                                     }}
                                 >
                                     {columns.map((col, idx) => (
-                                        <td key={idx} style={{ padding: '16px 18px', color: '#e4e4e7', ...col.style }}>
+                                        <td key={idx} style={{ padding: '16px 18px', color: 'var(--foreground)', ...col.style }}>
                                             {col.cell ? col.cell(item) : col.accessor ? String(item[col.accessor]) : null}
                                         </td>
                                     ))}

@@ -111,7 +111,7 @@ export default function Login() {
                 }}
                 style={{
                   width: '100%',
-                  background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                  background: 'var(--gradient-main)',
                   color: 'white',
                   border: 'none',
                   padding: '10px 14px',
@@ -119,7 +119,7 @@ export default function Login() {
                   fontWeight: 700,
                   fontSize: '0.88rem',
                   cursor: 'pointer',
-                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+                  boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)'
                 }}
               >
                 🚀 Entrar al Panel Admin (Modo Demo Local)

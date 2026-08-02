@@ -96,7 +96,7 @@ export default function AdminDashboard() {
         {
             header: 'Nº Pedido',
             cell: (order: DBOrder) => (
-                <Link href={`/admin/pedidos/${order.id}`} style={{ color: '#c084fc', fontWeight: 700, textDecoration: 'none' }}>
+                <Link href={`/admin/pedidos/${order.id}`} style={{ color: 'var(--robotina-orange)', fontWeight: 700, textDecoration: 'none' }}>
                     {order.order_number}
                 </Link>
             ),
@@ -105,8 +105,8 @@ export default function AdminDashboard() {
             header: 'Cliente',
             cell: (order: DBOrder) => (
                 <div>
-                    <div style={{ fontWeight: 600, color: 'white' }}>{order.customer_name}</div>
-                    <div style={{ fontSize: '0.78rem', color: '#71717a' }}>{order.customer_email}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>{order.customer_name}</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{order.customer_email}</div>
                 </div>
             ),
         },
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
         {
             header: 'Total',
             cell: (order: DBOrder) => (
-                <span style={{ fontWeight: 700, color: 'white' }}>
+                <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>
                     {formatMoney(order.total_amount)}
                 </span>
             ),
@@ -137,10 +137,10 @@ export default function AdminDashboard() {
                     href={`/admin/pedidos/${order.id}`}
                     style={{
                         padding: '6px 12px',
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'var(--glass-bg)',
+                        border: '1px solid var(--glass-border)',
                         borderRadius: '6px',
-                        color: 'white',
+                        color: 'var(--foreground)',
                         fontSize: '0.8rem',
                         textDecoration: 'none',
                         fontWeight: 600,
@@ -162,7 +162,7 @@ export default function AdminDashboard() {
                         href="/admin/productos/nuevo"
                         style={{
                             padding: '10px 18px',
-                            background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                            background: 'var(--gradient-main)',
                             color: 'white',
                             borderRadius: '10px',
                             fontWeight: 700,
@@ -171,7 +171,7 @@ export default function AdminDashboard() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '8px',
-                            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)',
+                            boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
                         }}
                     >
                         <span>➕</span> Nuevo Producto
@@ -186,52 +186,52 @@ export default function AdminDashboard() {
                     value={formatMoney(stats.totalSales)}
                     icon="💵"
                     subtitle="Órdenes con pago verificado"
-                    accentColor="#4ade80"
+                    accentColor="#22c55e"
                 />
                 <AdminStatCard
                     title="Pedidos Pendientes"
                     value={stats.pendingOrdersCount}
                     icon="⏳"
                     subtitle="Por validar o despachar"
-                    accentColor="#facc15"
+                    accentColor="#f59e0b"
                 />
                 <AdminStatCard
                     title="Pedidos Pagados"
                     value={stats.paidOrdersCount}
                     icon="✅"
                     subtitle="Listos para entrega"
-                    accentColor="#60a5fa"
+                    accentColor="#3b82f6"
                 />
                 <AdminStatCard
                     title="Productos Activos"
                     value={stats.activeProductsCount}
                     icon="📦"
                     subtitle="En catálogo visible"
-                    accentColor="#c084fc"
+                    accentColor="#ff6b00"
                 />
                 <AdminStatCard
                     title="Clientes Registrados"
                     value={stats.customersCount}
                     icon="👥"
                     subtitle="Base de compradores"
-                    accentColor="#f472b6"
+                    accentColor="#ff8a00"
                 />
             </div>
 
             {/* Quick Actions Grid */}
             <div style={{ marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', marginBottom: '16px' }}>Acciones Rápidas</h2>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Acciones Rápidas</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                    <Link href="/admin/productos/nuevo" style={{ padding: '16px', background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <Link href="/admin/productos/nuevo" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
                         <span style={{ fontSize: '1.2rem' }}>📦</span> Crear Producto
                     </Link>
-                    <Link href="/admin/pedidos" style={{ padding: '16px', background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <Link href="/admin/pedidos" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
                         <span style={{ fontSize: '1.2rem' }}>💰</span> Ver Pedidos
                     </Link>
-                    <Link href="/admin/categorias" style={{ padding: '16px', background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <Link href="/admin/categorias" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
                         <span style={{ fontSize: '1.2rem' }}>🏷️</span> Crear Categoría
                     </Link>
-                    <Link href="/admin/configuracion/pagos" style={{ padding: '16px', background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <Link href="/admin/configuracion/pagos" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
                         <span style={{ fontSize: '1.2rem' }}>💳</span> Métodos de Pago
                     </Link>
                 </div>
@@ -241,16 +241,16 @@ export default function AdminDashboard() {
             {lowStockProducts.length > 0 && (
                 <div style={{ marginBottom: '32px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px', padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                        <h3 style={{ margin: 0, color: '#f87171', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h3 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>⚠️</span> Productos con Bajo Stock ({lowStockProducts.length})
                         </h3>
-                        <Link href="/admin/inventario" style={{ color: '#f87171', fontSize: '0.82rem', fontWeight: 600 }}>Ver todo en inventario →</Link>
+                        <Link href="/admin/inventario" style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600 }}>Ver todo en inventario →</Link>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                         {lowStockProducts.map(prod => (
-                            <div key={prod.id} style={{ padding: '10px 14px', background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '8px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ color: 'white', fontWeight: 600 }}>{prod.title}</span>
-                                <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '0.75rem' }}>
+                            <div key={prod.id} style={{ padding: '10px 14px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{prod.title}</span>
+                                <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '0.75rem' }}>
                                     Quedan {prod.stock}
                                 </span>
                             </div>
@@ -262,9 +262,9 @@ export default function AdminDashboard() {
             {/* Recent Orders Section */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'white', margin: 0 }}>Pedidos Recientes</h2>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Pedidos Recientes</h2>
                     {orders.length > 0 && (
-                        <Link href="/admin/pedidos" style={{ color: '#c084fc', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}>
+                        <Link href="/admin/pedidos" style={{ color: 'var(--robotina-orange)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}>
                             Ver todos los pedidos ({orders.length}) →
                         </Link>
                     )}

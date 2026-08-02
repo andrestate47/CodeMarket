@@ -1,46 +1,71 @@
 :root {
-  /* Default Dark Theme */
-  --background: #030305;
-  --foreground: #ffffff;
-  --card-bg: #0f1014;
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  /* Robotina Central Brand Palette */
+  --robotina-orange: #ff6b00;
+  --robotina-orange-light: #ff8a00;
+  --robotina-orange-soft: #ff9d00;
 
-  /* Semantic Colors */
-  --text-muted: #888;
-  --text-description: #ccc;
-  --input-bg: rgba(0, 0, 0, 0.3);
-  --input-text: #ffffff;
-  --btn-outline-color: rgba(255, 255, 255, 0.3);
-  --btn-outline-text: #ffffff;
-  --btn-outline-hover-bg: #ffffff;
-  --btn-outline-hover-text: #000000;
+  --robotina-black: #070707;
+  --robotina-dark: #121212;
+  --robotina-gray-dark: #242424;
+  --robotina-gray: #777777;
+  --robotina-gray-light: #b8b8b8;
 
-  /* Brand Colors (Shared) */
-  --primary: #6366f1;
-  --secondary: #a855f7;
-  --accent: #ec4899;
-  --gradient-main: linear-gradient(135deg, var(--primary), var(--secondary));
-  --gradient-text: linear-gradient(to right, #818cf8, #c084fc, #f472b6);
+  --robotina-white: #ffffff;
+
+  --robotina-whatsapp: #25d366;
+  --robotina-whatsapp-dark: #128c4a;
+
+  --robotina-danger: #ef4444;
+  --robotina-success: #22c55e;
+  --robotina-warning: #f59e0b;
+
+  /* Default Dark Theme (Robotina Dark) */
+  --background: var(--robotina-black);
+  --foreground: var(--robotina-white);
+  --card-bg: var(--robotina-dark);
+  --glass-bg: rgba(18, 18, 18, 0.85);
+  --glass-border: #333338;
+
+  /* Semantic Colors Dark */
+  --text-muted: var(--robotina-gray-light);
+  --text-description: var(--robotina-gray);
+  --input-bg: rgba(36, 36, 36, 0.6);
+  --input-text: var(--robotina-white);
+  --btn-outline-color: #333338;
+  --btn-outline-text: var(--robotina-white);
+  --btn-outline-hover-bg: var(--robotina-orange);
+  --btn-outline-hover-text: var(--robotina-white);
+
+  /* Brand Gradients */
+  --primary: var(--robotina-orange);
+  --secondary: var(--robotina-orange-soft);
+  --accent: var(--robotina-orange-light);
+  --gradient-main: linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%);
+  --gradient-text: linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%);
+
+  /* WhatsApp */
+  --whatsapp: var(--robotina-whatsapp);
+  --whatsapp-hover: var(--robotina-whatsapp-dark);
+
   --radius: 16px;
   --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 [data-theme='light'] {
   --background: #f8fafc;
-  --foreground: #0f172a;
+  --foreground: #070707;
   --card-bg: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.6);
-  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.95);
+  --glass-border: #cbd5e1;
 
   /* Semantic Colors Light */
-  --text-muted: #64748b;
-  --text-description: #475569;
-  --input-bg: rgba(255, 255, 255, 0.8);
-  --input-text: #0f172a;
-  --btn-outline-color: rgba(0, 0, 0, 0.2);
-  --btn-outline-text: #0f172a;
-  --btn-outline-hover-bg: #0f172a;
+  --text-muted: #475569;
+  --text-description: #64748b;
+  --input-bg: #ffffff;
+  --input-text: #070707;
+  --btn-outline-color: #cbd5e1;
+  --btn-outline-text: #070707;
+  --btn-outline-hover-bg: var(--robotina-orange);
   --btn-outline-hover-text: #ffffff;
 }
 
@@ -72,6 +97,17 @@ button {
   font-family: inherit;
 }
 
+input, select, textarea {
+  font-family: inherit;
+  border: 1px solid var(--glass-border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--robotina-orange) !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.25) !important;
+}
+
 /* Utilities */
 .container {
   max-width: 1200px;
@@ -95,8 +131,8 @@ button {
 
 .card-hover:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.3);
-  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(255, 107, 0, 0.25);
+  border-color: rgba(255, 107, 0, 0.4);
 }
 
 .btn-primary {
@@ -114,9 +150,29 @@ button {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #4f46e5, #9333ea);
-  transform: scale(1.05);
-  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  background: linear-gradient(135deg, #FF8A00 0%, #FFB700 100%);
+  transform: scale(1.04);
+  box-shadow: 0 0 22px rgba(255, 107, 0, 0.45);
+}
+
+.btn-whatsapp {
+  background-color: var(--robotina-whatsapp);
+  color: #ffffff;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-whatsapp:hover {
+  background-color: var(--robotina-whatsapp-dark);
+  transform: scale(1.03);
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
 }
 
 .section-title {

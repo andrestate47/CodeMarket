@@ -17,38 +17,40 @@ export default function AdminSettingsPage() {
                     href="/admin/configuracion/pagos"
                     style={{
                         padding: '24px',
-                        background: '#0e0e14',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--glass-border)',
                         borderRadius: '16px',
-                        color: 'white',
+                        color: 'var(--foreground)',
                         textDecoration: 'none',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px',
+                        transition: 'var(--transition)',
                     }}
                 >
                     <div style={{ fontSize: '2rem' }}>💳</div>
                     <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Métodos de Pago</h3>
-                    <p style={{ margin: 0, color: '#a1a1aa', fontSize: '0.88rem' }}>Configura tus cuentas Yape, Plin y transferencia bancaria.</p>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.88rem' }}>Configura tus cuentas Yape, Plin y transferencia bancaria.</p>
                 </Link>
 
                 <Link
                     href="/admin/configuracion/envios"
                     style={{
                         padding: '24px',
-                        background: '#0e0e14',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--glass-border)',
                         borderRadius: '16px',
-                        color: 'white',
+                        color: 'var(--foreground)',
                         textDecoration: 'none',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '10px',
+                        transition: 'var(--transition)',
                     }}
                 >
                     <div style={{ fontSize: '2rem' }}>🚚</div>
                     <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>Envíos y Entregas</h3>
-                    <p style={{ margin: 0, color: '#a1a1aa', fontSize: '0.88rem' }}>Tarifas de envío por zona y opciones de entrega digital.</p>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.88rem' }}>Tarifas de envío por zona y opciones de entrega digital.</p>
                 </Link>
             </div>
         </div>

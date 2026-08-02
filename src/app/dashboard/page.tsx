@@ -132,7 +132,7 @@ export default function Dashboard() {
                   alignItems: 'center',
                 }}>
                   <div>
-                    <div style={{ fontWeight: 800, color: '#a855f7' }}>Pedido {o.order_number}</div>
+                    <div style={{ fontWeight: 800, color: 'var(--robotina-orange)' }}>Pedido {o.order_number}</div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                       Fecha: {new Date(o.created_at).toLocaleDateString()}
                     </div>

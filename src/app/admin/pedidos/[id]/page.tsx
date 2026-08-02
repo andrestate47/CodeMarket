@@ -76,7 +76,7 @@ export default function AdminOrderDetailPage() {
         return (
             <div>
                 <AdminPageHeader title="Pedido no encontrado" description="El pedido solicitado no existe o fue eliminado." />
-                <Link href="/admin/pedidos" style={{ color: '#c084fc', textDecoration: 'none', fontWeight: 600 }}>← Volver a lista de pedidos</Link>
+                <Link href="/admin/pedidos" style={{ color: 'var(--robotina-orange)', textDecoration: 'none', fontWeight: 600 }}>← Volver a lista de pedidos</Link>
             </div>
         );
     }
@@ -107,32 +107,32 @@ export default function AdminOrderDetailPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', flexWrap: 'wrap' }}>
                 {/* Main Info */}
-                <div style={{ background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '16px' }}>
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'var(--transition)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '16px' }}>
                         <div>
-                            <span style={{ fontSize: '0.85rem', color: '#71717a', display: 'block' }}>Estado de Pago</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Estado de Pago</span>
                             <AdminStatusBadge status={order.payment_status} />
                         </div>
                         <div>
-                            <span style={{ fontSize: '0.85rem', color: '#71717a', display: 'block' }}>Estado de Entrega</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'block' }}>Estado de Entrega</span>
                             <AdminStatusBadge status={order.fulfillment_status} />
                         </div>
                     </div>
 
                     <div>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '12px' }}>Actualizar Estado</h3>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '12px' }}>Actualizar Estado</h3>
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                             {order.payment_status !== 'paid' ? (
                                 <button
                                     onClick={() => updateStatus('paid', order.fulfillment_status)}
-                                    style={{ padding: '8px 16px', background: 'rgba(34, 197, 94, 0.2)', border: '1px solid #4ade80', color: '#4ade80', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ padding: '8px 16px', background: 'rgba(34, 197, 94, 0.2)', border: '1px solid #22c55e', color: '#22c55e', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
                                 >
                                     ✓ Confirmar Pago
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => updateStatus('pending', order.fulfillment_status)}
-                                    style={{ padding: '8px 16px', background: 'rgba(234, 179, 8, 0.2)', border: '1px solid #facc15', color: '#facc15', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                    style={{ padding: '8px 16px', background: 'rgba(234, 179, 8, 0.2)', border: '1px solid #f59e0b', color: '#f59e0b', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                                 >
                                     Marcar Pago Pendiente
                                 </button>
@@ -141,14 +141,14 @@ export default function AdminOrderDetailPage() {
                             {order.fulfillment_status !== 'fulfilled' ? (
                                 <button
                                     onClick={() => updateStatus(order.payment_status, 'fulfilled')}
-                                    style={{ padding: '8px 16px', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #60a5fa', color: '#60a5fa', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
+                                    style={{ padding: '8px 16px', background: 'rgba(59, 130, 246, 0.2)', border: '1px solid #3b82f6', color: '#3b82f6', borderRadius: '8px', fontWeight: 700, cursor: 'pointer' }}
                                 >
                                     🚚 Marcar Entregado
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => updateStatus(order.payment_status, 'unfulfilled')}
-                                    style={{ padding: '8px 16px', background: 'rgba(249, 115, 22, 0.2)', border: '1px solid #fb923c', color: '#fb923c', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                                    style={{ padding: '8px 16px', background: 'rgba(249, 115, 22, 0.2)', border: '1px solid #f97316', color: '#f97316', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                                 >
                                     Marcar No Entregado
                                 </button>
@@ -156,18 +156,18 @@ export default function AdminOrderDetailPage() {
                         </div>
                     </div>
 
-                    <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '16px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '12px' }}>Resumen Económico</h3>
+                    <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '12px' }}>Resumen Económico</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#a1a1aa' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                                 <span>Subtotal</span>
                                 <span>{formatMoney(order.subtotal_amount || order.total_amount)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#a1a1aa' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                                 <span>Envío</span>
                                 <span>{formatMoney(order.shipping_amount || 0)}</span>
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'white', fontWeight: 800, fontSize: '1.1rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '8px', marginTop: '4px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--foreground)', fontWeight: 800, fontSize: '1.1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '8px', marginTop: '4px' }}>
                                 <span>Total</span>
                                 <span>{formatMoney(order.total_amount)}</span>
                             </div>
@@ -176,18 +176,18 @@ export default function AdminOrderDetailPage() {
                 </div>
 
                 {/* Customer Details */}
-                <div style={{ background: '#0e0e14', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: 'fit-content' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', margin: 0 }}>Datos del Cliente</h3>
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: 'fit-content', transition: 'var(--transition)' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Datos del Cliente</h3>
                     <div>
-                        <span style={{ fontSize: '0.78rem', color: '#71717a', display: 'block' }}>Nombre</span>
-                        <span style={{ fontWeight: 600, color: 'white' }}>{order.customer_name}</span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block' }}>Nombre</span>
+                        <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{order.customer_name}</span>
                     </div>
                     <div>
-                        <span style={{ fontSize: '0.78rem', color: '#71717a', display: 'block' }}>Correo Electrónico</span>
-                        <span style={{ color: '#d4d4d8' }}>{order.customer_email}</span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block' }}>Correo Electrónico</span>
+                        <span style={{ color: 'var(--foreground)' }}>{order.customer_email}</span>
                     </div>
                     <div>
-                        <span style={{ fontSize: '0.78rem', color: '#71717a', display: 'block' }}>Teléfono</span>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block' }}>Teléfono</span>
                         <span style={{ color: '#d4d4d8' }}>{order.customer_phone || 'No registrado'}</span>
                     </div>
                     <div>

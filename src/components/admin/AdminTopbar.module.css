@@ -1,7 +1,7 @@
 .topbar {
   height: 64px;
-  background: var(--admin-topbar-bg, #0a0a0f);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--card-bg, #121212);
+  border-bottom: 1px solid var(--glass-border, #242424);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -9,6 +9,7 @@
   position: sticky;
   top: 0;
   z-index: 30;
+  transition: var(--transition);
 }
 
 .leftSection {
@@ -19,9 +20,9 @@
 
 .mobileMenuBtn {
   display: none;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--foreground);
   width: 38px;
   height: 38px;
   border-radius: 10px;
@@ -34,7 +35,7 @@
 .title {
   font-size: 1.1rem;
   font-weight: 700;
-  color: white;
+  color: var(--foreground);
   margin: 0;
 }
 
@@ -45,20 +46,20 @@
 
 .searchInput {
   width: 100%;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--input-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 10px;
   padding: 8px 14px 8px 36px;
-  color: white;
+  color: var(--input-text);
   font-size: 0.88rem;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .searchInput:focus {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(168, 85, 247, 0.5);
-  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+  background: var(--card-bg);
+  border-color: var(--robotina-orange);
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.2);
 }
 
 .searchIcon {
@@ -66,7 +67,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: #71717a;
+  color: var(--text-muted);
   font-size: 0.9rem;
 }
 
@@ -76,15 +77,37 @@
   gap: 16px;
 }
 
+.themeToggleBtn {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  color: var(--foreground);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: var(--transition);
+}
+
+.themeToggleBtn:hover {
+  background: var(--robotina-orange);
+  color: #ffffff;
+  border-color: var(--robotina-orange-light);
+  transform: scale(1.05);
+}
+
 .storeLink {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 7px 14px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
   border-radius: 8px;
-  color: #d4d4d8;
+  color: var(--foreground);
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
@@ -92,7 +115,7 @@
 }
 
 .storeLink:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--robotina-orange);
   color: white;
 }
 
@@ -115,7 +138,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%);
+  background: var(--gradient-main);
   color: white;
   font-weight: 700;
   display: flex;
@@ -134,12 +157,12 @@
 .userName {
   font-size: 0.85rem;
   font-weight: 600;
-  color: white;
+  color: var(--foreground);
 }
 
 .userRole {
   font-size: 0.72rem;
-  color: #a1a1aa;
+  color: var(--text-muted);
 }
 
 .dropdown {
@@ -147,11 +170,11 @@
   top: calc(100% + 8px);
   right: 0;
   width: 200px;
-  background: #12121a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--card-bg);
+  border: 1px solid var(--glass-border);
   border-radius: 12px;
   padding: 6px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -164,7 +187,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
-  color: #d4d4d8;
+  color: var(--foreground);
   text-decoration: none;
   font-size: 0.88rem;
   border-radius: 8px;
@@ -177,8 +200,8 @@
 }
 
 .dropdownItem:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: white;
+  background: var(--glass-bg);
+  color: var(--robotina-orange);
 }
 
 @keyframes dropdownIn {

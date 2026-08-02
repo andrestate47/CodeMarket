@@ -45,7 +45,7 @@ export default function AdminCustomersPage() {
                         width: '36px',
                         height: '36px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                        background: 'var(--gradient-main)',
                         color: 'white',
                         fontWeight: 700,
                         display: 'flex',
@@ -56,8 +56,8 @@ export default function AdminCustomersPage() {
                         {(customer.name || 'C').slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <div style={{ fontWeight: 700, color: 'white' }}>{customer.name || 'Sin nombre'}</div>
-                        <div style={{ fontSize: '0.78rem', color: '#71717a' }}>{customer.email}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{customer.name || 'Sin nombre'}</div>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{customer.email}</div>
                     </div>
                 </div>
             ),

@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useTheme } from '@/context/ThemeContext';
 import styles from './AdminTopbar.module.css';
 
 interface AdminTopbarProps {
@@ -19,6 +20,8 @@ export default function AdminTopbar({
     onToggleMobileMenu,
     onLogout,
 }: AdminTopbarProps) {
+    const { theme, toggleTheme } = useTheme();
+    const [mounted, setMounted] = useState(() => typeof window !== 'undefined');
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +62,15 @@ export default function AdminTopbar({
             </div>
 
             <div className={styles.rightSection}>
+                <button
+                    onClick={toggleTheme}
+                    className={styles.themeToggleBtn}
+                    aria-label="Cambiar tema"
+                    title={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                >
+                    {!mounted || theme === 'dark' ? '☀️' : '🌙'}
+                </button>
+
                 <Link href="/" className={styles.storeLink} target="_blank" rel="noopener noreferrer">
                     <span>🌐</span>
                     <span>Ver tienda</span>

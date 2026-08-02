@@ -31,80 +31,95 @@ export interface CatalogProduct {
     status?: string;
 }
 
+export function getInstantProducts(): CatalogProduct[] {
+    let localSavedProducts: CatalogProduct[] = [];
+    if (typeof window !== 'undefined') {
+        try {
+            localSavedProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
+        } catch {
+            localSavedProducts = [];
+        }
+    }
+
+    const staticMapped: CatalogProduct[] = localProducts.map(p => ({
+        id: p.id,
+        title: p.title,
+        category: p.category,
+        description: p.description,
+        price: p.price,
+        comparePrice: p.comparePrice,
+        price_amount: p.price ? Math.round(parseFloat(p.price.replace(/[^0-9.]/g, '')) * 100) : 0,
+        features: p.features,
+        type: (p.type === 'service' ? 'service' : 'digital') as 'digital' | 'service' | 'physical',
+        cta: p.cta,
+        highlight: p.highlight,
+        color: p.color,
+        image: p.image,
+        longDescription: p.longDescription,
+        stock_quantity: 100,
+        track_inventory: false,
+        status: 'active',
+    }));
+
+    const combined = [...localSavedProducts, ...staticMapped];
+    return combined.filter((prod, index, self) =>
+        index === self.findIndex(p => p.id === prod.id)
+    );
+}
+
 export async function fetchCatalogProducts(): Promise<CatalogProduct[]> {
+    const instantList = getInstantProducts();
+    let dbMapped: CatalogProduct[] = [];
+
     try {
         const supabase = createBrowserClient();
-        const { data: dbProducts, error } = await supabase
+
+        // 1.2s timeout so slow networks never freeze the page
+        const fetchPromise = supabase
             .from('products')
             .select(`
                 *,
                 categories ( name, slug )
-            `)
-            .eq('status', 'active');
+            `);
 
-        if (error || !dbProducts || dbProducts.length === 0) {
-            // Fallback to local products if database hasn't been seeded yet
-            return localProducts.map(p => ({
-                id: p.id,
-                title: p.title,
-                category: p.category,
-                description: p.description,
-                price: p.price,
-                comparePrice: p.comparePrice,
-                price_amount: p.price ? Math.round(parseFloat(p.price.replace(/[^0-9.]/g, '')) * 100) : 0,
-                features: p.features,
-                type: p.type === 'service' ? 'service' : 'digital',
-                cta: p.cta,
-                highlight: p.highlight,
-                color: p.color,
-                image: p.image,
-                longDescription: p.longDescription,
-                stock_quantity: 100,
-                track_inventory: false,
-            }));
+        const timeoutPromise = new Promise<{ data: null }>((resolve) =>
+            setTimeout(() => resolve({ data: null }), 1200)
+        );
+
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
+        const dbProducts = res.data;
+
+        if (dbProducts && dbProducts.length > 0) {
+            dbMapped = dbProducts.map(p => {
+                const meta = p.metadata || {};
+                return {
+                    id: p.id,
+                    title: p.name,
+                    category: p.categories?.name || 'General',
+                    description: p.short_description || p.description || '',
+                    price: formatMoney(p.price_amount, p.currency),
+                    comparePrice: p.compare_at_amount ? formatMoney(p.compare_at_amount, p.currency) : undefined,
+                    price_amount: p.price_amount,
+                    compare_at_amount: p.compare_at_amount,
+                    features: meta.features || [],
+                    type: (p.product_type || 'digital') as 'digital' | 'service' | 'physical',
+                    cta: meta.cta || 'Comprar',
+                    highlight: p.featured,
+                    color: meta.color || 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
+                    image: p.image_url || meta.image || '/web-basica-hero.png',
+                    longDescription: p.description,
+                    stock_quantity: p.stock_quantity || 0,
+                    track_inventory: p.track_inventory || false,
+                    status: p.status || 'active',
+                };
+            });
         }
-
-        return dbProducts.map(p => {
-            const meta = p.metadata || {};
-            return {
-                id: p.id,
-                title: p.name,
-                category: p.categories?.name || 'General',
-                description: p.short_description || p.description || '',
-                price: formatMoney(p.price_amount, p.currency),
-                comparePrice: p.compare_at_amount ? formatMoney(p.compare_at_amount, p.currency) : undefined,
-                price_amount: p.price_amount,
-                compare_at_amount: p.compare_at_amount,
-                features: meta.features || [],
-                type: p.product_type || 'digital',
-                cta: meta.cta || 'Comprar',
-                highlight: p.featured,
-                color: meta.color || 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                image: meta.image || '/web-basica-hero.png',
-                longDescription: p.description,
-                stock_quantity: p.stock_quantity || 0,
-                track_inventory: p.track_inventory || false,
-            };
-        });
     } catch {
-        // Safe fallback
-        return localProducts.map(p => ({
-            id: p.id,
-            title: p.title,
-            category: p.category,
-            description: p.description,
-            price: p.price,
-            comparePrice: p.comparePrice,
-            price_amount: p.price ? Math.round(parseFloat(p.price.replace(/[^0-9.]/g, '')) * 100) : 0,
-            features: p.features,
-            type: p.type === 'service' ? 'service' : 'digital',
-            cta: p.cta,
-            highlight: p.highlight,
-            color: p.color,
-            image: p.image,
-            longDescription: p.longDescription,
-            stock_quantity: 100,
-            track_inventory: false,
-        }));
+        // Safe fallback if Supabase network is unreachable
     }
+
+    const combined = [...instantList, ...dbMapped];
+    return combined.filter((prod, index, self) =>
+        index === self.findIndex(p => p.id === prod.id)
+    );
 }
