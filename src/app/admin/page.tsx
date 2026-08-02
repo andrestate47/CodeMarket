@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { formatMoney } from '@/lib/money';
+import { getInstantProducts, CatalogProduct } from '@/modules/catalog/queries';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminStatCard from '@/components/admin/AdminStatCard';
 import AdminDataTable from '@/components/admin/AdminDataTable';
@@ -22,67 +23,70 @@ interface DBOrder {
     created_at: string;
 }
 
-interface DBProduct {
-    id: string;
-    title: string;
-    price: number;
-    stock: number;
-    status: string;
-}
-
 export default function AdminDashboard() {
     const [orders, setOrders] = useState<DBOrder[]>([]);
-    const [lowStockProducts, setLowStockProducts] = useState<DBProduct[]>([]);
+    const [products, setProducts] = useState<CatalogProduct[]>(() => getInstantProducts());
     const [stats, setStats] = useState({
         totalSales: 0,
+        totalOrdersCount: 0,
         paidOrdersCount: 0,
         pendingOrdersCount: 0,
         activeProductsCount: 0,
+        lowStockCount: 0,
         customersCount: 0,
+        averageTicket: 0,
     });
     const [loading, setLoading] = useState(true);
 
     const loadMetrics = async () => {
         setLoading(true);
         try {
+            // 1. Local products & stock calculate
+            const currentProds = getInstantProducts();
+            setProducts(currentProds);
+            const activeProds = currentProds.filter(p => (p.status || 'active') === 'active');
+            const lowStockProds = currentProds.filter(p => (p.stock_quantity ?? 10) <= 5);
+
+            // 2. Local orders or Supabase orders
+            let localOrders: DBOrder[] = [];
+            try {
+                localOrders = JSON.parse(localStorage.getItem('admin_orders') || '[]');
+            } catch {
+                localOrders = [];
+            }
+
             const { data: dbOrders } = await supabase
                 .from('orders')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            const { count: prodCount } = await supabase
-                .from('products')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'active');
-
             const { count: custCount } = await supabase
                 .from('customers')
                 .select('*', { count: 'exact', head: true });
 
-            const { data: dbLowStock } = await supabase
-                .from('products')
-                .select('id, title, price, stock, status')
-                .lte('stock', 5)
-                .order('stock', { ascending: true })
-                .limit(5);
+            const combinedOrders = [...localOrders, ...(dbOrders || [])].filter((ord, idx, self) =>
+                idx === self.findIndex(o => o.id === ord.id || o.order_number === ord.order_number)
+            );
 
-            const orderList = dbOrders || [];
-            setOrders(orderList);
-            setLowStockProducts(dbLowStock || []);
+            setOrders(combinedOrders);
 
-            const paidOrders = orderList.filter(o => o.payment_status === 'paid');
-            const pendingOrders = orderList.filter(o => o.payment_status === 'pending');
+            const paidOrders = combinedOrders.filter(o => o.payment_status === 'paid');
+            const pendingOrders = combinedOrders.filter(o => o.payment_status === 'pending');
             const totalSales = paidOrders.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+            const avgTicket = paidOrders.length > 0 ? totalSales / paidOrders.length : 0;
 
             setStats({
                 totalSales,
+                totalOrdersCount: combinedOrders.length,
                 paidOrdersCount: paidOrders.length,
                 pendingOrdersCount: pendingOrders.length,
-                activeProductsCount: prodCount || 0,
+                activeProductsCount: activeProds.length,
+                lowStockCount: lowStockProds.length,
                 customersCount: custCount || 0,
+                averageTicket: avgTicket,
             });
         } catch {
-            // Keep default state
+            // Safe fallback
         } finally {
             setLoading(false);
         }
@@ -91,6 +95,8 @@ export default function AdminDashboard() {
     useEffect(() => {
         loadMetrics();
     }, []);
+
+    const lowStockList = products.filter(p => (p.stock_quantity ?? 10) <= 5);
 
     const orderColumns = [
         {
@@ -156,7 +162,7 @@ export default function AdminDashboard() {
         <div>
             <AdminPageHeader
                 title="Resumen del Ecommerce"
-                description="Métricas y actividad en tiempo real de CodeMarket."
+                description="Métricas reales y rendimiento operativo de CodeMarket."
                 action={
                     <Link
                         href="/admin/productos/nuevo"
@@ -179,14 +185,21 @@ export default function AdminDashboard() {
                 }
             />
 
-            {/* Stat Cards Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
+            {/* Real Metrics Stat Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '32px' }}>
                 <AdminStatCard
                     title="Ventas Confirmadas"
                     value={formatMoney(stats.totalSales)}
                     icon="💵"
-                    subtitle="Órdenes con pago verificado"
+                    subtitle="Pagos completados"
                     accentColor="#22c55e"
+                />
+                <AdminStatCard
+                    title="Pedidos Totales"
+                    value={stats.totalOrdersCount}
+                    icon="📦"
+                    subtitle="Órdenes registradas"
+                    accentColor="#3b82f6"
                 />
                 <AdminStatCard
                     title="Pedidos Pendientes"
@@ -196,62 +209,75 @@ export default function AdminDashboard() {
                     accentColor="#f59e0b"
                 />
                 <AdminStatCard
-                    title="Pedidos Pagados"
-                    value={stats.paidOrdersCount}
-                    icon="✅"
-                    subtitle="Listos para entrega"
-                    accentColor="#3b82f6"
+                    title="Ticket Promedio"
+                    value={formatMoney(stats.averageTicket)}
+                    icon="📊"
+                    subtitle="Valor medio por venta"
+                    accentColor="#8b5cf6"
                 />
                 <AdminStatCard
                     title="Productos Activos"
                     value={stats.activeProductsCount}
-                    icon="📦"
-                    subtitle="En catálogo visible"
+                    icon="🏷️"
+                    subtitle="Visibles en tienda"
                     accentColor="#ff6b00"
+                />
+                <AdminStatCard
+                    title="Stock Bajo"
+                    value={stats.lowStockCount}
+                    icon="⚠️"
+                    subtitle="Unidades <= 5"
+                    accentColor="#ef4444"
                 />
                 <AdminStatCard
                     title="Clientes Registrados"
                     value={stats.customersCount}
                     icon="👥"
-                    subtitle="Base de compradores"
-                    accentColor="#ff8a00"
+                    subtitle="Base de clientes"
+                    accentColor="#10b981"
                 />
             </div>
 
             {/* Quick Actions Grid */}
             <div style={{ marginBottom: '32px' }}>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Acciones Rápidas</h2>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--foreground)', marginBottom: '16px' }}>Acciones Rápidas</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-                    <Link href="/admin/productos/nuevo" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
+                    <Link href="/admin/productos/nuevo" style={{ padding: '14px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '0.88rem' }}>
                         <span style={{ fontSize: '1.2rem' }}>📦</span> Crear Producto
                     </Link>
-                    <Link href="/admin/pedidos" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
-                        <span style={{ fontSize: '1.2rem' }}>💰</span> Ver Pedidos
+                    <Link href="/admin/pedidos" style={{ padding: '14px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '0.88rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>📋</span> Ver Pedidos
                     </Link>
-                    <Link href="/admin/categorias" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
-                        <span style={{ fontSize: '1.2rem' }}>🏷️</span> Crear Categoría
+                    <Link href="/admin/descuentos/nuevo" style={{ padding: '14px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '0.88rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🎟️</span> Crear Descuento
                     </Link>
-                    <Link href="/admin/configuracion/pagos" style={{ padding: '16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 600, fontSize: '0.9rem' }}>
-                        <span style={{ fontSize: '1.2rem' }}>💳</span> Métodos de Pago
+                    <Link href="/admin/categorias" style={{ padding: '14px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '0.88rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🔖</span> Gestionar Categorías
+                    </Link>
+                    <Link href="/admin/configuracion/pagos" style={{ padding: '14px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '0.88rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>💳</span> Configurar Pagos
+                    </Link>
+                    <Link href="/" target="_blank" style={{ padding: '14px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px', fontWeight: 700, fontSize: '0.88rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>🛍️</span> Ver Tienda Pública ↗
                     </Link>
                 </div>
             </div>
 
-            {/* Low Stock Warning Section (Only if products with low stock exist) */}
-            {lowStockProducts.length > 0 && (
+            {/* Low Stock Warning Section (Only real products with low stock) */}
+            {lowStockList.length > 0 && (
                 <div style={{ marginBottom: '32px', background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px', padding: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                        <h3 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>⚠️</span> Productos con Bajo Stock ({lowStockProducts.length})
+                        <h3 style={{ margin: 0, color: '#ef4444', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span>⚠️</span> Productos con Bajo Stock ({lowStockList.length})
                         </h3>
-                        <Link href="/admin/inventario" style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 600 }}>Ver todo en inventario →</Link>
+                        <Link href="/admin/inventario" style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 700, textDecoration: 'none' }}>Ir a control de inventario →</Link>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                        {lowStockProducts.map(prod => (
+                        {lowStockList.map(prod => (
                             <div key={prod.id} style={{ padding: '10px 14px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{prod.title}</span>
-                                <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '2px 8px', borderRadius: '4px', fontWeight: 700, fontSize: '0.75rem' }}>
-                                    Quedan {prod.stock}
+                                <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>{prod.title}</span>
+                                <span style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', padding: '2px 8px', borderRadius: '4px', fontWeight: 800, fontSize: '0.75rem' }}>
+                                    Quedan {prod.stock_quantity ?? 0} un.
                                 </span>
                             </div>
                         ))}
@@ -262,9 +288,9 @@ export default function AdminDashboard() {
             {/* Recent Orders Section */}
             <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Pedidos Recientes</h2>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--foreground)', margin: 0 }}>Pedidos Recientes</h2>
                     {orders.length > 0 && (
-                        <Link href="/admin/pedidos" style={{ color: 'var(--robotina-orange)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}>
+                        <Link href="/admin/pedidos" style={{ color: 'var(--robotina-orange)', fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none' }}>
                             Ver todos los pedidos ({orders.length}) →
                         </Link>
                     )}
@@ -273,9 +299,9 @@ export default function AdminDashboard() {
                 {orders.length === 0 && !loading ? (
                     <AdminEmptyState
                         title="Todavía no tienes pedidos"
-                        description="Cuando un cliente complete una compra en la tienda, su pedido aparecerá aquí en tiempo real."
+                        description="Cuando un cliente realice una compra o registres una venta manual, aparecerá aquí."
                         action={
-                            <Link href="/" target="_blank" style={{ padding: '10px 16px', background: 'rgba(255, 255, 255, 0.08)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 600, fontSize: '0.85rem' }}>
+                            <Link href="/" target="_blank" style={{ padding: '10px 16px', background: 'var(--robotina-orange)', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 700, fontSize: '0.85rem' }}>
                                 Probar Tienda Pública
                             </Link>
                         }

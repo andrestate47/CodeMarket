@@ -30,6 +30,8 @@ export default function AdminEditProductPage() {
     const [trackInventory, setTrackInventory] = useState(false);
     const [featured, setFeatured] = useState(false);
     const [status, setStatus] = useState<'active' | 'draft'>('active');
+    const [variants, setVariants] = useState<{ id: string; name: string; price: string; stock: number }[]>([]);
+    const [wholesaleRules, setWholesaleRules] = useState<{ minQuantity: number; price: string }[]>([]);
 
     useEffect(() => {
         let isMounted = true;
@@ -90,6 +92,8 @@ export default function AdminEditProductPage() {
         setTrackInventory(prod.track_inventory || false);
         setFeatured(prod.highlight || false);
         setStatus((prod.status as 'active' | 'draft') || 'active');
+        setVariants(prod.variants || []);
+        setWholesaleRules(prod.wholesale_rules || []);
     };
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,6 +166,8 @@ export default function AdminEditProductPage() {
                 stock_quantity: trackInventory ? (parseInt(stockQuantity, 10) || 10) : 100,
                 track_inventory: trackInventory,
                 status: status,
+                variants,
+                wholesale_rules: wholesaleRules,
             };
 
             // 1. Save locally in localStorage
@@ -449,6 +455,84 @@ export default function AdminEditProductPage() {
                                 onChange={e => setStockQuantity(e.target.value)}
                                 style={{ width: '100%', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'var(--input-text)', outline: 'none' }}
                             />
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 8: Product Variants */}
+                <div style={{ background: 'var(--input-bg)', padding: '20px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--foreground)' }}>🎨 Variantes del Producto (Talla, Color, Capacidad)</h4>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const opt = prompt('Ingrese el nombre de la variante (ej. Talla M / Negro):');
+                                if (opt) {
+                                    setVariants([...variants, { id: `v-${Date.now()}`, name: opt, price: price, stock: 10 }]);
+                                }
+                            }}
+                            style={{ padding: '6px 12px', background: 'var(--robotina-orange)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            + Agregar Variante
+                        </button>
+                    </div>
+                    {variants.length === 0 ? (
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>Este producto se vende como producto único sin variantes.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {variants.map((v, i) => (
+                                <div key={v.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--card-bg)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                    <span style={{ fontWeight: 700, fontSize: '0.85rem', flex: 1, color: 'var(--foreground)' }}>{v.name}</span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>S/ {v.price}</span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{v.stock} un.</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setVariants(variants.filter((_, idx) => idx !== i))}
+                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 700 }}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Section 9: Wholesale Prices */}
+                <div style={{ background: 'var(--input-bg)', padding: '20px', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--foreground)' }}>🏷️ Precios Mayoristas / Por Cantidad</h4>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const min = prompt('Cantidad mínima (ej. 6):', '6');
+                                const wholesalePrice = prompt('Precio unitario mayorista (S/):', '39.00');
+                                if (min && wholesalePrice) {
+                                    setWholesaleRules([...wholesaleRules, { minQuantity: parseInt(min, 10), price: wholesalePrice }]);
+                                }
+                            }}
+                            style={{ padding: '6px 12px', background: 'var(--robotina-orange)', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            + Agregar Regla Mayorista
+                        </button>
+                    </div>
+                    {wholesaleRules.length === 0 ? (
+                        <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--text-muted)' }}>No hay descuentos por cantidad configurados para este producto.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {wholesaleRules.map((r, i) => (
+                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--card-bg)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                    <span style={{ fontWeight: 700, fontSize: '0.85rem', flex: 1, color: 'var(--foreground)' }}>Desde {r.minQuantity} unidades</span>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--robotina-orange)', fontWeight: 800 }}>S/ {r.price} / un.</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setWholesaleRules(wholesaleRules.filter((_, idx) => idx !== i))}
+                                        style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontWeight: 700 }}
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

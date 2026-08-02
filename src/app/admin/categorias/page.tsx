@@ -35,6 +35,12 @@ export default function AdminCategoriesPage() {
         return DEFAULT_CATEGORIES;
     });
     const [isCreating, setIsCreating] = useState(false);
+    const [editingCategory, setEditingCategory] = useState<CategoryItem | null>(null);
+
+    // Form state
+    const [name, setName] = useState('');
+    const [icon, setIcon] = useState('🏷️');
+    const [description, setDescription] = useState('');
 
     // Calculate product counts per category dynamically
     const products = getInstantProducts();
