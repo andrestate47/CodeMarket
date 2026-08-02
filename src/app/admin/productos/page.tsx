@@ -736,7 +736,7 @@ export default function AdminProductsList() {
                 </div>
             ) : (
                 /* Grid View Layout (4 cards per row on normal screens, 5 on wide monitors) */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '24px 18px', paddingTop: '10px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px 18px', paddingTop: '10px' }}>
                     {paginatedProducts.map(prod => {
                         const isSelected = selectedIds.includes(prod.id);
                         const isMenuOpen = openMenuId === prod.id;
