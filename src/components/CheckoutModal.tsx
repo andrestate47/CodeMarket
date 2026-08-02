@@ -14,11 +14,7 @@ interface CheckoutModalProps {
 export default function CheckoutModal({ product, isOpen, onClose }: CheckoutModalProps) {
     const [email, setEmail] = useState('');
     const [loading, setLoading] = useState(false);
-    const [mounted, setMounted] = useState(false);
-
     useEffect(() => {
-        setMounted(true);
-        // Prevent scrolling when modal is open
         if (isOpen) {
             document.body.style.overflow = 'hidden';
         } else {
@@ -29,7 +25,7 @@ export default function CheckoutModal({ product, isOpen, onClose }: CheckoutModa
         };
     }, [isOpen]);
 
-    if (!isOpen || !mounted) return null;
+    if (!isOpen || typeof window === 'undefined') return null;
 
     const handlePay = (e: React.FormEvent) => {
         e.preventDefault();

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 
 type Theme = 'light' | 'dark';
 
@@ -11,31 +11,36 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-    const [theme, setTheme] = useState<Theme>('dark');
-    const [mounted, setMounted] = useState(false);
+const getThemeSnapshot = (): Theme => {
+    if (typeof window !== 'undefined') {
+        const saved = localStorage.getItem('theme') as Theme;
+        if (saved === 'light' || saved === 'dark') return saved;
+    }
+    return 'dark';
+};
 
-    useEffect(() => {
-        // Check local storage or system preference on mount
-        const savedTheme = localStorage.getItem('theme') as Theme;
-        if (savedTheme) {
-            setTheme(savedTheme);
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        } else {
-            // Default to dark
-            document.documentElement.setAttribute('data-theme', 'dark');
-        }
-        setMounted(true);
-    }, []);
+const getServerSnapshot = (): Theme => 'dark';
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+    const theme = React.useSyncExternalStore(
+        (callback) => {
+            window.addEventListener('storage', callback);
+            return () => window.removeEventListener('storage', callback);
+        },
+        getThemeSnapshot,
+        getServerSnapshot
+    );
 
     const toggleTheme = () => {
         const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
         localStorage.setItem('theme', newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
+        window.dispatchEvent(new Event('storage'));
     };
 
-    // We must always render the Provider so consumers don't crash during SSR
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+    }, [theme]);
+
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>
             {children}

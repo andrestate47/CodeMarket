@@ -20,29 +20,37 @@ export default function Login() {
     setError(null);
     setMessage(null);
 
-    if (isLogin) {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (loginError) {
-        setError("Error al iniciar sesión: Verifica tus credenciales.");
+    try {
+      if (isLogin) {
+        const { data, error: loginError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (loginError || !data.session) {
+          setError(loginError?.message || "Error al iniciar sesión: Verifica tus credenciales.");
+        } else {
+          document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
+          const params = new URLSearchParams(window.location.search);
+          const redirect = params.get('redirect') || '/dashboard';
+          router.push(redirect);
+        }
       } else {
-        router.push('/dashboard');
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        if (signUpError) {
+          setError(signUpError.message);
+        } else {
+          setMessage('¡Registro exitoso! Ya puedes iniciar sesión (o revisa tu correo si la confirmación está activa en Supabase).');
+          setIsLogin(true); // Switch to login view
+        }
       }
-    } else {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      if (signUpError) {
-        setError(signUpError.message);
-      } else {
-        setMessage('¡Registro exitoso! Ya puedes iniciar sesión (o revisa tu correo si la confirmación está activa en Supabase).');
-        setIsLogin(true); // Switch to login view
-      }
+    } catch {
+      setError('No se pudo conectar con el servidor de Supabase. Revisa la URL y claves de Supabase en el archivo .env.local.');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (

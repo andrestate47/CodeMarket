@@ -8,12 +8,15 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from 'next/navigation';
 import styles from './Navbar.module.css';
 
+import { User } from '@supabase/supabase-js';
+
 export default function Navbar() {
   const { toggleCart, items } = useCart();
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = React.useState<any>(null);
+  const [user, setUser] = React.useState<User | null>(null);
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [mounted, setMounted] = React.useState(false);
   const router = useRouter();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -24,6 +27,7 @@ export default function Navbar() {
   };
 
   React.useEffect(() => {
+    setMounted(true);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
     });
@@ -75,7 +79,7 @@ export default function Navbar() {
             className={styles.themeToggle}
             aria-label="Toggle Theme"
           >
-            {theme === 'dark' ? (
+            {!mounted || theme === 'dark' ? (
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="5"></circle>
                 <line x1="12" y1="1" x2="12" y2="3"></line>

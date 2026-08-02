@@ -238,27 +238,12 @@ export default function ProductPage() {
     const id = params.id as string;
     const product = products.find(p => p.id === id);
 
-    if (!product) {
-        return (
-            <main className={styles.container}>
-                <Navbar />
-                <div className={styles.notFound}>
-                    <h1>Producto no encontrado</h1>
-                    <button onClick={() => router.push('/')} className={styles.backButton}>Volver al inicio</button>
-                </div>
-            </main>
-        );
-    }
-
     const [couponInput, setCouponInput] = React.useState('');
     const [appliedDiscount, setAppliedDiscount] = React.useState(0);
     const [couponMessage, setCouponMessage] = React.useState<{type: 'success' | 'error', text: string} | null>(null);
     const [timeLeft, setTimeLeft] = React.useState({ hours: 14, minutes: 28, seconds: 59 });
-    const [viewers, setViewers] = useState(0);
-
-    useEffect(() => {
-        setViewers(Math.floor(Math.random() * 7) + 2);
-    }, []);
+    const [viewers] = useState(() => Math.floor(Math.random() * 7) + 2);
+    const [cartMessage, setCartMessage] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const timer = setInterval(() => {
@@ -284,6 +269,18 @@ export default function ProductPage() {
         }, 1000);
         return () => clearInterval(timer);
     }, []);
+
+    if (!product) {
+        return (
+            <main className={styles.container}>
+                <Navbar />
+                <div className={styles.notFound}>
+                    <h1>Producto no encontrado</h1>
+                    <button onClick={() => router.push('/')} className={styles.backButton}>Volver al inicio</button>
+                </div>
+            </main>
+        );
+    }
 
     const handleApplyCoupon = () => {
         const validCoupons: Record<string, number> = { 
@@ -318,8 +315,6 @@ export default function ProductPage() {
 
     const isInCart = items.some(item => item.id === product.id);
 
-    const [cartMessage, setCartMessage] = React.useState<string | null>(null);
-
     const handleAddToCart = () => {
         if (isInCart) {
             setCartMessage('Este producto digital ya ha sido elegido y está en tu carrito.');
@@ -338,7 +333,7 @@ export default function ProductPage() {
 
     const handleBuyNow = () => {
         if (product.type === 'service') {
-            window.location.href = 'mailto:hello@codemarket.dev?subject=Consulta%20Proyecto';
+            window.open('mailto:hello@codemarket.dev?subject=Consulta%20Proyecto', '_self');
         } else {
             if (!isInCart) {
                 addItem(productToCart);

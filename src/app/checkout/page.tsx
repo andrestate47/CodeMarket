@@ -4,131 +4,85 @@ import React, { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import styles from './page.module.css';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { processCheckoutAction, CheckoutResult } from '@/modules/checkout/actions';
 
-type PaymentMethod = 'card' | 'yape' | 'plin' | 'bcp' | 'bbva';
+type PaymentMethod = 'yape' | 'plin' | 'bank_transfer' | 'quote_request';
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCart();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
-    const [isSuccess, setIsSuccess] = useState(false);
-    const [password, setPassword] = useState('');
-    const [passwordLoading, setPasswordLoading] = useState(false);
-    
+    const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('yape');
+    const [orderResult, setOrderResult] = useState<CheckoutResult | null>(null);
+
     const [formData, setFormData] = useState({
         fullName: '',
         email: '',
-        cardName: '',
-        cardNumber: '',
-        exp: '',
-        cvc: ''
+        phone: '',
+        notes: ''
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        const orderData = {
-            id: 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-            customer: formData.fullName,
-            email: formData.email,
-            items: items.map(i => ({ title: i.title, price: i.price })),
-            total: total.toFixed(2),
-            method: paymentMethod,
-            date: new Date().toLocaleString('es-ES'),
-            status: 'Completado'
+        const checkoutPayload = {
+            customerName: formData.fullName,
+            customerEmail: formData.email,
+            customerPhone: formData.phone,
+            paymentMethod,
+            notes: formData.notes,
+            items: items.map(i => ({ productId: i.id, quantity: 1 })),
         };
 
-        // Simulate API call
-        setTimeout(() => {
-            // Save order to history
-            const orders = JSON.parse(localStorage.getItem('admin_orders') || '[]');
-            localStorage.setItem('admin_orders', JSON.stringify([orderData, ...orders]));
+        const result = await processCheckoutAction(checkoutPayload);
+        setLoading(false);
 
-            // Add notification for admin
-            const notifications = JSON.parse(localStorage.getItem('admin_notifications') || '[]');
-            const newNotif = {
-                id: Date.now(),
-                type: 'order',
-                message: `Nueva compra de ${orderData.customer} por $${orderData.total}`,
-                date: new Date().toLocaleTimeString(),
-                read: false
-            };
-            localStorage.setItem('admin_notifications', JSON.stringify([newNotif, ...notifications]));
-
-            setLoading(false);
+        if (result.success) {
+            setOrderResult(result);
             clearCart();
-            setIsSuccess(true);
-            toast.success('¡Pago procesado correctamente!');
-            import('canvas-confetti').then((confetti) => confetti.default({ particleCount: 200, spread: 90, origin: { y: 0.6 } }));
-        }, 1500);
-    };
-
-    const handleCreateAccount = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setPasswordLoading(true);
-        const { error } = await supabase.auth.signUp({
-            email: formData.email,
-            password: password
-        });
-
-        setPasswordLoading(false);
-        if (error) {
-            toast.error("Error: " + error.message);
+            toast.success(`¡Pedido ${result.orderNumber} registrado exitosamente!`);
+            import('canvas-confetti').then((confetti) => confetti.default({ particleCount: 150, spread: 80, origin: { y: 0.6 } }));
         } else {
-            toast.success('¡Mágia! Tu cuenta ha sido asegurada.');
-            router.push('/dashboard');
+            toast.error(result.error || 'Error al procesar la orden.');
         }
     };
 
-    if (isSuccess) {
+    if (orderResult?.success) {
         return (
-            <div className={styles.container} style={{ textAlign: 'center', paddingTop: '60px', maxWidth: '600px', margin: '0 auto' }}>
-                <div style={{ background: 'var(--glass-bg)', padding: '50px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
-                    <div style={{ fontSize: '4rem', marginBottom: '16px' }}>🎉</div>
-                    <h1 style={{ fontSize: '2rem', marginBottom: '16px', fontWeight: 800 }}>¡Compra Exitosa!</h1>
-                    <p style={{ color: 'var(--text-muted)', marginBottom: '32px', fontSize: '1.05rem', lineHeight: '1.6' }}>
-                        Te hemos enviado tu recibo y las instrucciones de acceso a <strong>{formData.email}</strong>.
-                        <br/><br/>
-                        Para ver tus compras ahora y a futuro, hemos pre-creado tu cuenta. Por favor elige una contraseña para terminar de asegurarla:
+            <div className={styles.container} style={{ textAlign: 'center', paddingTop: '60px', maxWidth: '650px', margin: '0 auto' }}>
+                <div style={{ background: 'var(--glass-bg)', padding: '48px', borderRadius: '24px', border: '1px solid var(--glass-border)' }}>
+                    <div style={{ fontSize: '4rem', marginBottom: '16px' }}>📝</div>
+                    <h1 style={{ fontSize: '2rem', marginBottom: '12px', fontWeight: 800 }}>¡Pedido Registrado con Éxito!</h1>
+                    <div style={{ display: 'inline-block', background: 'rgba(168, 85, 247, 0.1)', color: '#a855f7', padding: '6px 16px', borderRadius: '20px', fontWeight: 800, fontSize: '1.1rem', marginBottom: '24px' }}>
+                        Número de Pedido: {orderResult.orderNumber}
+                    </div>
+
+                    <p style={{ color: 'var(--text-muted)', marginBottom: '24px', fontSize: '1rem', lineHeight: '1.6' }}>
+                        Estado del pago: <strong style={{ color: '#facc15' }}>Pago Pendiente</strong>.
+                        <br />
+                        Total del pedido: <strong>{orderResult.totalFormatted}</strong>.
                     </p>
-                    
-                    <form onSubmit={handleCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '350px', margin: '0 auto' }}>
-                        <input
-                            type="password"
-                            placeholder="Crea una contraseña segura"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            style={{
-                                background: 'var(--background)',
-                                border: '1px solid var(--glass-border)',
-                                borderRadius: '8px',
-                                padding: '12px 16px',
-                                color: 'var(--foreground)',
-                                outline: 'none',
-                                fontSize: '1rem'
-                            }}
-                        />
-                        <button type="submit" disabled={passwordLoading} style={{
-                            background: 'var(--card-bg)',
-                            color: 'var(--foreground)',
-                            border: '1px solid var(--glass-border)',
-                            padding: '14px',
-                            borderRadius: '8px',
-                            fontWeight: 700,
-                            cursor: passwordLoading ? 'not-allowed' : 'pointer',
-                        }}>
-                            {passwordLoading ? 'Asegurando...' : 'Guardar y Ver mis Compras'}
-                        </button>
-                    </form>
+
+                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '24px', borderRadius: '16px', textAlign: 'left', marginBottom: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: 'white' }}>Instrucciones para completar tu pago:</h4>
+                        {paymentMethod === 'yape' && <p style={{ fontSize: '0.9rem', color: '#ccc', margin: 0 }}>Envía el monto vía <strong>Yape</strong> al <strong>+51 900 000 000</strong> (CodeMarket Perú) indicando tu número de pedido <strong>{orderResult.orderNumber}</strong> en el concepto.</p>}
+                        {paymentMethod === 'plin' && <p style={{ fontSize: '0.9rem', color: '#ccc', margin: 0 }}>Envía tu pago por <strong>Plin</strong> al <strong>+51 900 000 000</strong> (CodeMarket Perú) con el concepto <strong>{orderResult.orderNumber}</strong>.</p>}
+                        {paymentMethod === 'bank_transfer' && <p style={{ fontSize: '0.9rem', color: '#ccc', margin: 0 }}>Transfiere a nuestra cuenta BCP: <strong>193-0000000-0-00</strong> (CodeMarket S.A.C.) indicando <strong>{orderResult.orderNumber}</strong>.</p>}
+                        {paymentMethod === 'quote_request' && <p style={{ fontSize: '0.9rem', color: '#ccc', margin: 0 }}>Hemos recibido tu solicitud de cotización. Nuestro equipo técnico se pondrá en contacto contigo en breve.</p>}
+                    </div>
+
+                    <button
+                        onClick={() => router.push('/')}
+                        style={{ background: 'white', color: 'black', border: 'none', padding: '14px 28px', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}
+                    >
+                        Volver a la Tienda
+                    </button>
                 </div>
             </div>
         );
@@ -139,18 +93,17 @@ export default function CheckoutPage() {
             <div className={styles.container} style={{ textAlign: 'center', paddingTop: '100px' }}>
                 <h1 className={styles.title}>Tu carrito está vacío</h1>
                 <button className="btn-primary" onClick={() => router.push('/')}>
-                    Volver a la tienda
+                    Volver al catálogo
                 </button>
             </div>
         );
     }
 
     const paymentOptions = [
-        { id: 'card', name: 'Tarjeta', icon: '💳' },
         { id: 'yape', name: 'Yape', icon: '🟣' },
         { id: 'plin', name: 'Plin', icon: '🔵' },
-        { id: 'bcp', name: 'BCP', icon: '🏦' },
-        { id: 'bbva', name: 'BBVA', icon: '💎' },
+        { id: 'bank_transfer', name: 'Transferencia BCP', icon: '🏦' },
+        { id: 'quote_request', name: 'Cotización / Consulta', icon: '📋' },
     ];
 
     return (
@@ -159,47 +112,66 @@ export default function CheckoutPage() {
                 &larr; Volver
             </button>
             <h1 className={styles.title}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="url(#gradientLock)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <defs>
-                        <linearGradient id="gradientLock" x1="0" y1="0" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#a855f7" />
-                            <stop offset="100%" stopColor="#ec4899" />
-                        </linearGradient>
-                    </defs>
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                Finalizar Compra
+                Finalizar Pedido
             </h1>
 
             <div className={styles.grid}>
                 {/* Form Section */}
                 <section className={styles.formSection}>
                     <form onSubmit={handleSubmit}>
-                        <div className={styles.sectionHeader}>Información Personal</div>
+                        <div className={styles.sectionHeader}>1. Datos del Cliente</div>
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>Nombre de Facturación / Apodo</label>
+                            <label className={styles.label}>Nombre Completo *</label>
                             <input
                                 name="fullName"
                                 className={styles.input}
                                 required
+                                value={formData.fullName}
                                 onChange={handleChange}
+                                placeholder="Ej. Juan Pérez"
                             />
                         </div>
 
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>Correo Electrónico (Aquí enviamos el producto)</label>
+                            <label className={styles.label}>Correo Electrónico *</label>
                             <input
                                 name="email"
                                 type="email"
                                 className={styles.input}
                                 required
+                                value={formData.email}
                                 onChange={handleChange}
+                                placeholder="tu@email.com"
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Teléfono / WhatsApp *</label>
+                            <input
+                                name="phone"
+                                type="tel"
+                                className={styles.input}
+                                required
+                                value={formData.phone}
+                                onChange={handleChange}
+                                placeholder="+51 900 000 000"
+                            />
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Notas adicionales (Opcional)</label>
+                            <textarea
+                                name="notes"
+                                className={styles.input}
+                                value={formData.notes}
+                                onChange={handleChange}
+                                placeholder="Indicaciones especiales para tu proyecto o pedido..."
+                                rows={3}
                             />
                         </div>
 
                         {/* Payment Method Selector */}
-                        <div className={styles.sectionHeader} style={{ marginTop: '40px' }}>Opciones de Pago</div>
+                        <div className={styles.sectionHeader} style={{ marginTop: '40px' }}>2. Método de Pago Manual</div>
                         <div className={styles.paymentMethodsGrid}>
                             {paymentOptions.map(option => (
                                 <div
@@ -213,70 +185,14 @@ export default function CheckoutPage() {
                             ))}
                         </div>
 
-                        {/* Dynamic Payment Content */}
-                        {paymentMethod === 'card' ? (
-                            <>
-                                <div className={styles.formGroup}>
-                                    <label className={styles.label}>Nombre en la Tarjeta</label>
-                                    <input
-                                        name="cardName"
-                                        className={styles.input}
-                                        required
-                                        onChange={handleChange}
-                                    />
-                                </div>
+                        <div className={styles.paymentInstruction} style={{ marginTop: '16px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: '#ccc' }}>
+                                Al confirmar, tu pedido iniciará con estado <strong>Pago Pendiente</strong>. Recibirás el número de pedido e instrucciones exactas para realizar tu depósito.
+                            </p>
+                        </div>
 
-                                <div className={styles.formGroup}>
-                                    <label className={styles.label}>Número de Tarjeta</label>
-                                    <input
-                                        name="cardNumber"
-                                        className={styles.input}
-                                        placeholder="0000 0000 0000 0000"
-                                        required
-                                        onChange={handleChange}
-                                    />
-                                </div>
-
-                                <div className={styles.row}>
-                                    <div className={styles.formGroup} style={{ flex: 1 }}>
-                                        <label className={styles.label}>Expiración (MM/YY)</label>
-                                        <input
-                                            name="exp"
-                                            className={styles.input}
-                                            placeholder="MM/YY"
-                                            required
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                    <div className={styles.formGroup} style={{ flex: 1 }}>
-                                        <label className={styles.label}>CVC</label>
-                                        <input
-                                            name="cvc"
-                                            className={styles.input}
-                                            placeholder="123"
-                                            required
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <div className={styles.paymentInstruction}>
-                                <h4 style={{ marginBottom: '8px', color: 'white' }}>Instrucciones para {paymentOptions.find(p => p.id === paymentMethod)?.name}</h4>
-                                {paymentMethod === 'yape' && <p>Yapea al número <strong>999-999-999</strong> (CodeMarket SAC) y envía la captura a pagos@codemarket.dev.</p>}
-                                {paymentMethod === 'plin' && <p>Envía Plin al número <strong>999-999-999</strong> (CodeMarket SAC) y envía la captura a pagos@codemarket.dev.</p>}
-                                {paymentMethod === 'bcp' && <p>Transferencia BCP: <strong>193-12345678-0-01</strong><br />CCI: 002-193-12345678001-12<br />Razón Social: CodeMarket SAC</p>}
-                                {paymentMethod === 'bbva' && <p>Transferencia BBVA: <strong>0011-0123-98765432-10</strong><br />CCI: 011-123-9876543210-99<br />Razón Social: CodeMarket SAC</p>}
-
-                                <div className={styles.formGroup} style={{ marginTop: '20px' }}>
-                                    <label className={styles.label}>Adjuntar Comprobante (Opcional)</label>
-                                    <input type="file" className={styles.input} />
-                                </div>
-                            </div>
-                        )}
-
-                        <button type="submit" className={`btn-primary ${styles.payButton}`} disabled={loading}>
-                            {loading ? 'Procesando...' : (paymentMethod === 'card' ? `Pagar $${total.toFixed(2)}` : 'Confirmar Pedido')}
+                        <button type="submit" className={`btn-primary ${styles.payButton}`} disabled={loading} style={{ marginTop: '24px' }}>
+                            {loading ? 'Generando Pedido...' : `Confirmar Pedido (S/ ${total.toFixed(2)})`}
                         </button>
                     </form>
                 </section>
@@ -284,7 +200,7 @@ export default function CheckoutPage() {
                 {/* Summary Section */}
                 <section className={styles.summarySection}>
                     <div className={styles.summaryCard}>
-                        <div className={styles.summaryTitle}>Resumen del Pedido</div>
+                        <div className={styles.summaryTitle}>Resumen del Carrito</div>
 
                         {items.map((item) => (
                             <div key={item.cartId} className={styles.summaryItem}>
@@ -295,16 +211,12 @@ export default function CheckoutPage() {
 
                         <div className={styles.summaryItem} style={{ borderTop: '1px solid #333', paddingTop: '16px', marginTop: '16px' }}>
                             <span>Subtotal</span>
-                            <span>${total.toFixed(2)}</span>
+                            <span>S/ {total.toFixed(2)}</span>
                         </div>
 
                         <div className={styles.totalRow}>
                             <span>Total</span>
-                            <span>${total.toFixed(2)}</span>
-                        </div>
-
-                        <div style={{ marginTop: '24px', fontSize: '0.8rem', color: '#666', textAlign: 'center' }}>
-                            🔒 Transacción 100% segura y encriptada.
+                            <span>S/ {total.toFixed(2)}</span>
                         </div>
                     </div>
                 </section>

@@ -14,7 +14,6 @@ export default function CartDrawer() {
         // If an item was added and the drawer is open, close it after 1.5s
         if (items.length > prevItemsLength.current && isOpen) {
             const timer = setTimeout(() => {
-                const currentDrawer = document.querySelector('[class*="drawer"]');
                 // Only toggle if it's still open
                 if (isOpen) {
                     toggleCart();

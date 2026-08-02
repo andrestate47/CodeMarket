@@ -63,7 +63,7 @@ export default function Testimonials() {
                             <div className={styles.stars}>
                                 {'★★★★★'.split('').map((s, i) => <span key={i}>{s}</span>)}
                             </div>
-                            <p className={styles.text}>"{review.text}"</p>
+                            <p className={styles.text}>&quot;{review.text}&quot;</p>
                         </div>
                     ))}
                 </div>
