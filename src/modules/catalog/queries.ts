@@ -51,16 +51,18 @@ export function getInstantProducts(): CatalogProduct[] {
         price: p.price,
         comparePrice: p.comparePrice,
         price_amount: p.price ? Math.round(parseFloat(p.price.replace(/[^0-9.]/g, '')) * 100) : 0,
+        compare_at_amount: p.comparePrice ? Math.round(parseFloat(p.comparePrice.replace(/[^0-9.]/g, '')) * 100) : undefined,
         features: p.features,
-        type: (p.type === 'service' ? 'service' : 'digital') as 'digital' | 'service' | 'physical',
+        type: p.type,
         cta: p.cta,
         highlight: p.highlight,
         color: p.color,
         image: p.image,
         longDescription: p.longDescription,
-        stock_quantity: 100,
-        track_inventory: false,
+        stock_quantity: p.id === 'audifonos-pro' ? 0 : (p.id === 'smartband-v8' ? 4 : 25),
+        track_inventory: true,
         status: 'active',
+        variants: p.variants,
     }));
 
     const combined = [...localSavedProducts, ...staticMapped];
@@ -104,7 +106,7 @@ export async function fetchCatalogProducts(): Promise<CatalogProduct[]> {
                     price_amount: p.price_amount,
                     compare_at_amount: p.compare_at_amount,
                     features: meta.features || [],
-                    type: (p.product_type || 'digital') as 'digital' | 'service' | 'physical',
+                    type: (p.product_type || 'physical') as 'digital' | 'service' | 'physical',
                     cta: meta.cta || 'Comprar',
                     highlight: p.featured,
                     color: meta.color || 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
@@ -113,6 +115,8 @@ export async function fetchCatalogProducts(): Promise<CatalogProduct[]> {
                     stock_quantity: p.stock_quantity || 0,
                     track_inventory: p.track_inventory || false,
                     status: p.status || 'active',
+                    variants: meta.variants || [],
+                    wholesale_rules: meta.wholesale_rules || [],
                 };
             });
         }

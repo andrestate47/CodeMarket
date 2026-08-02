@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { fetchCatalogProducts, getInstantProducts, CatalogProduct } from '@/modules/catalog/queries';
 import { supabase } from '@/lib/supabase';
-import { formatMoney } from '@/lib/money';
+import { formatMoney, parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge';
 import AdminEmptyState from '@/components/admin/AdminEmptyState';
@@ -30,6 +30,7 @@ export default function AdminProductsList() {
     const [statusFilter, setStatusFilter] = useState('all');
     const [stockFilter, setStockFilter] = useState('all');
     const [variantFilter, setVariantFilter] = useState('all');
+    const [discountFilter, setDiscountFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'price_asc' | 'price_desc' | 'stock_asc' | 'stock_desc' | 'newest'>('newest');
 
     // Selection & Bulk Action State
@@ -39,6 +40,9 @@ export default function AdminProductsList() {
     // Quick Inventory Modal State
     const [inventoryModalProduct, setInventoryModalProduct] = useState<CatalogProduct | null>(null);
     const [newStockInput, setNewStockInput] = useState<number>(0);
+
+    // Import CSV Modal / Input
+    const csvFileInputRef = useRef<HTMLInputElement>(null);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -86,6 +90,29 @@ export default function AdminProductsList() {
         return Array.from(new Set(productsList.map(p => p.category))).filter(Boolean);
     }, [productsList]);
 
+    // Helper to calculate exact Soles numerical price for sorting/discount
+    const getProductNumericalPrice = (prod: CatalogProduct): { price: number; compare?: number } => {
+        let price = 0;
+        if (typeof prod.price_amount === 'number' && prod.price_amount > 0) {
+            price = prod.price_amount / 100;
+        } else if (typeof prod.price === 'number') {
+            price = prod.price;
+        } else {
+            const clean = parseFloat(String(prod.price || '').replace(/[^0-9.]/g, ''));
+            price = isNaN(clean) ? 0 : clean;
+        }
+
+        let compare: number | undefined = undefined;
+        if (typeof prod.compare_at_amount === 'number' && prod.compare_at_amount > 0) {
+            compare = prod.compare_at_amount / 100;
+        } else if (prod.comparePrice) {
+            const clean = parseFloat(String(prod.comparePrice).replace(/[^0-9.]/g, ''));
+            if (!isNaN(clean) && clean > 0) compare = clean;
+        }
+
+        return { price, compare };
+    };
+
     // Filter & Sort Logic
     const filteredProducts = useMemo(() => {
         return productsList.filter(prod => {
@@ -108,10 +135,16 @@ export default function AdminProductsList() {
             if (variantFilter === 'with') matchesVariants = hasVariants;
             if (variantFilter === 'without') matchesVariants = !hasVariants;
 
-            return matchesSearch && matchesCategory && matchesStatus && matchesStock && matchesVariants;
+            const { price, compare } = getProductNumericalPrice(prod);
+            const hasDiscount = Boolean(compare && compare > price);
+            let matchesDiscount = true;
+            if (discountFilter === 'with') matchesDiscount = hasDiscount;
+            if (discountFilter === 'without') matchesDiscount = !hasDiscount;
+
+            return matchesSearch && matchesCategory && matchesStatus && matchesStock && matchesVariants && matchesDiscount;
         }).sort((a, b) => {
-            const priceA = typeof a.price === 'number' ? a.price : (a.price_amount ? a.price_amount / 100 : parseFloat(String(a.price).replace(/[^0-9.]/g, '')) || 0);
-            const priceB = typeof b.price === 'number' ? b.price : (b.price_amount ? b.price_amount / 100 : parseFloat(String(b.price).replace(/[^0-9.]/g, '')) || 0);
+            const priceA = getProductNumericalPrice(a).price;
+            const priceB = getProductNumericalPrice(b).price;
             const stockA = a.stock_quantity ?? 10;
             const stockB = b.stock_quantity ?? 10;
 
@@ -123,7 +156,7 @@ export default function AdminProductsList() {
             if (sortBy === 'stock_desc') return stockB - stockA;
             return 0; // newest default order
         });
-    }, [productsList, searchQuery, categoryFilter, statusFilter, stockFilter, variantFilter, sortBy]);
+    }, [productsList, searchQuery, categoryFilter, statusFilter, stockFilter, variantFilter, discountFilter, sortBy]);
 
     // Pagination Calculation
     const totalCount = filteredProducts.length;
@@ -148,7 +181,7 @@ export default function AdminProductsList() {
         );
     };
 
-    // Actions
+    // Single Product Actions
     const toggleStatus = async (productId: string, currentStatus: string) => {
         const nextStatus = currentStatus === 'active' ? 'draft' : 'active';
         setProductsList(prev => prev.map(p => p.id === productId ? { ...p, status: nextStatus } : p));
@@ -209,6 +242,63 @@ export default function AdminProductsList() {
         setSelectedIds([]);
     };
 
+    const handleBulkCategoryChange = async () => {
+        const newCat = prompt('Ingrese el nuevo nombre de categoría para los productos seleccionados:');
+        if (!newCat || !newCat.trim()) return;
+
+        const cleanCat = newCat.trim();
+        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, category: cleanCat } : p));
+        try {
+            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, category: cleanCat } : p);
+            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
+        } catch { }
+        setSelectedIds([]);
+    };
+
+    const handleBulkPriceUpdate = async () => {
+        const inputPrice = prompt('Ingrese el nuevo precio en soles (S/) para los productos seleccionados (ej. 49.90):');
+        if (!inputPrice) return;
+
+        const numPrice = parseFloat(inputPrice.replace(/[^0-9.]/g, ''));
+        if (isNaN(numPrice) || numPrice < 0) {
+            alert('Precio inválido');
+            return;
+        }
+
+        const cents = Math.round(numPrice * 100);
+        const formattedPrice = `S/ ${numPrice.toFixed(2)}`;
+
+        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, price: formattedPrice, price_amount: cents } : p));
+        try {
+            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, price: formattedPrice, price_amount: cents } : p);
+            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
+            await supabase.from('products').update({ price_amount: cents }).in('id', selectedIds);
+        } catch { }
+        setSelectedIds([]);
+    };
+
+    const handleBulkStockUpdate = async () => {
+        const inputStock = prompt('Ingrese la cantidad de unidades en stock para los productos seleccionados:');
+        if (inputStock === null) return;
+
+        const stockNum = parseInt(inputStock, 10);
+        if (isNaN(stockNum) || stockNum < 0) {
+            alert('Stock inválido');
+            return;
+        }
+
+        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, stock_quantity: stockNum } : p));
+        try {
+            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
+            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, stock_quantity: stockNum } : p);
+            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
+            await supabase.from('products').update({ stock_quantity: stockNum }).in('id', selectedIds);
+        } catch { }
+        setSelectedIds([]);
+    };
+
     const handleBulkDelete = async () => {
         if (!confirm(`¿Eliminar los ${selectedIds.length} productos seleccionados?`)) return;
         setProductsList(prev => prev.filter(p => !selectedIds.includes(p.id)));
@@ -221,10 +311,14 @@ export default function AdminProductsList() {
         setSelectedIds([]);
     };
 
+    // Export CSV
     const handleExportCSV = () => {
         const targetList = selectedIds.length > 0 ? productsList.filter(p => selectedIds.includes(p.id)) : filteredProducts;
         const headers = 'ID,Titulo,Categoria,Precio,Stock,Estado\n';
-        const rows = targetList.map(p => `"${p.id}","${p.title}","${p.category}","${p.price}",${p.stock_quantity ?? 10},"${p.status || 'active'}"`).join('\n');
+        const rows = targetList.map(p => {
+            const { price } = getProductNumericalPrice(p);
+            return `"${p.id}","${p.title}","${p.category}","S/ ${price.toFixed(2)}",${p.stock_quantity ?? 10},"${p.status || 'active'}"`;
+        }).join('\n');
         
         const blob = new Blob([headers + rows], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
@@ -236,12 +330,71 @@ export default function AdminProductsList() {
         document.body.removeChild(link);
     };
 
+    // Import CSV File Handler
+    const handleImportCSVFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const content = evt.target?.result as string;
+            if (!content) return;
+
+            const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+            if (lines.length <= 1) {
+                alert('El archivo CSV está vacío o no contiene filas de datos.');
+                return;
+            }
+
+            const importedProducts: CatalogProduct[] = [];
+            for (let i = 1; i < lines.length; i++) {
+                const parts = lines[i].split(',').map(p => p.replace(/^"|"$/g, '').trim());
+                if (parts.length >= 2) {
+                    const title = parts[1] || parts[0] || `Producto Importado ${i}`;
+                    const category = parts[2] || 'Físicos';
+                    const rawPrice = parts[3] || '49.00';
+                    const stock = parseInt(parts[4] || '10', 10) || 10;
+                    const cents = parseMoneyToCents(rawPrice);
+
+                    importedProducts.push({
+                        id: `prod-imp-${Date.now()}-${i}`,
+                        title,
+                        category,
+                        description: `Producto importado desde CSV (${title})`,
+                        price: `S/ ${(cents / 100).toFixed(2)}`,
+                        price_amount: cents,
+                        features: ['Producto Físico'],
+                        type: 'physical',
+                        cta: 'Agregar al Carrito',
+                        color: 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
+                        image: '/arepa-hero.jpg',
+                        stock_quantity: stock,
+                        track_inventory: true,
+                        status: 'active',
+                    });
+                }
+            }
+
+            if (importedProducts.length > 0) {
+                setProductsList(prev => [...importedProducts, ...prev]);
+                try {
+                    const localSaved = JSON.parse(localStorage.getItem('admin_products') || '[]');
+                    const updated = [...importedProducts, ...localSaved];
+                    localStorage.setItem('admin_products', JSON.stringify(updated));
+                } catch { }
+                alert(`✅ ¡Se importaron ${importedProducts.length} productos con éxito!`);
+            }
+        };
+        reader.readAsText(file);
+    };
+
     const clearFilters = () => {
         setSearchQuery('');
         setCategoryFilter('all');
         setStatusFilter('all');
         setStockFilter('all');
         setVariantFilter('all');
+        setDiscountFilter('all');
         setSortBy('newest');
         setCurrentPage(1);
     };
@@ -266,11 +419,38 @@ export default function AdminProductsList() {
 
     return (
         <div>
+            <input
+                type="file"
+                ref={csvFileInputRef}
+                accept=".csv"
+                onChange={handleImportCSVFile}
+                style={{ display: 'none' }}
+            />
+
             <AdminPageHeader
                 title={`Gestión de Productos (${totalCount})`}
-                description="Administra el catálogo completo, precios en soles (S/), inventario por variantes y visibilidad."
+                description="Administra el catálogo completo de productos físicos, precios en soles (S/), inventario por variantes y visibilidad."
                 action={
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <button
+                            onClick={() => csvFileInputRef.current?.click()}
+                            style={{
+                                padding: '9px 15px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '10px',
+                                color: 'var(--foreground)',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
+                        >
+                            <span>📥</span> Importar CSV
+                        </button>
+
                         <button
                             onClick={handleExportCSV}
                             style={{
@@ -316,7 +496,7 @@ export default function AdminProductsList() {
             <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '18px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
                     {/* Search Input */}
-                    <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
+                    <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
                         <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>🔍</span>
                         <input
                             type="text"
@@ -377,7 +557,7 @@ export default function AdminProductsList() {
                     </div>
                 </div>
 
-                {/* Dropdowns Row */}
+                {/* Dropdowns Row (Specific Filter Descriptions) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <select
                         value={categoryFilter}
@@ -414,9 +594,19 @@ export default function AdminProductsList() {
                         onChange={e => setVariantFilter(e.target.value)}
                         style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
                     >
-                        <option value="all">Todas las opciones</option>
-                        <option value="with">Con Variantes</option>
-                        <option value="without">Sin Variantes</option>
+                        <option value="all">Todas las variantes</option>
+                        <option value="with">Con variantes</option>
+                        <option value="without">Sin variantes</option>
+                    </select>
+
+                    <select
+                        value={discountFilter}
+                        onChange={e => setDiscountFilter(e.target.value)}
+                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
+                    >
+                        <option value="all">Todas las ofertas</option>
+                        <option value="with">Con descuento (% OFF)</option>
+                        <option value="without">Sin descuento</option>
                     </select>
 
                     <select
@@ -432,7 +622,7 @@ export default function AdminProductsList() {
                         <option value="stock_desc">Stock: Mayor a Menor</option>
                     </select>
 
-                    {(searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || stockFilter !== 'all' || variantFilter !== 'all' || sortBy !== 'newest') && (
+                    {(searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || stockFilter !== 'all' || variantFilter !== 'all' || discountFilter !== 'all' || sortBy !== 'newest') && (
                         <button
                             onClick={clearFilters}
                             style={{ padding: '8px 12px', background: 'transparent', border: '1px dashed #ef4444', color: '#ef4444', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
@@ -451,11 +641,11 @@ export default function AdminProductsList() {
                         top: '80px',
                         zIndex: 90,
                         background: 'var(--card-bg)',
-                        border: '1.5px solid var(--robotina-orange)',
-                        borderRadius: '12px',
-                        padding: '12px 20px',
+                        border: '2px solid var(--robotina-orange)',
+                        borderRadius: '14px',
+                        padding: '14px 22px',
                         marginBottom: '20px',
-                        boxShadow: '0 10px 30px rgba(255, 107, 0, 0.2)',
+                        boxShadow: '0 12px 35px rgba(255, 107, 0, 0.25)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -463,34 +653,52 @@ export default function AdminProductsList() {
                         flexWrap: 'wrap',
                     }}
                 >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 800, color: 'var(--robotina-orange)', fontSize: '0.92rem' }}>
-                            {selectedIds.length} seleccionado(s)
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontWeight: 800, color: 'var(--robotina-orange)', fontSize: '0.95rem' }}>
+                            ✓ {selectedIds.length} producto(s) seleccionado(s)
                         </span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                         <button
                             onClick={() => handleBulkStatusChange('active')}
-                            style={{ padding: '6px 14px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '7px 14px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
                         >
-                            🚀 Publicar
+                            🚀 Activar
                         </button>
                         <button
                             onClick={() => handleBulkStatusChange('draft')}
-                            style={{ padding: '6px 14px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '7px 14px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
                         >
                             👁️ Pasar a Borrador
                         </button>
                         <button
+                            onClick={handleBulkCategoryChange}
+                            style={{ padding: '7px 14px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            📁 Cambiar Categoría
+                        </button>
+                        <button
+                            onClick={handleBulkPriceUpdate}
+                            style={{ padding: '7px 14px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            💲 Actualizar Precio
+                        </button>
+                        <button
+                            onClick={handleBulkStockUpdate}
+                            style={{ padding: '7px 14px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                        >
+                            ⚡ Ajustar Inventario
+                        </button>
+                        <button
                             onClick={handleExportCSV}
-                            style={{ padding: '6px 14px', background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '7px 14px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
                         >
                             📤 Exportar
                         </button>
                         <button
                             onClick={handleBulkDelete}
-                            style={{ padding: '6px 14px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '7px 14px', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
                         >
                             🗑️ Eliminar
                         </button>
@@ -540,16 +748,8 @@ export default function AdminProductsList() {
                                 const isMenuOpen = openMenuId === prod.id;
                                 const sku = `SKU-${prod.id.slice(-6).toUpperCase()}`;
                                 
-                                // Price calculation
-                                const numPrice = typeof prod.price === 'number'
-                                    ? prod.price
-                                    : (prod.price_amount ? prod.price_amount / 100 : parseFloat(String(prod.price).replace(/[^0-9.]/g, '')) || 0);
-
-                                const numCompare = prod.compare_at_amount
-                                    ? prod.compare_at_amount / 100
-                                    : parseFloat(String(prod.comparePrice || '').replace(/[^0-9.]/g, '')) || 0;
-
-                                const discountPercent = numCompare > numPrice
+                                const { price: numPrice, compare: numCompare } = getProductNumericalPrice(prod);
+                                const discountPercent = (numCompare && numCompare > numPrice)
                                     ? Math.round(((numCompare - numPrice) / numCompare) * 100)
                                     : 0;
 
@@ -579,7 +779,7 @@ export default function AdminProductsList() {
                                         {/* Product & SKU */}
                                         <td style={{ padding: '14px 16px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                <div style={{ width: '42px', height: '42px', borderRadius: '8px', overflow: 'hidden', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', flexShrink: 0 }}>
+                                                <div style={{ width: '44px', height: '44px', borderRadius: '8px', overflow: 'hidden', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', flexShrink: 0 }}>
                                                     {prod.image ? (
                                                         <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                     ) : (
@@ -587,16 +787,14 @@ export default function AdminProductsList() {
                                                     )}
                                                 </div>
                                                 <div>
-                                                    <Link href={`/admin/productos/${prod.id}`} style={{ fontWeight: 800, color: 'var(--foreground)', textDecoration: 'none' }}>
+                                                    <Link href={`/admin/productos/${prod.id}`} title={prod.title} style={{ fontWeight: 800, color: 'var(--foreground)', textDecoration: 'none' }}>
                                                         {prod.title}
                                                     </Link>
-                                                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                                                         <span>{sku}</span>
-                                                        {variantCount > 0 && (
-                                                            <span style={{ background: 'var(--glass-bg)', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)', fontWeight: 700 }}>
-                                                                🎨 {variantCount} variantes
-                                                            </span>
-                                                        )}
+                                                        <span style={{ background: 'var(--glass-bg)', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--glass-border)', fontWeight: 700, color: variantCount > 0 ? 'var(--robotina-orange)' : 'var(--text-muted)' }}>
+                                                            {variantCount > 0 ? `🎨 ${variantCount} variantes` : 'Sin variantes'}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -613,8 +811,8 @@ export default function AdminProductsList() {
                                                 <span style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.92rem' }}>
                                                     {formatMoney(numPrice)}
                                                 </span>
-                                                {numCompare > numPrice && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem' }}>
+                                                {numCompare && numCompare > numPrice && (
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', marginTop: '2px' }}>
                                                         <span style={{ textDecoration: 'line-through', color: 'var(--text-muted)' }}>
                                                             {formatMoney(numCompare)}
                                                         </span>
@@ -633,11 +831,11 @@ export default function AdminProductsList() {
                                                 padding: '4px 10px',
                                                 borderRadius: '6px',
                                                 fontSize: '0.8rem',
-                                                background: isOut ? 'rgba(239, 68, 68, 0.15)' : (isLow ? 'rgba(245, 158, 11, 0.15)' : 'var(--glass-bg)'),
-                                                color: isOut ? '#ef4444' : (isLow ? '#f59e0b' : 'var(--foreground)'),
-                                                border: `1px solid ${isOut ? 'rgba(239, 68, 68, 0.3)' : (isLow ? 'rgba(245, 158, 11, 0.3)' : 'var(--glass-border)')}`,
+                                                background: isOut ? 'rgba(239, 68, 68, 0.15)' : (isLow ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.12)'),
+                                                color: isOut ? '#ef4444' : (isLow ? '#f59e0b' : '#22c55e'),
+                                                border: `1px solid ${isOut ? 'rgba(239, 68, 68, 0.3)' : (isLow ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)')}`,
                                             }}>
-                                                {isOut ? 'Agotado (0 un.)' : (isLow ? `⚠️ ${stock} — Stock bajo` : `${stock} disponibles`)}
+                                                {isOut ? '❌ Agotado (0 un.)' : (isLow ? `⚠️ ${stock} un. — Stock bajo` : `🟢 ${stock} unidades`)}
                                             </span>
                                         </td>
 
@@ -735,22 +933,15 @@ export default function AdminProductsList() {
                     </table>
                 </div>
             ) : (
-                /* Grid View Layout (4 cards per row on normal screens, 5 on wide monitors) */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px 18px', paddingTop: '10px' }}>
+                /* Grid View Layout (280px minwidth limits to 4-5 cards per row on wide screens) */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px 18px', paddingTop: '10px' }}>
                     {paginatedProducts.map(prod => {
                         const isSelected = selectedIds.includes(prod.id);
                         const isMenuOpen = openMenuId === prod.id;
                         const sku = `SKU-${prod.id.slice(-6).toUpperCase()}`;
 
-                        const numPrice = typeof prod.price === 'number'
-                            ? prod.price
-                            : (prod.price_amount ? prod.price_amount / 100 : parseFloat(String(prod.price).replace(/[^0-9.]/g, '')) || 0);
-
-                        const numCompare = prod.compare_at_amount
-                            ? prod.compare_at_amount / 100
-                            : parseFloat(String(prod.comparePrice || '').replace(/[^0-9.]/g, '')) || 0;
-
-                        const discountPercent = numCompare > numPrice
+                        const { price: numPrice, compare: numCompare } = getProductNumericalPrice(prod);
+                        const discountPercent = (numCompare && numCompare > numPrice)
                             ? Math.round(((numCompare - numPrice) / numCompare) * 100)
                             : 0;
 
@@ -874,7 +1065,7 @@ export default function AdminProductsList() {
                                 )}
 
                                 {/* Card Header Image */}
-                                <div style={{ height: '140px', width: '100%', background: 'var(--input-bg)', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
+                                <div style={{ height: '150px', width: '100%', background: 'var(--input-bg)', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
                                     {prod.image ? (
                                         <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
@@ -889,7 +1080,7 @@ export default function AdminProductsList() {
                                 </div>
 
                                 {/* Card Content Body */}
-                                <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                                             {prod.category}
@@ -897,38 +1088,37 @@ export default function AdminProductsList() {
                                         <AdminStatusBadge status={prod.status || 'active'} />
                                     </div>
 
-                                    <h3 style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--foreground)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    <h3 title={prod.title} style={{ fontSize: '0.94rem', fontWeight: 800, color: 'var(--foreground)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {prod.title}
                                     </h3>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{sku}</div>
 
-                                    {variantCount > 0 && (
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--robotina-orange)', fontWeight: 700 }}>
-                                            🎨 {variantCount} variantes
-                                        </div>
-                                    )}
+                                    <div style={{ fontSize: '0.75rem', color: variantCount > 0 ? 'var(--robotina-orange)' : 'var(--text-muted)', fontWeight: 700 }}>
+                                        {variantCount > 0 ? `🎨 ${variantCount} variantes` : 'Sin variantes'}
+                                    </div>
 
                                     <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                                         <div>
                                             <span style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--foreground)', display: 'block' }}>
                                                 {formatMoney(numPrice)}
                                             </span>
-                                            {numCompare > numPrice && (
-                                                <span style={{ fontSize: '0.72rem', textDecoration: 'line-through', color: 'var(--text-muted)' }}>
+                                            {numCompare && numCompare > numPrice && (
+                                                <span style={{ fontSize: '0.72rem', textDecoration: 'line-through', color: 'var(--text-muted)', display: 'block', marginTop: '2px' }}>
                                                     {formatMoney(numCompare)}
                                                 </span>
                                             )}
                                         </div>
 
                                         <span style={{
-                                            fontSize: '0.72rem',
+                                            fontSize: '0.74rem',
                                             fontWeight: 800,
-                                            padding: '2px 8px',
+                                            padding: '3px 8px',
                                             borderRadius: '6px',
-                                            background: isOut ? 'rgba(239, 68, 68, 0.15)' : (isLow ? 'rgba(245, 158, 11, 0.15)' : 'var(--glass-bg)'),
-                                            color: isOut ? '#ef4444' : (isLow ? '#f59e0b' : 'var(--foreground)'),
+                                            background: isOut ? 'rgba(239, 68, 68, 0.15)' : (isLow ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.12)'),
+                                            color: isOut ? '#ef4444' : (isLow ? '#f59e0b' : '#22c55e'),
+                                            border: `1px solid ${isOut ? 'rgba(239, 68, 68, 0.3)' : (isLow ? 'rgba(245, 158, 11, 0.3)' : 'rgba(34, 197, 94, 0.3)')}`,
                                         }}>
-                                            {isOut ? 'Agotado' : (isLow ? `${stock} bajo` : `${stock} disp.`)}
+                                            {isOut ? 'Agotado' : (isLow ? `⚠️ ${stock} bajo` : `🟢 ${stock} un.`)}
                                         </span>
                                     </div>
                                 </div>

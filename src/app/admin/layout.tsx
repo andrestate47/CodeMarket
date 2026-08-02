@@ -27,8 +27,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 if (isPlaceholderUrl || hasDevToken) {
                     if (isMounted) {
-                        setAdminEmail('admin@codemarket.local');
-                        setAdminName('Administrador Demo');
+                        setAdminEmail('andrestate47@gmail.com');
+                        setAdminName('Andrés Tate');
                         setAuthorized(true);
                     }
                     return;
