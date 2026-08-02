@@ -69,6 +69,22 @@ export default function Login() {
           <h1 style={{ margin: '0 0 24px 0', fontSize: '1.8rem', textAlign: 'center', fontWeight: 800 }}>
             {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </h1>
+
+          {process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project') && (
+            <div style={{
+              background: 'rgba(234, 179, 8, 0.1)',
+              border: '1px solid rgba(234, 179, 8, 0.3)',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              marginBottom: '20px',
+              fontSize: '0.82rem',
+              color: '#facc15',
+              lineHeight: '1.4'
+            }}>
+              <strong>⚠️ Configuración de Supabase Requerida:</strong><br />
+              Ingresa la URL y llaves reales de tu proyecto Supabase en el archivo <code>.env.local</code> para habilitar el inicio de sesión.
+            </div>
+          )}
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
