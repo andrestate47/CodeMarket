@@ -314,8 +314,8 @@ export default function AdminProductsList() {
                     loading={loading}
                 />
             ) : (
-                /* Grid View Layout */
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '28px 22px', paddingTop: '10px' }}>
+                /* Grid View Layout (Compact to fit 6 per line on desktop) */
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '22px 14px', paddingTop: '10px' }}>
                     {productsList.map(prod => {
                         const isActive = (prod.status || 'active') === 'active';
                         const isMenuOpen = openMenuId === prod.id;
@@ -326,7 +326,7 @@ export default function AdminProductsList() {
                                 style={{
                                     background: 'var(--card-bg)',
                                     border: '1px solid var(--glass-border)',
-                                    borderRadius: '16px',
+                                    borderRadius: '14px',
                                     overflow: 'visible',
                                     position: 'relative',
                                     display: 'flex',
@@ -342,16 +342,16 @@ export default function AdminProductsList() {
                                     }}
                                     style={{
                                         position: 'absolute',
-                                        top: '-10px',
-                                        right: '-10px',
-                                        width: '36px',
-                                        height: '36px',
-                                        minWidth: '36px',
-                                        minHeight: '36px',
+                                        top: '-8px',
+                                        right: '-8px',
+                                        width: '32px',
+                                        height: '32px',
+                                        minWidth: '32px',
+                                        minHeight: '32px',
                                         borderRadius: '50%',
                                         background: 'var(--card-bg)',
                                         border: '1.5px solid var(--glass-border)',
-                                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                                        boxShadow: '0 3px 10px rgba(0, 0, 0, 0.25)',
                                         color: 'var(--foreground)',
                                         cursor: 'pointer',
                                         display: 'inline-flex',
@@ -366,8 +366,8 @@ export default function AdminProductsList() {
                                     title="Opciones del Producto"
                                 >
                                     <svg
-                                        width="16"
-                                        height="16"
+                                        width="14"
+                                        height="14"
                                         viewBox="0 0 24 24"
                                         fill="none"
                                         stroke="currentColor"
@@ -386,8 +386,8 @@ export default function AdminProductsList() {
                                         onClick={(e) => e.stopPropagation()}
                                         style={{
                                             position: 'absolute',
-                                            top: '34px',
-                                            right: '-10px',
+                                            top: '30px',
+                                            right: '-8px',
                                             background: 'var(--card-bg)',
                                             border: '1px solid var(--glass-border)',
                                             borderRadius: '12px',
@@ -397,7 +397,7 @@ export default function AdminProductsList() {
                                             display: 'flex',
                                             flexDirection: 'column',
                                             gap: '4px',
-                                            minWidth: '150px',
+                                            minWidth: '140px',
                                         }}
                                     >
                                         <Link
@@ -407,7 +407,7 @@ export default function AdminProductsList() {
                                                 borderRadius: '8px',
                                                 color: 'var(--foreground)',
                                                 textDecoration: 'none',
-                                                fontSize: '0.85rem',
+                                                fontSize: '0.82rem',
                                                 fontWeight: 600,
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -427,7 +427,7 @@ export default function AdminProductsList() {
                                                 background: 'transparent',
                                                 color: 'var(--foreground)',
                                                 border: 'none',
-                                                fontSize: '0.85rem',
+                                                fontSize: '0.82rem',
                                                 fontWeight: 600,
                                                 textAlign: 'left',
                                                 cursor: 'pointer',
@@ -449,7 +449,7 @@ export default function AdminProductsList() {
                                                 background: 'rgba(239, 68, 68, 0.1)',
                                                 color: '#ef4444',
                                                 border: 'none',
-                                                fontSize: '0.85rem',
+                                                fontSize: '0.82rem',
                                                 fontWeight: 600,
                                                 textAlign: 'left',
                                                 cursor: 'pointer',
@@ -464,36 +464,36 @@ export default function AdminProductsList() {
                                 )}
 
                                 {/* Product Image Header */}
-                                <div style={{ height: '160px', width: '100%', background: 'var(--input-bg)', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
+                                <div style={{ height: '115px', width: '100%', background: 'var(--input-bg)', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '14px', borderTopRightRadius: '14px' }}>
                                     {prod.image ? (
                                         <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '3rem' }}>📦</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2.5rem' }}>📦</div>
                                     )}
                                 </div>
 
                                 {/* Card Body */}
-                                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                                <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                        <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '80px' }}>
                                             {prod.category}
                                         </span>
                                         <AdminStatusBadge status={prod.status || 'active'} />
                                     </div>
 
-                                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--foreground)', margin: '4px 0' }}>
+                                    <h3 style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--foreground)', margin: '2px 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {prod.title}
                                     </h3>
 
-                                    <p style={{ fontSize: '0.82rem', color: 'var(--text-description)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '36px' }}>
+                                    <p style={{ fontSize: '0.76rem', color: 'var(--text-description)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: '32px', margin: 0, lineHeight: 1.3 }}>
                                         {prod.description}
                                     </p>
 
-                                    <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                    <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--foreground)' }}>
                                             {typeof prod.price === 'number' ? formatMoney(prod.price) : prod.price}
                                         </span>
-                                        <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                        <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                                             📦 {prod.stock_quantity ?? 10} un.
                                         </span>
                                     </div>
