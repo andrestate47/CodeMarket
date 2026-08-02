@@ -29,8 +29,8 @@ export interface CatalogProduct {
     stock_quantity: number;
     track_inventory: boolean;
     status?: string;
-    variants?: any[];
-    wholesale_rules?: any[];
+    variants?: Record<string, unknown>[];
+    wholesale_rules?: Record<string, unknown>[];
 }
 
 export function getInstantProducts(): CatalogProduct[] {

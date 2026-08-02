@@ -92,8 +92,8 @@ export default function AdminEditProductPage() {
         setTrackInventory(prod.track_inventory || false);
         setFeatured(prod.highlight || false);
         setStatus((prod.status as 'active' | 'draft') || 'active');
-        setVariants(prod.variants || []);
-        setWholesaleRules(prod.wholesale_rules || []);
+        setVariants((prod.variants as { id: string; name: string; price: string; stock: number }[]) || []);
+        setWholesaleRules((prod.wholesale_rules as { minQuantity: number; price: string }[]) || []);
     };
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

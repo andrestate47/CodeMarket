@@ -21,7 +21,16 @@ export interface InventoryLog {
 
 export default function AdminInventoryPage() {
     const [products, setProducts] = useState<CatalogProduct[]>(() => getInstantProducts());
-    const [logs, setLogs] = useState<InventoryLog[]>([]);
+    const [logs, setLogs] = useState<InventoryLog[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                return JSON.parse(localStorage.getItem('admin_inventory_logs') || '[]');
+            } catch {
+                return [];
+            }
+        }
+        return [];
+    });
     const [activeTab, setActiveTab] = useState<'stock' | 'history'>('stock');
 
     // Filter states
@@ -35,19 +44,6 @@ export default function AdminInventoryPage() {
     const [adjustmentAmount, setAdjustmentAmount] = useState<number>(0);
     const [reason, setReason] = useState('');
     const [saving, setSaving] = useState(false);
-
-    useEffect(() => {
-        // Load initial products and logs
-        const prods = getInstantProducts();
-        setProducts(prods);
-
-        try {
-            const savedLogs = JSON.parse(localStorage.getItem('admin_inventory_logs') || '[]');
-            setLogs(savedLogs);
-        } catch {
-            setLogs([]);
-        }
-    }, []);
 
     const categoriesList = Array.from(new Set(products.map(p => p.category))).filter(Boolean);
 
@@ -95,7 +91,7 @@ export default function AdminInventoryPage() {
 
         // 2. Create Inventory Log
         const newLog: InventoryLog = {
-            id: `inv-${Date.now()}`,
+            id: `inv-${selectedProduct.id}-${logs.length + 1}`,
             product_id: selectedProduct.id,
             product_title: selectedProduct.title,
             sku: sku,
@@ -353,7 +349,7 @@ export default function AdminInventoryPage() {
                 <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
                     <form onSubmit={handleSaveAdjustment} style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '28px', maxWidth: '480px', width: '100%', display: 'flex', flexDirection: 'column', gap: '18px' }}>
                         <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--foreground)' }}>
-                            ⚡ Ajustar Inventario de "{selectedProduct.title}"
+                            ⚡ Ajustar Inventario de &quot;{selectedProduct.title}&quot;
                         </h3>
 
                         <div style={{ background: 'var(--input-bg)', padding: '12px 16px', borderRadius: '10px', border: '1px solid var(--glass-border)', fontSize: '0.88rem', color: 'var(--text-muted)' }}>
