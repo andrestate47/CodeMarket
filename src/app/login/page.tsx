@@ -74,15 +74,40 @@ export default function Login() {
             <div style={{
               background: 'rgba(234, 179, 8, 0.1)',
               border: '1px solid rgba(234, 179, 8, 0.3)',
-              borderRadius: '10px',
-              padding: '12px 14px',
+              borderRadius: '12px',
+              padding: '16px',
               marginBottom: '20px',
-              fontSize: '0.82rem',
+              fontSize: '0.85rem',
               color: '#facc15',
               lineHeight: '1.4'
             }}>
-              <strong>⚠️ Configuración de Supabase Requerida:</strong><br />
-              Ingresa la URL y llaves reales de tu proyecto Supabase en el archivo <code>.env.local</code> para habilitar el inicio de sesión.
+              <strong>⚠️ Modo de Demostración Local:</strong>
+              <p style={{ margin: '6px 0 12px 0', color: '#e4e4e7', fontSize: '0.8rem' }}>
+                Tu archivo <code>.env.local</code> aún no tiene las claves de Supabase. Puedes entrar directamente al Panel Admin en Modo Demo para probar la interfaz:
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  document.cookie = 'sb-access-token=dev-admin-demo-token; path=/; max-age=604800; SameSite=Lax';
+                  const params = new URLSearchParams(window.location.search);
+                  const redirect = params.get('redirect') || '/admin';
+                  router.push(redirect);
+                }}
+                style={{
+                  width: '100%',
+                  background: 'linear-gradient(135deg, #a855f7 0%, #ec4899 100%)',
+                  color: 'white',
+                  border: 'none',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  fontWeight: 700,
+                  fontSize: '0.88rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(168, 85, 247, 0.3)'
+                }}
+              >
+                🚀 Entrar al Panel Admin (Modo Demo Local)
+              </button>
             </div>
           )}
           

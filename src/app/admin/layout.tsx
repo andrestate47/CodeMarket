@@ -22,6 +22,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         let isMounted = true;
         (async () => {
             try {
+                const isPlaceholderUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project');
+                const hasDevToken = typeof document !== 'undefined' && document.cookie.includes('dev-admin-demo-token');
+
+                if (isPlaceholderUrl || hasDevToken) {
+                    if (isMounted) {
+                        setAdminEmail('admin@codemarket.local');
+                        setAdminName('Administrador Demo');
+                        setAuthorized(true);
+                    }
+                    return;
+                }
+
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.user) {
                     if (isMounted) {
