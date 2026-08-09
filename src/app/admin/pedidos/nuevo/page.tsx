@@ -48,6 +48,7 @@ interface SelectedOrderItem {
     productName: string;
     variantName?: string;
     sku?: string;
+    image?: string;
     originalUnitPriceAmount: number; // in cents
     unitPriceAmount: number; // in cents
     priceAdjustmentReason?: string;
@@ -296,6 +297,7 @@ export default function NewManualOrderPage() {
                     productName,
                     variantName,
                     sku,
+                    image: prod.image,
                     originalUnitPriceAmount: basePriceCents,
                     unitPriceAmount: basePriceCents,
                     quantity: 1,
@@ -722,9 +724,17 @@ export default function NewManualOrderPage() {
                                                     style={{ padding: '12px 16px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'background 0.15s ease' }}
                                                 >
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                        <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
-                                                            🏷️
-                                                        </div>
+                                                        {p.image ? (
+                                                            <img
+                                                                src={p.image}
+                                                                alt={p.name}
+                                                                style={{ width: '42px', height: '42px', borderRadius: '8px', objectFit: 'cover', border: '1.5px solid var(--glass-border)', flexShrink: 0 }}
+                                                            />
+                                                        ) : (
+                                                            <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', flexShrink: 0 }}>
+                                                                🏷️
+                                                            </div>
+                                                        )}
                                                         <div>
                                                             <div style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.92rem' }}>{p.name}</div>
                                                             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>SKU: {p.sku || 'N/A'} • Stock disponible: <strong>{p.stock_quantity}</strong></div>
@@ -802,10 +812,23 @@ export default function NewManualOrderPage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {selectedItems.map((item, idx) => (
                                     <div key={idx} style={{ background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.95rem' }}>{item.productName}</div>
-                                            {item.variantName && <div style={{ fontSize: '0.8rem', color: 'var(--robotina-orange)', fontWeight: 700 }}>Variante: {item.variantName}</div>}
-                                            {item.sku && <div style={{ fontSize: '0.75rem', color: 'var(--text-description)' }}>SKU: {item.sku}</div>}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                                            {item.image ? (
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.productName}
+                                                    style={{ width: '42px', height: '42px', borderRadius: '8px', objectFit: 'cover', border: '1.5px solid var(--glass-border)', flexShrink: 0 }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '42px', height: '42px', borderRadius: '8px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', flexShrink: 0 }}>
+                                                    🏷️
+                                                </div>
+                                            )}
+                                            <div>
+                                                <div style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.95rem' }}>{item.productName}</div>
+                                                {item.variantName && <div style={{ fontSize: '0.8rem', color: 'var(--robotina-orange)', fontWeight: 700 }}>Variante: {item.variantName}</div>}
+                                                {item.sku && <div style={{ fontSize: '0.75rem', color: 'var(--text-description)' }}>SKU: {item.sku}</div>}
+                                            </div>
                                         </div>
 
                                         {/* Price Adjustment */}
@@ -1126,11 +1149,20 @@ export default function NewManualOrderPage() {
                                 </div>
                             ) : (
                                 selectedItems.map((item, idx) => (
-                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--foreground)' }}>
-                                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
-                                            <span style={{ fontWeight: 700 }}>{item.productName}</span>
-                                            {item.variantName && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> ({item.variantName})</span>}
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> × {item.quantity}</span>
+                                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.84rem', color: 'var(--foreground)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                                            {item.image && (
+                                                <img
+                                                    src={item.image}
+                                                    alt={item.productName}
+                                                    style={{ width: '24px', height: '24px', borderRadius: '4px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--glass-border)' }}
+                                                />
+                                            )}
+                                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
+                                                <span style={{ fontWeight: 700 }}>{item.productName}</span>
+                                                {item.variantName && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> ({item.variantName})</span>}
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> × {item.quantity}</span>
+                                            </div>
                                         </div>
                                         <div style={{ fontWeight: 700, flexShrink: 0 }}>
                                             {formatMoney(item.unitPriceAmount * item.quantity)}
