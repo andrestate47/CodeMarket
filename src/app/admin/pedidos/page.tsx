@@ -203,9 +203,9 @@ export default function AdminOrdersPage() {
                             disabled={isPending}
                             style={{
                                 padding: '10px 16px',
-                                background: 'rgba(255, 255, 255, 0.08)',
-                                border: '1px solid rgba(255, 255, 255, 0.15)',
-                                color: 'white',
+                                background: 'var(--input-bg)',
+                                border: '1.5px solid var(--glass-border)',
+                                color: 'var(--foreground)',
                                 borderRadius: '10px',
                                 fontSize: '0.88rem',
                                 fontWeight: 600,
