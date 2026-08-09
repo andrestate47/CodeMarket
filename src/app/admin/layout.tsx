@@ -134,7 +134,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', transition: 'var(--transition)' }}>
+        <div style={{ height: '100vh', width: '100vw', overflow: 'hidden', background: 'var(--background)', color: 'var(--foreground)', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', transition: 'var(--transition)' }}>
             {/* Desktop Fixed Sidebar */}
             <AdminSidebar
                 onLogout={handleLogout}
@@ -151,7 +151,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </AdminMobileDrawer>
 
             {/* Main Area */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', overflow: 'hidden' }}>
                 <AdminTopbar
                     adminName={adminName}
                     adminEmail={adminEmail}

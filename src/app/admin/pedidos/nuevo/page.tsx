@@ -166,7 +166,6 @@ export default function NewManualOrderPage() {
         const basePriceCents = variant ? variant.price_amount : prod.price_amount;
         const availableStock = variant ? variant.stock_quantity : prod.stock_quantity;
 
-        // Check if item already in order
         const existingIndex = selectedItems.findIndex(
             i => i.productId === prod.id && i.variantId === variantId
         );
@@ -295,10 +294,10 @@ export default function NewManualOrderPage() {
                         href="/admin/pedidos"
                         style={{
                             padding: '8px 14px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'var(--card-bg)',
+                            border: '1.5px solid var(--glass-border)',
                             borderRadius: '8px',
-                            color: 'white',
+                            color: 'var(--foreground)',
                             fontSize: '0.85rem',
                             textDecoration: 'none',
                             fontWeight: 600,
@@ -310,7 +309,7 @@ export default function NewManualOrderPage() {
             />
 
             {errorMessage && (
-                <div style={{ padding: '14px 18px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '12px', color: '#f87171', marginBottom: '20px', fontWeight: 600 }}>
+                <div style={{ padding: '14px 18px', background: 'rgba(239, 68, 68, 0.15)', border: '1.5px solid #ef4444', borderRadius: '12px', color: '#ef4444', marginBottom: '20px', fontWeight: 600 }}>
                     ⚠️ {errorMessage}
                 </div>
             )}
@@ -321,8 +320,8 @@ export default function NewManualOrderPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
                     {/* SECTION 1: CLIENTE */}
-                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '20px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             👤 1. Información del Cliente
                         </h3>
 
@@ -334,9 +333,9 @@ export default function NewManualOrderPage() {
                                 style={{
                                     padding: '8px 14px',
                                     borderRadius: '8px',
-                                    border: customerMode === 'search' ? '1px solid var(--robotina-orange)' : '1px solid var(--glass-border)',
-                                    background: customerMode === 'search' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                    color: customerMode === 'search' ? '#f97316' : '#a1a1aa',
+                                    border: customerMode === 'search' ? '1.5px solid var(--robotina-orange)' : '1.5px solid var(--glass-border)',
+                                    background: customerMode === 'search' ? 'rgba(249, 115, 22, 0.15)' : 'var(--input-bg)',
+                                    color: customerMode === 'search' ? 'var(--robotina-orange)' : 'var(--text-muted)',
                                     fontSize: '0.82rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',
@@ -350,9 +349,9 @@ export default function NewManualOrderPage() {
                                 style={{
                                     padding: '8px 14px',
                                     borderRadius: '8px',
-                                    border: customerMode === 'new' ? '1px solid var(--robotina-orange)' : '1px solid var(--glass-border)',
-                                    background: customerMode === 'new' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                    color: customerMode === 'new' ? '#f97316' : '#a1a1aa',
+                                    border: customerMode === 'new' ? '1.5px solid var(--robotina-orange)' : '1.5px solid var(--glass-border)',
+                                    background: customerMode === 'new' ? 'rgba(249, 115, 22, 0.15)' : 'var(--input-bg)',
+                                    color: customerMode === 'new' ? 'var(--robotina-orange)' : 'var(--text-muted)',
                                     fontSize: '0.82rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',
@@ -366,9 +365,9 @@ export default function NewManualOrderPage() {
                                 style={{
                                     padding: '8px 14px',
                                     borderRadius: '8px',
-                                    border: customerMode === 'guest' ? '1px solid var(--robotina-orange)' : '1px solid var(--glass-border)',
-                                    background: customerMode === 'guest' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                    color: customerMode === 'guest' ? '#f97316' : '#a1a1aa',
+                                    border: customerMode === 'guest' ? '1.5px solid var(--robotina-orange)' : '1.5px solid var(--glass-border)',
+                                    background: customerMode === 'guest' ? 'rgba(249, 115, 22, 0.15)' : 'var(--input-bg)',
+                                    color: customerMode === 'guest' ? 'var(--robotina-orange)' : 'var(--text-muted)',
                                     fontSize: '0.82rem',
                                     fontWeight: 700,
                                     cursor: 'pointer',
@@ -394,9 +393,9 @@ export default function NewManualOrderPage() {
                                         width: '100%',
                                         padding: '10px 14px',
                                         background: 'var(--input-bg)',
-                                        border: '1px solid var(--glass-border)',
+                                        border: '1.5px solid var(--glass-border)',
                                         borderRadius: '8px',
-                                        color: 'white',
+                                        color: 'var(--input-text)',
                                         fontSize: '0.88rem',
                                     }}
                                 />
@@ -404,17 +403,17 @@ export default function NewManualOrderPage() {
                                 {customerResults.length > 0 && (
                                     <div style={{
                                         position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
-                                        background: '#18181b', border: '1px solid var(--glass-border)', borderRadius: '8px', marginTop: '4px',
-                                        maxHeight: '200px', overflowY: 'auto'
+                                        background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', marginTop: '4px',
+                                        maxHeight: '200px', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
                                     }}>
                                         {customerResults.map(c => (
                                             <div
                                                 key={c.id}
                                                 onClick={() => handleSelectCustomer(c)}
-                                                style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                                                style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--glass-border)' }}
                                             >
-                                                <div style={{ fontWeight: 700, color: 'white' }}>{c.name}</div>
-                                                <div style={{ fontSize: '0.78rem', color: '#a1a1aa' }}>{c.email} • {c.phone || 'Sin tel'}</div>
+                                                <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{c.name}</div>
+                                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{c.email} • {c.phone || 'Sin tel'}</div>
                                             </div>
                                         ))}
                                     </div>
@@ -425,40 +424,40 @@ export default function NewManualOrderPage() {
                         {/* Form Fields for Selected / New / Guest */}
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '14px' }}>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Nombre completo *</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Nombre completo *</label>
                                 <input
                                     type="text"
                                     value={custName}
                                     onChange={e => setCustName(e.target.value)}
-                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 />
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Correo Electrónico *</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Correo Electrónico *</label>
                                 <input
                                     type="email"
                                     value={custEmail}
                                     onChange={e => setCustEmail(e.target.value)}
-                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 />
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Teléfono (WhatsApp)</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Teléfono (WhatsApp)</label>
                                 <input
                                     type="text"
                                     value={custPhone}
                                     onChange={e => setCustPhone(e.target.value)}
                                     placeholder="+51 999 000 000"
-                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 />
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Documento (DNI / RUC)</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Documento (DNI / RUC)</label>
                                 <div style={{ display: 'flex', gap: '6px' }}>
                                     <select
                                         value={custDocType}
                                         onChange={e => setCustDocType(e.target.value)}
-                                        style={{ padding: '9px 8px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', fontSize: '0.8rem' }}
+                                        style={{ padding: '9px 8px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.8rem' }}
                                     >
                                         <option value="DNI">DNI</option>
                                         <option value="RUC">RUC</option>
@@ -469,7 +468,7 @@ export default function NewManualOrderPage() {
                                         value={custDocNum}
                                         onChange={e => setCustDocNum(e.target.value)}
                                         placeholder="Número..."
-                                        style={{ flex: 1, padding: '9px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                        style={{ flex: 1, padding: '9px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                     />
                                 </div>
                             </div>
@@ -477,17 +476,17 @@ export default function NewManualOrderPage() {
                     </div>
 
                     {/* SECTION 2: CANAL DE ORIGEN */}
-                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '20px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '14px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>
                             📢 2. Canal de Origen del Pedido
                         </h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Seleccionar Canal *</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Seleccionar Canal *</label>
                                 <select
                                     value={source}
                                     onChange={e => setSource(e.target.value as 'online_store' | 'manual' | 'whatsapp' | 'instagram' | 'facebook' | 'phone' | 'pos' | 'other')}
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 >
                                     <option value="whatsapp">WhatsApp</option>
                                     <option value="instagram">Instagram</option>
@@ -500,21 +499,21 @@ export default function NewManualOrderPage() {
                                 </select>
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Referencia de Canal (Opcional)</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Referencia de Canal (Opcional)</label>
                                 <input
                                     type="text"
                                     value={sourceReference}
                                     onChange={e => setSourceReference(e.target.value)}
                                     placeholder="Ej: +51 999 000 000 o @usuario_ig"
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* SECTION 3: PRODUCTOS Y VARIANTES */}
-                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '20px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '14px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>
                             🛒 3. Selección de Productos y Variantes
                         </h3>
 
@@ -529,10 +528,10 @@ export default function NewManualOrderPage() {
                                     if (!val.trim()) setProductResults([]);
                                 }}
                                 placeholder="Buscar por nombre de producto o SKU..."
-                                style={{ width: '100%', padding: '11px 14px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'white' }}
+                                style={{ width: '100%', padding: '11px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '10px', color: 'var(--input-text)' }}
                             />
                             {isSearchingProducts && (
-                                <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: '#a1a1aa' }}>
+                                <span style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                     Cargando...
                                 </span>
                             )}
@@ -540,37 +539,37 @@ export default function NewManualOrderPage() {
                             {productResults.length > 0 && (
                                 <div style={{
                                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
-                                    background: '#18181b', border: '1px solid var(--glass-border)', borderRadius: '10px', marginTop: '6px',
-                                    maxHeight: '260px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.7)'
+                                    background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '10px', marginTop: '6px',
+                                    maxHeight: '260px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.2)'
                                 }}>
                                     {productResults.map(p => (
-                                        <div key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                        <div key={p.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                                             {/* Product Item */}
                                             <div
                                                 onClick={() => handleAddProduct(p)}
                                                 style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
                                             >
                                                 <div>
-                                                    <div style={{ fontWeight: 700, color: 'white' }}>{p.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>SKU: {p.sku || 'N/A'} • Stock: {p.stock_quantity}</div>
+                                                    <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SKU: {p.sku || 'N/A'} • Stock: {p.stock_quantity}</div>
                                                 </div>
-                                                <div style={{ fontWeight: 800, color: '#4ade80' }}>
+                                                <div style={{ fontWeight: 800, color: '#16a34a' }}>
                                                     {formatMoney(p.price_amount)}
                                                 </div>
                                             </div>
 
                                             {/* Variants if any */}
                                             {p.product_variants && p.product_variants.length > 0 && (
-                                                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '6px 14px 10px 24px' }}>
-                                                    <span style={{ fontSize: '0.72rem', color: '#71717a' }}>Variantes:</span>
+                                                <div style={{ background: 'var(--input-bg)', padding: '6px 14px 10px 24px' }}>
+                                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-description)' }}>Variantes:</span>
                                                     {p.product_variants.map(v => (
                                                         <div
                                                             key={v.id}
                                                             onClick={() => handleAddProduct(p, v)}
-                                                            style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', background: 'rgba(255,255,255,0.04)', marginTop: '4px' }}
+                                                            style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', border: '1px solid var(--glass-border)', marginTop: '4px' }}
                                                         >
-                                                            <span style={{ fontSize: '0.8rem', color: '#e4e4e7' }}>↳ {v.name}</span>
-                                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#4ade80' }}>{formatMoney(v.price_amount)}</span>
+                                                            <span style={{ fontSize: '0.8rem', color: 'var(--foreground)' }}>↳ {v.name}</span>
+                                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#16a34a' }}>{formatMoney(v.price_amount)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -583,22 +582,22 @@ export default function NewManualOrderPage() {
 
                         {/* Selected Items Table */}
                         {selectedItems.length === 0 ? (
-                            <div style={{ padding: '24px', color: '#71717a', textAlign: 'center', border: '1px dashed var(--glass-border)', borderRadius: '10px' }}>
+                            <div style={{ padding: '24px', color: 'var(--text-description)', textAlign: 'center', border: '1.5px dashed var(--glass-border)', borderRadius: '10px' }}>
                                 No has agregado ningún producto al pedido. Usa el buscador arriba.
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {selectedItems.map((item, idx) => (
-                                    <div key={idx} style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--glass-border)', borderRadius: '10px', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                    <div key={idx} style={{ background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '10px', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, color: 'white' }}>{item.productName}</div>
-                                            {item.variantName && <div style={{ fontSize: '0.78rem', color: '#60a5fa' }}>Variante: {item.variantName}</div>}
-                                            {item.sku && <div style={{ fontSize: '0.75rem', color: '#71717a' }}>SKU: {item.sku}</div>}
+                                            <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{item.productName}</div>
+                                            {item.variantName && <div style={{ fontSize: '0.78rem', color: 'var(--robotina-orange)' }}>Variante: {item.variantName}</div>}
+                                            {item.sku && <div style={{ fontSize: '0.75rem', color: 'var(--text-description)' }}>SKU: {item.sku}</div>}
                                         </div>
 
                                         {/* Unit Price & Adjustment */}
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
-                                            <div style={{ fontWeight: 800, color: '#4ade80' }}>
+                                            <div style={{ fontWeight: 800, color: '#16a34a' }}>
                                                 {formatMoney(item.unitPriceAmount)}
                                             </div>
                                             <input
@@ -610,19 +609,19 @@ export default function NewManualOrderPage() {
                                                         if (reason) handlePriceAdjustment(idx, e.target.value, reason);
                                                     }
                                                 }}
-                                                style={{ width: '90px', padding: '3px 6px', fontSize: '0.75rem', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '4px', color: 'white', textAlign: 'right' }}
+                                                style={{ width: '90px', padding: '3px 6px', fontSize: '0.75rem', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '4px', color: 'var(--input-text)', textAlign: 'right' }}
                                             />
                                         </div>
 
                                         {/* Quantity Controls */}
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.06)', padding: '4px 8px', borderRadius: '6px' }}>
-                                            <button type="button" onClick={() => handleQuantityChange(idx, -1)} style={{ background: 'none', border: 'none', color: 'white', fontWeight: 800, cursor: 'pointer' }}>-</button>
-                                            <span style={{ fontWeight: 700, color: 'white', minWidth: '18px', textAlign: 'center' }}>{item.quantity}</span>
-                                            <button type="button" onClick={() => handleQuantityChange(idx, 1)} style={{ background: 'none', border: 'none', color: 'white', fontWeight: 800, cursor: 'pointer' }}>+</button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', padding: '4px 8px', borderRadius: '6px' }}>
+                                            <button type="button" onClick={() => handleQuantityChange(idx, -1)} style={{ background: 'none', border: 'none', color: 'var(--foreground)', fontWeight: 800, cursor: 'pointer' }}>-</button>
+                                            <span style={{ fontWeight: 700, color: 'var(--foreground)', minWidth: '18px', textAlign: 'center' }}>{item.quantity}</span>
+                                            <button type="button" onClick={() => handleQuantityChange(idx, 1)} style={{ background: 'none', border: 'none', color: 'var(--foreground)', fontWeight: 800, cursor: 'pointer' }}>+</button>
                                         </div>
 
                                         {/* Subtotal Item */}
-                                        <div style={{ fontWeight: 800, color: 'white', minWidth: '80px', textAlign: 'right' }}>
+                                        <div style={{ fontWeight: 800, color: 'var(--foreground)', minWidth: '80px', textAlign: 'right' }}>
                                             {formatMoney(item.unitPriceAmount * item.quantity)}
                                         </div>
                                     </div>
@@ -632,18 +631,18 @@ export default function NewManualOrderPage() {
                     </div>
 
                     {/* SECTION 4: DESCUENTOS Y ENVÍO */}
-                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '20px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '14px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>
                             🚚 4. Envío y Descuentos
                         </h3>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '14px' }}>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Tipo de Entrega *</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Tipo de Entrega *</label>
                                 <select
                                     value={deliveryType}
                                     onChange={e => setDeliveryType(e.target.value as 'pickup' | 'local_delivery' | 'national_shipping' | 'none')}
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 >
                                     <option value="local_delivery">Delivery Local</option>
                                     <option value="national_shipping">Envío Nacional</option>
@@ -654,13 +653,13 @@ export default function NewManualOrderPage() {
 
                             {deliveryType !== 'pickup' && deliveryType !== 'none' && (
                                 <div>
-                                    <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Costo de Envío (S/)</label>
+                                    <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Costo de Envío (S/)</label>
                                     <input
                                         type="number"
                                         step="0.1"
                                         value={shippingFeeInput}
                                         onChange={e => setShippingFeeInput(e.target.value)}
-                                        style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                        style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                     />
                                 </div>
                             )}
@@ -668,50 +667,50 @@ export default function NewManualOrderPage() {
 
                         {/* Shipping Address Inputs if required */}
                         {deliveryType !== 'pickup' && deliveryType !== 'none' && (
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '12px', background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '10px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginTop: '12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', padding: '14px', borderRadius: '10px' }}>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Nombre del Destinatario</label>
-                                    <input type="text" value={recipientName} onChange={e => setRecipientName(e.target.value)} placeholder="Nombre del receptor" style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Nombre del Destinatario</label>
+                                    <input type="text" value={recipientName} onChange={e => setRecipientName(e.target.value)} placeholder="Nombre del receptor" style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Teléfono Destinatario</label>
-                                    <input type="text" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} placeholder="Teléfono de entrega" style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Teléfono Destinatario</label>
+                                    <input type="text" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} placeholder="Teléfono de entrega" style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Método / Empresa Envío</label>
-                                    <input type="text" value={shippingMethodName} onChange={e => setShippingMethodName(e.target.value)} placeholder="Ej: Olva, Shalom, Express" style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Método / Empresa Envío</label>
+                                    <input type="text" value={shippingMethodName} onChange={e => setShippingMethodName(e.target.value)} placeholder="Ej: Olva, Shalom, Express" style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Departamento</label>
-                                    <input type="text" value={shippingDepartment} onChange={e => setShippingDepartment(e.target.value)} style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Departamento</label>
+                                    <input type="text" value={shippingDepartment} onChange={e => setShippingDepartment(e.target.value)} style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Provincia</label>
-                                    <input type="text" value={shippingProvince} onChange={e => setShippingProvince(e.target.value)} style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Provincia</label>
+                                    <input type="text" value={shippingProvince} onChange={e => setShippingProvince(e.target.value)} style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Distrito</label>
-                                    <input type="text" value={shippingDistrict} onChange={e => setShippingDistrict(e.target.value)} style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Distrito</label>
+                                    <input type="text" value={shippingDistrict} onChange={e => setShippingDistrict(e.target.value)} style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div style={{ gridColumn: 'span 2' }}>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Dirección de Entrega</label>
-                                    <input type="text" value={shippingAddressLine} onChange={e => setShippingAddressLine(e.target.value)} placeholder="Av. Principal 123, Dpto 402" style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Dirección de Entrega</label>
+                                    <input type="text" value={shippingAddressLine} onChange={e => setShippingAddressLine(e.target.value)} placeholder="Av. Principal 123, Dpto 402" style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                                 <div>
-                                    <label style={{ fontSize: '0.75rem', color: '#71717a', display: 'block' }}>Referencia</label>
-                                    <input type="text" value={shippingReference} onChange={e => setShippingReference(e.target.value)} placeholder="Frente al parque..." style={{ width: '100%', padding: '7px 10px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'white' }} />
+                                    <label style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Referencia</label>
+                                    <input type="text" value={shippingReference} onChange={e => setShippingReference(e.target.value)} placeholder="Frente al parque..." style={{ width: '100%', padding: '7px 10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--input-text)' }} />
                                 </div>
                             </div>
                         )}
 
                         {/* Discounts */}
-                        <div style={{ marginTop: '16px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px' }}>
-                            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'white', display: 'block', marginBottom: '8px' }}>Descuento General del Pedido</label>
+                        <div style={{ marginTop: '16px', borderTop: '1.5px solid var(--glass-border)', paddingTop: '14px' }}>
+                            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)', display: 'block', marginBottom: '8px' }}>Descuento General del Pedido</label>
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <select
                                     value={discountType}
                                     onChange={e => setDiscountType(e.target.value as 'none' | 'percentage' | 'fixed')}
-                                    style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 >
                                     <option value="none">Sin Descuento</option>
                                     <option value="percentage">Porcentaje (%)</option>
@@ -723,7 +722,7 @@ export default function NewManualOrderPage() {
                                         value={discountValue}
                                         onChange={e => setDiscountValue(e.target.value)}
                                         placeholder={discountType === 'percentage' ? '%' : 'S/'}
-                                        style={{ width: '120px', padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                        style={{ width: '120px', padding: '8px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                     />
                                 )}
                             </div>
@@ -731,17 +730,17 @@ export default function NewManualOrderPage() {
                     </div>
 
                     {/* SECTION 5: PAGO Y NOTAS */}
-                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '20px' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'white', marginBottom: '14px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>
                             💳 5. Método de Pago y Notas
                         </h3>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '14px' }}>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Método de Pago *</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Método de Pago *</label>
                                 <select
                                     value={paymentMethod}
                                     onChange={e => setPaymentMethod(e.target.value as 'yape' | 'plin' | 'bank_transfer' | 'cash_on_delivery' | 'external_payment_link' | 'cash' | 'other')}
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 >
                                     <option value="yape">Yape</option>
                                     <option value="plin">Plin</option>
@@ -753,11 +752,11 @@ export default function NewManualOrderPage() {
                                 </select>
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Estado Inicial del Pago *</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Estado Inicial del Pago *</label>
                                 <select
                                     value={initialPaymentStatus}
                                     onChange={e => setInitialPaymentStatus(e.target.value as 'pending' | 'paid')}
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 >
                                     <option value="pending">Pendiente de Pago</option>
                                     <option value="paid">Pagado (Marcar como Pagado)</option>
@@ -768,23 +767,23 @@ export default function NewManualOrderPage() {
                         {/* Customer & Internal Notes */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Nota del Cliente (Instrucciones de entrega/pedido)</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Nota del Cliente (Instrucciones de entrega/pedido)</label>
                                 <input
                                     type="text"
                                     value={customerNotes}
                                     onChange={e => setCustomerNotes(e.target.value)}
                                     placeholder="Ej: Llamar antes de entregar, dejar en portería."
-                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white' }}
+                                    style={{ width: '100%', padding: '9px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)' }}
                                 />
                             </div>
                             <div>
-                                <label style={{ fontSize: '0.78rem', color: '#a1a1aa', display: 'block', marginBottom: '4px' }}>Notas Internas (Solo Administradores)</label>
+                                <label style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px', fontWeight: 600 }}>Notas Internas (Solo Administradores)</label>
                                 <textarea
                                     rows={2}
                                     value={internalNotes}
                                     onChange={e => setInternalNotes(e.target.value)}
                                     placeholder="Ej: Cliente recurrente de WhatsApp, enviar bolsa de regalo."
-                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', resize: 'vertical' }}
+                                    style={{ width: '100%', padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', resize: 'vertical' }}
                                 />
                             </div>
                         </div>
@@ -793,32 +792,32 @@ export default function NewManualOrderPage() {
 
                 {/* RIGHT COLUMN — STICKY SUMMARY CARD */}
                 <div style={{ position: 'sticky', top: '24px' }}>
-                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'white', marginBottom: '16px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--foreground)', marginBottom: '16px', borderBottom: '1.5px solid var(--glass-border)', paddingBottom: '12px' }}>
                             Resumen del Pedido
                         </h3>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem', marginBottom: '20px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#a1a1aa' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                                 <span>Subtotal productos ({selectedItems.reduce((a, b) => a + b.quantity, 0)})</span>
                                 <span>{formatMoney(subtotalCents)}</span>
                             </div>
 
                             {discountCents > 0 && (
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f87171' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444' }}>
                                     <span>Descuento aplicado</span>
                                     <span>-{formatMoney(discountCents)}</span>
                                 </div>
                             )}
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#a1a1aa' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                                 <span>Costo de envío</span>
                                 <span>{formatMoney(shippingCents)}</span>
                             </div>
 
                             <div style={{
-                                display: 'flex', justifyContent: 'space-between', color: 'white', fontWeight: 800, fontSize: '1.25rem',
-                                borderTop: '1px solid var(--glass-border)', paddingTop: '12px', marginTop: '6px'
+                                display: 'flex', justifyContent: 'space-between', color: 'var(--foreground)', fontWeight: 800, fontSize: '1.25rem',
+                                borderTop: '1.5px solid var(--glass-border)', paddingTop: '12px', marginTop: '6px'
                             }}>
                                 <span>Total Final</span>
                                 <span style={{ color: 'var(--robotina-orange)' }}>{formatMoney(totalCents)}</span>

@@ -270,38 +270,38 @@ export default function AdminOrdersPage() {
                     marginBottom: '24px',
                 }}
             >
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>TOTAL</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'white' }}>{metrics.total}</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--foreground)' }}>{metrics.total}</span>
                 </div>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#60a5fa', display: 'block', fontWeight: 600 }}>NUEVOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#60a5fa' }}>{metrics.new}</span>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#2563eb', display: 'block', fontWeight: 600 }}>NUEVOS</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563eb' }}>{metrics.new}</span>
                 </div>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#facc15', display: 'block', fontWeight: 600 }}>PENDIENTES PAGO</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#facc15' }}>{metrics.pendingPayment}</span>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#d97706', display: 'block', fontWeight: 600 }}>PENDIENTES PAGO</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#d97706' }}>{metrics.pendingPayment}</span>
                 </div>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#4ade80', display: 'block', fontWeight: 600 }}>PAGADOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#4ade80' }}>{metrics.paid}</span>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'block', fontWeight: 600 }}>PAGADOS</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#16a34a' }}>{metrics.paid}</span>
                 </div>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#fbbf24', display: 'block', fontWeight: 600 }}>PREPARANDO</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#fbbf24' }}>{metrics.preparing}</span>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#b45309', display: 'block', fontWeight: 600 }}>PREPARANDO</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#b45309' }}>{metrics.preparing}</span>
                 </div>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#38bdf8', display: 'block', fontWeight: 600 }}>ENVIADOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#38bdf8' }}>{metrics.shipped}</span>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#0284c7', display: 'block', fontWeight: 600 }}>ENVIADOS</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>{metrics.shipped}</span>
                 </div>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#34d399', display: 'block', fontWeight: 600 }}>ENTREGADOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#34d399' }}>{metrics.delivered}</span>
+                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#059669', display: 'block', fontWeight: 600 }}>ENTREGADOS</span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#059669' }}>{metrics.delivered}</span>
                 </div>
             </div>
 
             {/* SEARCH & FILTERS BAR */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px', padding: '18px', marginBottom: '20px' }}>
+            <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '14px', padding: '18px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
                     {/* Search input with Debounce */}
                     <div style={{ position: 'relative', flex: '2 1 240px' }}>
@@ -315,9 +315,9 @@ export default function AdminOrdersPage() {
                                 width: '100%',
                                 padding: '10px 14px 10px 36px',
                                 background: 'var(--input-bg)',
-                                border: '1px solid var(--glass-border)',
+                                border: '1.5px solid var(--glass-border)',
                                 borderRadius: '8px',
-                                color: 'white',
+                                color: 'var(--input-text)',
                                 fontSize: '0.88rem',
                                 outline: 'none',
                             }}
@@ -328,7 +328,7 @@ export default function AdminOrdersPage() {
                     <select
                         value={orderStatus}
                         onChange={(e) => setOrderStatus(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', fontSize: '0.85rem' }}
+                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
                     >
                         <option value="all">Estado Pedido: Todos</option>
                         <option value="new">Nuevo</option>
@@ -343,7 +343,7 @@ export default function AdminOrdersPage() {
                     <select
                         value={paymentStatus}
                         onChange={(e) => setPaymentStatus(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', fontSize: '0.85rem' }}
+                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
                     >
                         <option value="all">Pago: Todos</option>
                         <option value="pending">Pendiente</option>
@@ -358,7 +358,7 @@ export default function AdminOrdersPage() {
                     <select
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', fontSize: '0.85rem' }}
+                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
                     >
                         <option value="all">Canal: Todos</option>
                         <option value="online_store">Tienda online</option>
@@ -375,7 +375,7 @@ export default function AdminOrdersPage() {
                     <select
                         value={fulfillmentStatus}
                         onChange={(e) => setFulfillmentStatus(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', fontSize: '0.85rem' }}
+                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
                     >
                         <option value="all">Envío: Todos</option>
                         <option value="unfulfilled">Pendiente / Sin enviar</option>
@@ -390,7 +390,7 @@ export default function AdminOrdersPage() {
                     <select
                         value={dateRange}
                         onChange={(e) => setDateRange(e.target.value as 'all' | 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month')}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'white', fontSize: '0.85rem' }}
+                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
                     >
                         <option value="all">Fecha: Todas</option>
                         <option value="today">Hoy</option>
@@ -405,10 +405,10 @@ export default function AdminOrdersPage() {
                         onClick={handleClearFilters}
                         style={{
                             padding: '10px 14px',
-                            background: 'rgba(255, 255, 255, 0.05)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'var(--input-bg)',
+                            border: '1.5px solid var(--glass-border)',
                             borderRadius: '8px',
-                            color: '#a1a1aa',
+                            color: 'var(--text-muted)',
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             cursor: 'pointer',

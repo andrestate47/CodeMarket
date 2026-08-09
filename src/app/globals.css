@@ -24,14 +24,14 @@
   --foreground: var(--robotina-white);
   --card-bg: var(--robotina-dark);
   --glass-bg: rgba(18, 18, 18, 0.85);
-  --glass-border: #333338;
+  --glass-border: #3f3f46;
 
   /* Semantic Colors Dark */
-  --text-muted: var(--robotina-gray-light);
-  --text-description: var(--robotina-gray);
-  --input-bg: rgba(36, 36, 36, 0.6);
+  --text-muted: #cbd5e1;
+  --text-description: #94a3b8;
+  --input-bg: #18181b;
   --input-text: var(--robotina-white);
-  --btn-outline-color: #333338;
+  --btn-outline-color: #3f3f46;
   --btn-outline-text: var(--robotina-white);
   --btn-outline-hover-bg: var(--robotina-orange);
   --btn-outline-hover-text: var(--robotina-white);
@@ -52,19 +52,19 @@
 }
 
 [data-theme='light'] {
-  --background: #f8fafc;
-  --foreground: #070707;
+  --background: #f1f5f9;
+  --foreground: #0f172a;
   --card-bg: #ffffff;
   --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: #cbd5e1;
+  --glass-border: #94a3b8;
 
   /* Semantic Colors Light */
-  --text-muted: #475569;
-  --text-description: #64748b;
+  --text-muted: #334155;
+  --text-description: #475569;
   --input-bg: #ffffff;
-  --input-text: #070707;
-  --btn-outline-color: #cbd5e1;
-  --btn-outline-text: #070707;
+  --input-text: #0f172a;
+  --btn-outline-color: #94a3b8;
+  --btn-outline-text: #0f172a;
   --btn-outline-hover-bg: var(--robotina-orange);
   --btn-outline-hover-text: #ffffff;
 }
@@ -99,7 +99,10 @@ button {
 
 input, select, textarea {
   font-family: inherit;
-  border: 1px solid var(--glass-border);
+  border: 1.5px solid var(--glass-border);
+  background: var(--input-bg);
+  color: var(--input-text);
+  border-radius: 8px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
