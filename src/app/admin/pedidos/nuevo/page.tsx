@@ -713,7 +713,7 @@ export default function NewManualOrderPage() {
                                 <div style={{
                                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 40,
                                     background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', marginTop: '6px',
-                                    maxHeight: '420px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.2)'
+                                    maxHeight: '700px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.2)'
                                 }}>
                                     {productResults.length > 0 ? (
                                         productResults.map(p => (
@@ -728,16 +728,16 @@ export default function NewManualOrderPage() {
                                                             <img
                                                                 src={p.image}
                                                                 alt={p.name}
-                                                                style={{ width: '64px', height: '64px', borderRadius: '10px', objectFit: 'cover', border: '1.5px solid var(--glass-border)', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                                                style={{ width: '240px', height: '240px', borderRadius: '16px', objectFit: 'cover', border: '2px solid var(--glass-border)', flexShrink: 0, boxShadow: '0 6px 20px rgba(0,0,0,0.15)' }}
                                                             />
                                                         ) : (
-                                                            <div style={{ width: '64px', height: '64px', borderRadius: '10px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', flexShrink: 0 }}>
+                                                            <div style={{ width: '240px', height: '240px', borderRadius: '16px', background: 'var(--input-bg)', border: '2px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', flexShrink: 0 }}>
                                                                 🏷️
                                                             </div>
                                                         )}
                                                         <div>
-                                                            <div style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.92rem' }}>{p.name}</div>
-                                                            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>SKU: {p.sku || 'N/A'} • Stock disponible: <strong>{p.stock_quantity}</strong></div>
+                                                            <div style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '1.15rem' }}>{p.name}</div>
+                                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginTop: '4px' }}>SKU: {p.sku || 'N/A'} • Stock disponible: <strong>{p.stock_quantity}</strong></div>
                                                         </div>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -817,10 +817,10 @@ export default function NewManualOrderPage() {
                                                 <img
                                                     src={item.image}
                                                     alt={item.productName}
-                                                    style={{ width: '64px', height: '64px', borderRadius: '10px', objectFit: 'cover', border: '1.5px solid var(--glass-border)', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+                                                    style={{ width: '240px', height: '240px', borderRadius: '16px', objectFit: 'cover', border: '2px solid var(--glass-border)', flexShrink: 0, boxShadow: '0 6px 20px rgba(0,0,0,0.15)' }}
                                                 />
                                             ) : (
-                                                <div style={{ width: '64px', height: '64px', borderRadius: '10px', background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', flexShrink: 0 }}>
+                                                <div style={{ width: '240px', height: '240px', borderRadius: '16px', background: 'var(--card-bg)', border: '2px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', flexShrink: 0 }}>
                                                     🏷️
                                                 </div>
                                             )}
@@ -1142,7 +1142,7 @@ export default function NewManualOrderPage() {
                         </h3>
 
                         {/* Itemized List Summary */}
-                        <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1.5px solid var(--glass-border)', paddingBottom: '12px' }}>
+                        <div style={{ maxHeight: '320px', overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '8px', borderBottom: '1.5px solid var(--glass-border)', paddingBottom: '12px' }}>
                             {selectedItems.length === 0 ? (
                                 <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>
                                     Ningún producto seleccionado
@@ -1155,7 +1155,7 @@ export default function NewManualOrderPage() {
                                                 <img
                                                     src={item.image}
                                                     alt={item.productName}
-                                                    style={{ width: '38px', height: '38px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0, border: '1.5px solid var(--glass-border)' }}
+                                                    style={{ width: '120px', height: '120px', borderRadius: '10px', objectFit: 'cover', flexShrink: 0, border: '1.5px solid var(--glass-border)' }}
                                                 />
                                             )}
                                             <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', paddingRight: '8px' }}>
