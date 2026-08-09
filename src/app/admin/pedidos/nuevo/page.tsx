@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { formatMoney, parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import { createManualOrderAction } from '@/modules/orders/actions';
+import { fetchCatalogProducts } from '@/modules/catalog/queries';
 
 interface CustomerOption {
     id: string;
@@ -121,27 +122,82 @@ export default function NewManualOrderPage() {
         return () => clearTimeout(handler);
     }, [customerSearchQuery, customerMode]);
 
-    // Product search debounce
+    // Robust Product Search Debounce (Local Catalog + Supabase DB)
     useEffect(() => {
-        if (!productSearchQuery.trim()) {
+        const queryTrimmed = productSearchQuery.trim();
+        if (!queryTrimmed) {
+            setProductResults([]);
             return;
         }
 
+        const queryLower = queryTrimmed.toLowerCase();
+
         const handler = setTimeout(async () => {
             setIsSearchingProducts(true);
-            const { data: prods } = await supabase
-                .from('products')
-                .select(`
-                    id, name, sku, price_amount, stock_quantity, track_inventory,
-                    product_variants (id, name, sku, price_amount, stock_quantity)
-                `)
-                .eq('status', 'active')
-                .or(`name.ilike.%${productSearchQuery}%,sku.ilike.%${productSearchQuery}%`)
-                .limit(8);
+            try {
+                // 1. Search in Catalog (Local data + localStorage + Supabase DB cache)
+                const catalogProducts = await fetchCatalogProducts();
+                const filteredCatalog = catalogProducts.filter(p =>
+                    p.title?.toLowerCase().includes(queryLower) ||
+                    p.category?.toLowerCase().includes(queryLower) ||
+                    p.id?.toLowerCase().includes(queryLower) ||
+                    p.description?.toLowerCase().includes(queryLower)
+                );
 
-            setProductResults(prods || []);
-            setIsSearchingProducts(false);
-        }, 300);
+                // 2. Search direct in Supabase DB safely
+                let dbProducts: ProductSearchResult[] = [];
+                try {
+                    const { data: dbProds } = await supabase
+                        .from('products')
+                        .select('*')
+                        .or(`name.ilike.%${queryTrimmed}%,sku.ilike.%${queryTrimmed}%`)
+                        .limit(8);
+
+                    if (dbProds && dbProds.length > 0) {
+                        dbProducts = dbProds.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            sku: p.sku || p.id,
+                            price_amount: p.price_amount || 0,
+                            stock_quantity: p.stock_quantity ?? 20,
+                            track_inventory: p.track_inventory ?? true,
+                            product_variants: p.metadata?.variants || []
+                        }));
+                    }
+                } catch {
+                    // Fallback to catalog if DB query errors
+                }
+
+                // 3. Map filtered catalog products to ProductSearchResult format
+                const mappedCatalog: ProductSearchResult[] = filteredCatalog.map(p => ({
+                    id: p.id,
+                    name: p.title,
+                    sku: p.id,
+                    price_amount: p.price_amount,
+                    stock_quantity: p.stock_quantity ?? 25,
+                    track_inventory: p.track_inventory ?? true,
+                    product_variants: (p.variants || []).map((v: Record<string, unknown>) => ({
+                        id: (v.id as string) || `${p.id}-${v.name}`,
+                        name: (v.name as string) || 'Variante',
+                        sku: (v.id as string) || `${p.id}-${v.name}`,
+                        price_amount: v.price ? parseMoneyToCents(v.price as string) : p.price_amount,
+                        stock_quantity: (v.stock as number) ?? p.stock_quantity ?? 20,
+                    }))
+                }));
+
+                // Combine results and deduplicate by ID
+                const combined = [...mappedCatalog, ...dbProducts];
+                const uniqueResults = combined.filter((prod, idx, self) =>
+                    idx === self.findIndex(item => item.id === prod.id)
+                );
+
+                setProductResults(uniqueResults.slice(0, 8));
+            } catch (err) {
+                console.error('Error al buscar productos:', err);
+            } finally {
+                setIsSearchingProducts(false);
+            }
+        }, 150);
 
         return () => clearTimeout(handler);
     }, [productSearchQuery]);
@@ -527,7 +583,7 @@ export default function NewManualOrderPage() {
                                     setProductSearchQuery(val);
                                     if (!val.trim()) setProductResults([]);
                                 }}
-                                placeholder="Buscar por nombre de producto o SKU..."
+                                placeholder="Buscar por nombre de producto o SKU (ej: arepa, polera, zapatillas...)"
                                 style={{ width: '100%', padding: '11px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '10px', color: 'var(--input-text)' }}
                             />
                             {isSearchingProducts && (
@@ -536,46 +592,55 @@ export default function NewManualOrderPage() {
                                 </span>
                             )}
 
-                            {productResults.length > 0 && (
+                            {/* Dropdown Search Results */}
+                            {productSearchQuery.trim().length > 0 && (
                                 <div style={{
                                     position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 20,
                                     background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '10px', marginTop: '6px',
-                                    maxHeight: '260px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.2)'
+                                    maxHeight: '300px', overflowY: 'auto', boxShadow: '0 12px 30px rgba(0,0,0,0.2)'
                                 }}>
-                                    {productResults.map(p => (
-                                        <div key={p.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                            {/* Product Item */}
-                                            <div
-                                                onClick={() => handleAddProduct(p)}
-                                                style={{ padding: '10px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-                                            >
-                                                <div>
-                                                    <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SKU: {p.sku || 'N/A'} • Stock: {p.stock_quantity}</div>
+                                    {productResults.length > 0 ? (
+                                        productResults.map(p => (
+                                            <div key={p.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                                {/* Product Item */}
+                                                <div
+                                                    onClick={() => handleAddProduct(p)}
+                                                    style={{ padding: '12px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                                                >
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{p.name}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>SKU: {p.sku || 'N/A'} • Stock: {p.stock_quantity}</div>
+                                                    </div>
+                                                    <div style={{ fontWeight: 800, color: '#16a34a' }}>
+                                                        {formatMoney(p.price_amount)}
+                                                    </div>
                                                 </div>
-                                                <div style={{ fontWeight: 800, color: '#16a34a' }}>
-                                                    {formatMoney(p.price_amount)}
-                                                </div>
-                                            </div>
 
-                                            {/* Variants if any */}
-                                            {p.product_variants && p.product_variants.length > 0 && (
-                                                <div style={{ background: 'var(--input-bg)', padding: '6px 14px 10px 24px' }}>
-                                                    <span style={{ fontSize: '0.72rem', color: 'var(--text-description)' }}>Variantes:</span>
-                                                    {p.product_variants.map(v => (
-                                                        <div
-                                                            key={v.id}
-                                                            onClick={() => handleAddProduct(p, v)}
-                                                            style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', borderRadius: '6px', cursor: 'pointer', border: '1px solid var(--glass-border)', marginTop: '4px' }}
-                                                        >
-                                                            <span style={{ fontSize: '0.8rem', color: 'var(--foreground)' }}>↳ {v.name}</span>
-                                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#16a34a' }}>{formatMoney(v.price_amount)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
+                                                {/* Variants if any */}
+                                                {p.product_variants && p.product_variants.length > 0 && (
+                                                    <div style={{ background: 'var(--input-bg)', padding: '6px 14px 10px 24px' }}>
+                                                        <span style={{ fontSize: '0.72rem', color: 'var(--text-description)', fontWeight: 600 }}>Variantes disponibles:</span>
+                                                        {p.product_variants.map(v => (
+                                                            <div
+                                                                key={v.id}
+                                                                onClick={() => handleAddProduct(p, v)}
+                                                                style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 10px', borderRadius: '6px', cursor: 'pointer', border: '1.5px solid var(--glass-border)', marginTop: '4px', background: 'var(--card-bg)' }}
+                                                            >
+                                                                <span style={{ fontSize: '0.8rem', color: 'var(--foreground)', fontWeight: 600 }}>↳ {v.name}</span>
+                                                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#16a34a' }}>{formatMoney(v.price_amount)}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        !isSearchingProducts && (
+                                            <div style={{ padding: '16px', color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.88rem' }}>
+                                                No se encontraron productos coincidentes con &quot;<strong>{productSearchQuery}</strong>&quot;.
+                                            </div>
+                                        )
+                                    )}
                                 </div>
                             )}
                         </div>
