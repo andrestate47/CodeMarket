@@ -51,7 +51,7 @@ export interface CreateManualOrderPayload {
     shippingReference?: string;
     shippingPostalCode?: string;
 
-    discountType?: 'percentage' | 'fixed';
+    discountType?: 'percentage' | 'fixed' | 'coupon';
     discountValue?: number; // percent value or fixed cents
     couponCode?: string;
 
@@ -416,20 +416,13 @@ export async function createManualOrderAction(payload: CreateManualOrderPayload)
             .select('*')
             .in('id', productIds);
 
-        if (!dbProducts || dbProducts.length === 0) {
-            return { success: false, error: 'Los productos seleccionados no existen en el catálogo.' };
-        }
-
         let subtotalAmountCents = 0;
         const validatedItems = [];
 
         for (const item of items) {
-            const dbProd = dbProducts.find(p => p.id === item.productId);
-            if (!dbProd) {
-                return { success: false, error: `Producto ${item.productName} no encontrado.` };
-            }
+            const dbProd = dbProducts?.find(p => p.id === item.productId);
 
-            if (dbProd.track_inventory && (dbProd.stock_quantity - (dbProd.stock_reserved || 0)) < item.quantity) {
+            if (dbProd && dbProd.track_inventory && (dbProd.stock_quantity - (dbProd.stock_reserved || 0)) < item.quantity) {
                 const available = dbProd.stock_quantity - (dbProd.stock_reserved || 0);
                 return {
                     success: false,
@@ -443,13 +436,13 @@ export async function createManualOrderAction(payload: CreateManualOrderPayload)
 
             validatedItems.push({
                 store_id: storeId,
-                product_id: dbProd.id,
+                product_id: dbProd ? dbProd.id : (item.productId.length === 36 ? item.productId : null),
                 variant_id: item.variantId || null,
-                product_name: dbProd.name,
+                product_name: item.productName || dbProd?.name || 'Producto',
                 variant_name: item.variantName || null,
-                sku: item.sku || dbProd.sku || null,
+                sku: item.sku || dbProd?.sku || null,
                 unit_price_amount: itemUnitPriceCents,
-                original_unit_price: parseMoneyToCents(item.originalUnitPriceAmount || dbProd.price_amount),
+                original_unit_price: parseMoneyToCents(item.originalUnitPriceAmount || dbProd?.price_amount || itemUnitPriceCents),
                 final_unit_price: itemUnitPriceCents,
                 price_adjustment_reason: item.priceAdjustmentReason || null,
                 quantity: item.quantity,
@@ -530,7 +523,7 @@ export async function createManualOrderAction(payload: CreateManualOrderPayload)
 
         // 8. Update Inventory & Record Movements
         for (const item of validatedItems) {
-            const dbProd = dbProducts.find(p => p.id === item.product_id);
+            const dbProd = dbProducts?.find(p => p.id === item.product_id);
             if (dbProd && dbProd.track_inventory) {
                 const newStock = Math.max(0, dbProd.stock_quantity - item.quantity);
                 await adminClient
