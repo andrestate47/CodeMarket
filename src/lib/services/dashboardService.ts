@@ -10,6 +10,7 @@ import {
     formatShortDateLabel,
     calculateComparison,
     generateDemoSalesOrders,
+    getGranularity,
 } from '@/components/admin/analytics/salesAnalyticsUtils';
 
 export interface PaymentMethodBreakdown {
@@ -34,6 +35,7 @@ export interface LowStockProductItem {
     sku: string;
     stock: number;
     threshold: number;
+    variantName?: string;
 }
 
 export interface DBOrderRecord {
@@ -62,6 +64,9 @@ export interface DashboardMetrics {
     bestDayAmount: number;        // Soles decimal
     bestDayLabel: string;         // e.g. "14 Ago"
     totalRefunds: number;         // Soles decimal
+    diffCreatedOrders: number;    // Absolute diff vs previous period
+    diffPaidSales: number;        // Absolute diff vs previous period
+    isDemoData: boolean;
 
     // Trends vs Previous Period
     paidSalesTrend: PeriodComparison;
@@ -91,20 +96,14 @@ export async function getDashboardMetrics(
     const { startDate, endDate } = getPeriodRange(preset, customStart, customEnd);
     const { prevStartDate, prevEndDate } = getPreviousPeriodRange(startDate, endDate);
 
-    // 1. Fetch Orders from Supabase + LocalStorage fallback + Demo fallback
     let allOrders: DBOrderRecord[] = [];
-
-    let localOrders: DBOrderRecord[] = [];
-    if (typeof window !== 'undefined') {
-        try {
-            localOrders = JSON.parse(localStorage.getItem('admin_orders') || '[]');
-        } catch {
-            localOrders = [];
-        }
-    }
+    let isDemoData = false;
 
     try {
-        const { data: dbOrders } = await supabase
+        const { data: localOrdersStr } = { data: null };
+        const localOrders: DBOrderRecord[] = [];
+
+        const { data: dbOrders, error } = await supabase
             .from('orders')
             .select('id, order_number, customer_name, customer_email, total_amount, paid_amount, payment_status, fulfillment_status, payment_method, source, created_at, currency')
             .order('created_at', { ascending: false })
@@ -138,7 +137,30 @@ export async function getDashboardMetrics(
         );
 
         if (allOrders.length === 0) {
-            allOrders = generateDemoSalesOrders().map((o) => ({
+            const demos = generateDemoSalesOrders();
+            if (demos.length > 0) {
+                isDemoData = true;
+                allOrders = demos.map((o) => ({
+                    id: o.id,
+                    order_number: o.order_number,
+                    customer_name: 'Cliente Demo',
+                    customer_email: 'demo@codemarket.pe',
+                    total_amount: o.total_amount,
+                    paid_amount: o.paid_amount,
+                    payment_status: o.payment_status,
+                    fulfillment_status: o.payment_status === 'paid' ? 'delivered' : 'unfulfilled',
+                    payment_method: Math.random() > 0.4 ? 'yape' : Math.random() > 0.5 ? 'transfer' : 'card',
+                    source: Math.random() > 0.3 ? 'online_store' : Math.random() > 0.5 ? 'whatsapp' : 'instagram',
+                    created_at: o.created_at,
+                    currency: 'PEN',
+                }));
+            }
+        }
+    } catch {
+        const demos = generateDemoSalesOrders();
+        if (demos.length > 0) {
+            isDemoData = true;
+            allOrders = demos.map((o) => ({
                 id: o.id,
                 order_number: o.order_number,
                 customer_name: 'Cliente Demo',
@@ -147,27 +169,12 @@ export async function getDashboardMetrics(
                 paid_amount: o.paid_amount,
                 payment_status: o.payment_status,
                 fulfillment_status: o.payment_status === 'paid' ? 'delivered' : 'unfulfilled',
-                payment_method: Math.random() > 0.4 ? 'yape' : Math.random() > 0.5 ? 'transfer' : 'card',
-                source: Math.random() > 0.3 ? 'online_store' : Math.random() > 0.5 ? 'whatsapp' : 'instagram',
+                payment_method: 'yape',
+                source: 'online_store',
                 created_at: o.created_at,
                 currency: 'PEN',
             }));
         }
-    } catch {
-        allOrders = generateDemoSalesOrders().map((o) => ({
-            id: o.id,
-            order_number: o.order_number,
-            customer_name: 'Cliente Demo',
-            customer_email: 'demo@codemarket.pe',
-            total_amount: o.total_amount,
-            paid_amount: o.paid_amount,
-            payment_status: o.payment_status,
-            fulfillment_status: o.payment_status === 'paid' ? 'delivered' : 'unfulfilled',
-            payment_method: 'yape',
-            source: 'online_store',
-            created_at: o.created_at,
-            currency: 'PEN',
-        }));
     }
 
     // 2. Filter Current & Previous Period Orders
@@ -194,10 +201,11 @@ export async function getDashboardMetrics(
     const averageTicket = paidOrdersCount > 0 ? paidSales / paidOrdersCount : 0;
     const paymentRate = createdOrdersCount > 0 ? (paidOrdersCount / createdOrdersCount) * 100 : 0;
 
-    // 4. Daily / Hourly Chart Points Aggregation (America/Lima)
+    // 4. Daily / Hourly / Weekly / Monthly Chart Points Aggregation (America/Lima)
     const dailyMap: Record<string, DailyAnalyticsPoint> = {};
+    const granularity = getGranularity(preset, startDate, endDate);
 
-    if (preset === 'today') {
+    if (granularity === 'hour') {
         const hourSlots = ['04:00', '08:00', '12:00', '16:00', '20:00', '22:00'];
         hourSlots.forEach((hr) => {
             dailyMap[hr] = {
@@ -228,6 +236,73 @@ export async function getDashboardMetrics(
                 dailyMap[slotKey].paidOrdersCount += 1;
             } else if (o.payment_status === 'refunded') {
                 dailyMap[slotKey].refunds += amount;
+            }
+        });
+    } else if (granularity === 'week') {
+        let curr = new Date(startDate);
+        let weekIdx = 1;
+        while (curr <= endDate) {
+            const weekKey = `Sem ${weekIdx}`;
+            dailyMap[weekKey] = {
+                dateKey: weekKey,
+                dateLabel: weekKey,
+                fullDateLabel: `Semana ${weekIdx}`,
+                grossSales: 0,
+                refunds: 0,
+                netSales: 0,
+                paidOrdersCount: 0,
+                avgTicket: 0,
+            };
+            curr = new Date(curr.getTime() + 7 * 24 * 60 * 60 * 1000);
+            weekIdx++;
+        }
+
+        currentOrders.forEach((o) => {
+            const d = new Date(o.created_at);
+            const diffDays = Math.floor((d.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+            const wIdx = Math.min(Math.floor(diffDays / 7) + 1, Object.keys(dailyMap).length);
+            const weekKey = `Sem ${wIdx}`;
+            if (!dailyMap[weekKey]) return;
+
+            const amount = Number(o.paid_amount || o.total_amount || 0);
+            if (o.payment_status === 'paid') {
+                dailyMap[weekKey].grossSales += amount;
+                dailyMap[weekKey].paidOrdersCount += 1;
+            } else if (o.payment_status === 'refunded') {
+                dailyMap[weekKey].refunds += amount;
+            }
+        });
+    } else if (granularity === 'month') {
+        const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        const curr = new Date(startDate);
+        while (curr <= endDate) {
+            const monthKey = `${monthNames[curr.getMonth()]} ${curr.getFullYear().toString().slice(-2)}`;
+            if (!dailyMap[monthKey]) {
+                dailyMap[monthKey] = {
+                    dateKey: monthKey,
+                    dateLabel: monthKey,
+                    fullDateLabel: monthKey,
+                    grossSales: 0,
+                    refunds: 0,
+                    netSales: 0,
+                    paidOrdersCount: 0,
+                    avgTicket: 0,
+                };
+            }
+            curr.setMonth(curr.getMonth() + 1);
+        }
+
+        currentOrders.forEach((o) => {
+            const d = new Date(o.created_at);
+            const monthKey = `${monthNames[d.getMonth()]} ${d.getFullYear().toString().slice(-2)}`;
+            if (!dailyMap[monthKey]) return;
+
+            const amount = Number(o.paid_amount || o.total_amount || 0);
+            if (o.payment_status === 'paid') {
+                dailyMap[monthKey].grossSales += amount;
+                dailyMap[monthKey].paidOrdersCount += 1;
+            } else if (o.payment_status === 'refunded') {
+                dailyMap[monthKey].refunds += amount;
             }
         });
     } else {
@@ -403,6 +478,8 @@ export async function getDashboardMetrics(
         // Fallback demo low stock list
     }
 
+    const diffCreatedOrders = createdOrdersCount - prevCreatedOrdersCount;
+    const diffPaidSales = paidSales - prevPaidSales;
     const recentOrders = allOrders.slice(0, 5);
 
     return {
@@ -415,6 +492,9 @@ export async function getDashboardMetrics(
         bestDayAmount,
         bestDayLabel,
         totalRefunds,
+        diffCreatedOrders,
+        diffPaidSales,
+        isDemoData,
         paidSalesTrend,
         createdOrdersTrend,
         avgTicketTrend,

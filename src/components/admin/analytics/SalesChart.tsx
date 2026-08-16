@@ -37,12 +37,21 @@ export default function SalesChart({
         }), 0);
     }, [data, metric]);
 
-    const yMax = useMemo(() => calculateDynamicYMax(maxVal), [maxVal]);
+    const yMax = useMemo(() => calculateDynamicYMax(maxVal, metric === 'orders'), [maxVal, metric]);
 
     // Format Y tick label based on metric
     const formatYTick = (val: number): string => {
-        if (metric === 'orders') return val % 1 === 0 ? `${Math.round(val)}` : val.toFixed(1);
+        if (metric === 'orders') return `${Math.round(val)}`;
         return formatMoney(val);
+    };
+
+    // Format Period Average Label based on metric
+    const formatAverageLabel = (avg: number): string => {
+        if (metric === 'orders') {
+            const formatted = avg % 1 === 0 ? avg.toString() : avg.toFixed(1);
+            return `Promedio: ${formatted} pedidos`;
+        }
+        return `Promedio: ${formatMoney(avg)}`;
     };
 
     // SVG Dimensions
@@ -62,10 +71,10 @@ export default function SalesChart({
     const hoveredX = hoveredIdx !== null ? padding.left + (hoveredIdx + 0.5) * stepX : 0;
 
     const metricLegendName = {
-        sales: 'Ventas diarias',
-        orders: 'Pedidos diarios',
+        sales: 'Ventas del período',
+        orders: 'Pedidos del período',
         avg_ticket: 'Ticket promedio',
-        refunds: 'Reembolsos diarios',
+        refunds: 'Reembolsos del período',
     }[metric];
 
     return (
@@ -134,7 +143,7 @@ export default function SalesChart({
                                 fontSize="11"
                                 fontWeight="800"
                             >
-                                Promedio: {formatYTick(periodAverage)}
+                                {formatAverageLabel(periodAverage)}
                             </text>
                         </g>
                     )}
@@ -185,7 +194,7 @@ export default function SalesChart({
                                         fontSize="11"
                                         fontWeight={isHovered ? '800' : '600'}
                                     >
-                                        {formatShortDateLabel(p.dateKey)}
+                                        {p.dateLabel || formatShortDateLabel(p.dateKey)}
                                     </text>
                                 )}
                             </g>
@@ -200,6 +209,7 @@ export default function SalesChart({
                         x={hoveredX}
                         y={0}
                         containerWidth={containerWidth}
+                        metric={metric}
                     />
                 )}
             </div>

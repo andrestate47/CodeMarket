@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { DailyAnalyticsPoint, formatFullDateLabel } from './salesAnalyticsUtils';
+import { DailyAnalyticsPoint, MetricType, formatFullDateLabel } from './salesAnalyticsUtils';
 import { formatMoney } from '@/lib/money';
 
 interface SalesTooltipProps {
@@ -9,13 +9,13 @@ interface SalesTooltipProps {
     x: number;
     y: number;
     containerWidth: number;
+    metric?: MetricType;
 }
 
-export default function SalesTooltip({ point, x, containerWidth }: SalesTooltipProps) {
+export default function SalesTooltip({ point, x, containerWidth, metric = 'sales' }: SalesTooltipProps) {
     const fullDate = formatFullDateLabel(point.dateKey);
 
-    // Keep tooltip inside container bounds horizontally
-    const cardWidth = 210;
+    const cardWidth = 220;
     let leftPos = x;
     if (leftPos < cardWidth / 2 + 10) leftPos = cardWidth / 2 + 10;
     if (leftPos > containerWidth - cardWidth / 2 - 10) leftPos = containerWidth - cardWidth / 2 - 10;
@@ -42,7 +42,6 @@ export default function SalesTooltip({ point, x, containerWidth }: SalesTooltipP
                 fontSize: '0.82rem',
                 color: '#a1a1aa',
                 fontWeight: 700,
-                textTransform: 'capitalize',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                 paddingBottom: '6px',
                 marginBottom: '8px',
@@ -51,25 +50,67 @@ export default function SalesTooltip({ point, x, containerWidth }: SalesTooltipP
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '0.82rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#d4d4d8', fontWeight: 600 }}>Ventas:</span>
-                    <strong style={{ color: '#22c55e', fontWeight: 800 }}>{formatMoney(point.netSales)}</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#d4d4d8', fontWeight: 600 }}>Pedidos:</span>
-                    <strong style={{ color: '#38bdf8', fontWeight: 800 }}>{point.paidOrdersCount}</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#d4d4d8', fontWeight: 600 }}>Ticket promedio:</span>
-                    <strong style={{ color: 'var(--robotina-orange)', fontWeight: 800 }}>{formatMoney(point.avgTicket)}</strong>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ color: '#d4d4d8', fontWeight: 600 }}>Reembolsos:</span>
-                    <strong style={{ color: point.refunds > 0 ? '#ef4444' : '#a1a1aa', fontWeight: 800 }}>{formatMoney(point.refunds)}</strong>
-                </div>
+                {metric === 'orders' ? (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 700 }}>Pedidos:</span>
+                            <strong style={{ color: '#38bdf8', fontWeight: 800 }}>{point.paidOrdersCount}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Pagados:</span>
+                            <strong style={{ color: '#22c55e', fontWeight: 700 }}>{point.paidOrdersCount}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Ventas:</span>
+                            <strong style={{ color: 'var(--robotina-orange)', fontWeight: 800 }}>{formatMoney(point.netSales)}</strong>
+                        </div>
+                    </>
+                ) : metric === 'avg_ticket' ? (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 700 }}>Ticket promedio:</span>
+                            <strong style={{ color: 'var(--robotina-orange)', fontWeight: 800 }}>{formatMoney(point.avgTicket)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Pedidos pagados:</span>
+                            <strong style={{ color: '#38bdf8', fontWeight: 700 }}>{point.paidOrdersCount}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Ventas:</span>
+                            <strong style={{ color: '#22c55e', fontWeight: 700 }}>{formatMoney(point.netSales)}</strong>
+                        </div>
+                    </>
+                ) : metric === 'refunds' ? (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 700 }}>Reembolsos:</span>
+                            <strong style={{ color: '#ef4444', fontWeight: 800 }}>{formatMoney(point.refunds)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Ventas netas:</span>
+                            <strong style={{ color: '#22c55e', fontWeight: 700 }}>{formatMoney(point.netSales)}</strong>
+                        </div>
+                    </>
+                ) : (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 700 }}>Ventas:</span>
+                            <strong style={{ color: '#22c55e', fontWeight: 800 }}>{formatMoney(point.netSales)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Pedidos pagados:</span>
+                            <strong style={{ color: '#38bdf8', fontWeight: 700 }}>{point.paidOrdersCount}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Ticket promedio:</span>
+                            <strong style={{ color: 'var(--robotina-orange)', fontWeight: 700 }}>{formatMoney(point.avgTicket)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#d4d4d8', fontWeight: 500 }}>Reembolsos:</span>
+                            <strong style={{ color: point.refunds > 0 ? '#ef4444' : '#a1a1aa', fontWeight: 700 }}>{formatMoney(point.refunds)}</strong>
+                        </div>
+                    </>
+                )}
             </div>
         </div>
     );

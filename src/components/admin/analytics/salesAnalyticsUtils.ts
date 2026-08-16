@@ -136,8 +136,23 @@ export function getPreviousPeriodRange(startDate: Date, endDate: Date): { prevSt
     return { prevStartDate, prevEndDate };
 }
 
+export type TimeGranularity = 'hour' | 'day' | 'week' | 'month';
+
 /**
- * Safe percentage comparison vs previous period. Never returns Infinity or NaN.
+ * Determines granularity automatically based on period preset or custom date diff
+ */
+export function getGranularity(preset: PresetPeriod, startDate: Date, endDate: Date): TimeGranularity {
+    if (preset === 'today') return 'hour';
+    if (preset === '7d' || preset === '30d' || preset === 'this_month') return 'day';
+
+    const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24));
+    if (diffDays <= 31) return 'day';
+    if (diffDays <= 120) return 'week';
+    return 'month';
+}
+
+/**
+ * Safe percentage comparison vs previous period with exact rules for zero cases.
  */
 export function calculateComparison(currentVal: number, prevVal: number): PeriodComparison {
     if (prevVal <= 0 && currentVal > 0) {
@@ -150,12 +165,22 @@ export function calculateComparison(currentVal: number, prevVal: number): Period
         };
     }
 
+    if (prevVal > 0 && currentVal === 0) {
+        return {
+            currentVal,
+            prevVal,
+            percentChange: -100,
+            trendLabel: '↓ 100%',
+            trendType: 'negative',
+        };
+    }
+
     if (prevVal <= 0 && currentVal <= 0) {
         return {
             currentVal,
             prevVal,
             percentChange: 0,
-            trendLabel: '—',
+            trendLabel: 'Sin cambios',
             trendType: 'neutral',
         };
     }
@@ -174,11 +199,16 @@ export function calculateComparison(currentVal: number, prevVal: number): Period
 }
 
 /**
- * Calculates dynamic Y axis ceiling based on data max value
+ * Calculates dynamic Y axis ceiling based on data max value and metric type
  */
-export function calculateDynamicYMax(maxVal: number): number {
-    if (maxVal <= 0) return 100;
-    const withMargin = maxVal * 1.18; // 18% top margin to prevent bar overflow
+export function calculateDynamicYMax(maxVal: number, isOrdersMetric: boolean = false): number {
+    if (maxVal <= 0) return isOrdersMetric ? 5 : 100;
+    const withMargin = maxVal * 1.15; // 15% top margin
+
+    if (isOrdersMetric) {
+        return Math.max(Math.ceil(withMargin), 5);
+    }
+
     if (withMargin <= 50) return 50;
     if (withMargin <= 100) return 100;
     if (withMargin <= 250) return 250;
@@ -194,9 +224,12 @@ export function calculateDynamicYMax(maxVal: number): number {
 }
 
 /**
- * Generates realistic sample sales orders for preview / demo mode when database has 0 orders or fails connection
+ * Generates realistic sample sales orders for preview / demo mode in development environment only
  */
 export function generateDemoSalesOrders(): RawOrderRecord[] {
+    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'production') {
+        return [];
+    }
     const demo: RawOrderRecord[] = [];
     const now = new Date();
 

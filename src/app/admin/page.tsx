@@ -46,10 +46,59 @@ export default function AdminDashboard() {
         <div style={{ paddingBottom: '60px' }}>
             {/* Page Header */}
             <AdminPageHeader
-                title="Resumen del Ecommerce"
-                description="Métricas reales y rendimiento operativo consolidado de CodeMarket."
+                title="Resumen"
+                description="Métricas reales y rendimiento operativo de CodeMarket."
                 action={
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        {metrics?.isDemoData && (
+                            <span style={{
+                                fontSize: '0.75rem',
+                                background: 'rgba(255, 107, 0, 0.15)',
+                                color: 'var(--robotina-orange)',
+                                padding: '4px 10px',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(255, 107, 0, 0.3)',
+                                fontWeight: 700,
+                            }}>
+                                🛠️ Modo Demo (Desarrollo)
+                            </span>
+                        )}
+                        <Link
+                            href="/admin/pedidos/nuevo"
+                            style={{
+                                padding: '9px 16px',
+                                background: 'var(--gradient-main)',
+                                color: '#FFFFFF',
+                                borderRadius: '10px',
+                                textDecoration: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.86rem',
+                                boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
+                        >
+                            ➕ Crear Pedido Manual
+                        </Link>
+                        <Link
+                            href="/admin/productos/nuevo"
+                            style={{
+                                padding: '9px 16px',
+                                background: 'var(--input-bg)',
+                                border: '1.5px solid var(--glass-border)',
+                                color: 'var(--foreground)',
+                                borderRadius: '10px',
+                                textDecoration: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.86rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
+                        >
+                            📦 Crear Producto
+                        </Link>
                         <Link
                             href="/admin/reportes"
                             style={{
@@ -66,25 +115,7 @@ export default function AdminDashboard() {
                                 gap: '6px',
                             }}
                         >
-                            📊 Ver Reportes por Fechas
-                        </Link>
-                        <Link
-                            href="/admin/productos/nuevo"
-                            style={{
-                                padding: '9px 18px',
-                                background: 'var(--gradient-main)',
-                                color: '#FFFFFF',
-                                borderRadius: '10px',
-                                textDecoration: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.86rem',
-                                boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            ➕ Nuevo Producto
+                            📊 Ver Reportes
                         </Link>
                     </div>
                 }
@@ -101,35 +132,35 @@ export default function AdminDashboard() {
                     title="Ventas"
                     value={metrics ? formatMoney(metrics.paidSales) : 'S/ 0.00'}
                     icon="💵"
-                    subtitle={metrics ? `${metrics.paidSalesTrend.trendLabel} vs anterior` : 'Cargando...'}
+                    subtitle={metrics ? `${metrics.paidOrdersCount} pedidos pagados (${metrics.paidSalesTrend.trendLabel})` : 'Cargando...'}
                     accentColor="#22c55e"
                 />
                 <AdminStatCard
                     title="Pedidos"
                     value={metrics ? metrics.createdOrdersCount.toString() : '0'}
                     icon="📦"
-                    subtitle={metrics ? `${metrics.createdOrdersTrend.trendLabel} vs anterior` : 'Cargando...'}
+                    subtitle={metrics ? `${metrics.diffCreatedOrders >= 0 ? '+' : ''}${metrics.diffCreatedOrders} pedidos vs anterior (${metrics.createdOrdersTrend.trendLabel})` : 'Cargando...'}
                     accentColor="#3b82f6"
                 />
                 <AdminStatCard
                     title="Ticket Promedio"
                     value={metrics ? formatMoney(metrics.averageTicket) : 'S/ 0.00'}
                     icon="📊"
-                    subtitle={metrics ? `${metrics.avgTicketTrend.trendLabel} vs anterior` : 'Cargando...'}
+                    subtitle="Valor promedio por pedido pagado"
                     accentColor="#ff6b00"
                 />
                 <AdminStatCard
                     title="Tasa de Pago"
-                    value={metrics ? `${Math.round(metrics.paymentRate)}%` : '0%'}
+                    value={metrics ? (metrics.createdOrdersCount > 0 ? `${Math.round(metrics.paymentRate)}%` : '—') : '—'}
                     icon="🎯"
-                    subtitle={metrics ? `${metrics.paidOrdersCount} de ${metrics.createdOrdersCount} pagados` : 'Cargando...'}
+                    subtitle={metrics ? (metrics.createdOrdersCount > 0 ? `${metrics.paidOrdersCount} de ${metrics.createdOrdersCount} pagados` : '0 pedidos') : 'Cargando...'}
                     accentColor="#8b5cf6"
                 />
                 <AdminStatCard
                     title="Stock Bajo"
                     value={metrics ? metrics.lowStockCount.toString() : '0'}
                     icon="⚠️"
-                    subtitle="Unidades <= 5"
+                    subtitle="Productos/variantes bajo el mínimo"
                     accentColor="#ef4444"
                 />
             </div>
@@ -182,7 +213,7 @@ export default function AdminDashboard() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', marginBottom: '6px' }}>
                                         <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>{pm.name}</span>
                                         <span style={{ fontWeight: 800, color: 'var(--robotina-orange)' }}>
-                                            {pm.count === 1 ? '1 pedido' : `${pm.count} pedidos`} · {pm.percentage}%
+                                            {pm.count === 1 ? '1 pago' : `${pm.count} pagos`} · {pm.percentage}%
                                         </span>
                                     </div>
                                     <div style={{ height: '7px', background: 'var(--input-bg)', borderRadius: '4px', overflow: 'hidden' }}>
@@ -250,7 +281,7 @@ export default function AdminDashboard() {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                 gap: '20px',
             }}>
-                {/* Pedidos Recientes */}
+                {/* Pedidos Recientes con Dual Badges */}
                 <div style={{
                     background: 'var(--card-bg)',
                     border: '1.5px solid var(--glass-border)',
@@ -299,11 +330,12 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <strong style={{ color: 'var(--foreground)', fontWeight: 800 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                                        <strong style={{ color: 'var(--foreground)', fontWeight: 800, marginRight: '4px' }}>
                                             {formatMoney(ord.total_amount, ord.currency)}
                                         </strong>
                                         <AdminStatusBadge status={ord.payment_status} />
+                                        <AdminStatusBadge status={ord.fulfillment_status} />
                                     </div>
                                 </div>
                             ))}
@@ -352,7 +384,12 @@ export default function AdminDashboard() {
                                         <div style={{ fontWeight: 800, color: 'var(--foreground)' }}>
                                             {prod.name}
                                         </div>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>
+                                        {prod.variantName && (
+                                            <div style={{ color: 'var(--robotina-orange)', fontSize: '0.76rem', fontWeight: 700 }}>
+                                                {prod.variantName}
+                                            </div>
+                                        )}
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>
                                             {prod.sku}
                                         </div>
                                     </div>
