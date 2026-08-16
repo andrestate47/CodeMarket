@@ -182,7 +182,7 @@ export default function AdminDashboard() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', marginBottom: '6px' }}>
                                         <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>{pm.name}</span>
                                         <span style={{ fontWeight: 800, color: 'var(--robotina-orange)' }}>
-                                            {pm.count} pedidos · {pm.percentage}%
+                                            {pm.count === 1 ? '1 pedido' : `${pm.count} pedidos`} · {pm.percentage}%
                                         </span>
                                     </div>
                                     <div style={{ height: '7px', background: 'var(--input-bg)', borderRadius: '4px', overflow: 'hidden' }}>
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', marginBottom: '6px' }}>
                                         <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>{ch.name}</span>
                                         <span style={{ fontWeight: 800, color: '#22c55e' }}>
-                                            {ch.count} pedidos · {ch.percentage}%
+                                            {ch.count === 1 ? '1 pedido' : `${ch.count} pedidos`} · {ch.percentage}%
                                         </span>
                                     </div>
                                     <div style={{ height: '7px', background: 'var(--input-bg)', borderRadius: '4px', overflow: 'hidden' }}>

@@ -41,7 +41,7 @@ export default function SalesChart({
 
     // Format Y tick label based on metric
     const formatYTick = (val: number): string => {
-        if (metric === 'orders') return `${Math.round(val)}`;
+        if (metric === 'orders') return val % 1 === 0 ? `${Math.round(val)}` : val.toFixed(1);
         return formatMoney(val);
     };
 
