@@ -49,14 +49,13 @@ export default function SalesChart({
         return formatMoney(val);
     };
 
-    // Format Period Average Label based on metric & granularity
+    // Format Period Average Label based on metric
     const formatAverageLabel = (avg: number): string => {
-        const label = getAverageLabel(granularity, metric);
         if (metric === 'orders') {
             const formatted = avg % 1 === 0 ? avg.toString() : (Math.round(avg * 100) / 100).toString();
-            return `${label}: ${formatted} pedidos`;
+            return `Promedio: ${formatted} pedidos`;
         }
-        return `${label}: ${formatMoney(avg)}`;
+        return `Promedio: ${formatMoney(avg)}`;
     };
 
     // SVG Dimensions
@@ -94,41 +93,41 @@ export default function SalesChart({
             marginTop: '16px',
         }}>
             {/* SVG Chart */}
-            <div style={{ width: '100%', overflowX: 'auto' }}>
+            <div style={{ overflowX: 'auto', position: 'relative' }}>
                 <svg
                     viewBox={`0 0 ${containerWidth} ${height}`}
-                    style={{ width: '100%', height: 'auto', minWidth: '600px', display: 'block' }}
+                    style={{ width: '100%', height: 'auto', display: 'block' }}
                 >
-                    {/* Y Gridlines and Ticks */}
-                    {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
-                        const y = padding.top + chartHeight * (1 - ratio);
-                        const tickVal = yMax * ratio;
+                    {/* Horizontal Grid Lines */}
+                    {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
+                        const yVal = yMax * (1 - pct);
+                        const yPos = padding.top + chartHeight * pct;
                         return (
-                            <g key={ratio}>
+                            <g key={pct}>
                                 <line
                                     x1={padding.left}
-                                    y1={y}
+                                    y1={yPos}
                                     x2={padding.left + chartWidth}
-                                    y2={y}
+                                    y2={yPos}
                                     stroke="var(--glass-border)"
-                                    strokeDasharray="3 3"
+                                    strokeDasharray={pct === 1 ? 'none' : '4 4'}
                                     strokeWidth="1"
                                 />
                                 <text
-                                    x={padding.left - 10}
-                                    y={y + 4}
+                                    x={padding.left - 12}
+                                    y={yPos + 4}
                                     textAnchor="end"
                                     fill="var(--text-muted)"
                                     fontSize="11"
                                     fontWeight="600"
                                 >
-                                    {formatYTick(tickVal)}
+                                    {formatYTick(yVal)}
                                 </text>
                             </g>
                         );
                     })}
 
-                    {/* Period Average Line */}
+                    {/* Period Average Horizontal Line & Badge */}
                     {periodAverage > 0 && (
                         <g>
                             <line
@@ -140,9 +139,18 @@ export default function SalesChart({
                                 strokeWidth="1.8"
                                 strokeDasharray="5 4"
                             />
+                            <rect
+                                x={padding.left + chartWidth - 148}
+                                y={avgY - 17}
+                                width="144"
+                                height="18"
+                                rx="4"
+                                fill="#18181b"
+                                fillOpacity="0.88"
+                            />
                             <text
-                                x={padding.left + chartWidth - 6}
-                                y={avgY - 6}
+                                x={padding.left + chartWidth - 8}
+                                y={avgY - 4}
                                 textAnchor="end"
                                 fill="#FF8A00"
                                 fontSize="11"
