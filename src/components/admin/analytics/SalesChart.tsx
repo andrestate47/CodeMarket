@@ -68,10 +68,12 @@ export default function SalesChart({
     const barWidth = Math.max(Math.min(stepX * 0.55, 32), 6);
 
     // Position calculation for period average horizontal line
-    const avgY = padding.top + chartHeight - Math.min((periodAverage / yMax), 1) * chartHeight;
+    const safeYMax = yMax > 0 ? yMax : 1;
+    const avgRatio = Math.min(Math.max((periodAverage || 0) / safeYMax, 0), 1);
+    const avgY = isNaN(avgRatio) ? padding.top + chartHeight : padding.top + chartHeight - avgRatio * chartHeight;
 
     // Hovered point details
-    const hoveredPoint = hoveredIdx !== null && data[hoveredIdx] ? data[hoveredIdx] : null;
+    const hoveredPoint = hoveredIdx !== null && data && data[hoveredIdx] ? data[hoveredIdx] : null;
     const hoveredX = hoveredIdx !== null ? padding.left + (hoveredIdx + 0.5) * stepX : 0;
 
     const metricLegendName = {
@@ -128,7 +130,7 @@ export default function SalesChart({
                     })}
 
                     {/* Period Average Horizontal Line & Badge */}
-                    {periodAverage > 0 && (
+                    {periodAverage > 0 && !isNaN(avgY) && (
                         <g>
                             <line
                                 x1={padding.left}
@@ -163,8 +165,10 @@ export default function SalesChart({
 
                     {/* Vertical Bars */}
                     {data.map((p, idx) => {
-                        const val = metric === 'sales' ? p.netSales : metric === 'orders' ? p.paidOrdersCount : metric === 'avg_ticket' ? p.avgTicket : p.refunds;
-                        const barHeight = Math.min((val / yMax) * chartHeight, chartHeight);
+                        const rawVal = metric === 'sales' ? p.netSales : metric === 'orders' ? p.paidOrdersCount : metric === 'avg_ticket' ? p.avgTicket : p.refunds;
+                        const val = isNaN(rawVal) || !isFinite(rawVal) ? 0 : rawVal;
+                        const barRatio = safeYMax > 0 ? Math.min(Math.max(val / safeYMax, 0), 1) : 0;
+                        const barHeight = barRatio * chartHeight;
                         const x = padding.left + idx * stepX + (stepX - barWidth) / 2;
                         const y = padding.top + chartHeight - barHeight;
                         const isHovered = hoveredIdx === idx;
