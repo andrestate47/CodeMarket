@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { PresetPeriod, MetricType, getLimaDateKey } from './salesAnalyticsUtils';
+import { PresetPeriod, MetricType, getLimaDateKey, getGranularity, getPeriodRange } from './salesAnalyticsUtils';
 import { DashboardMetrics, getDashboardMetrics } from '@/lib/services/dashboardService';
 
 import PeriodSelector from './PeriodSelector';
@@ -60,6 +60,11 @@ export default function SalesPerformance({
     const activeMetrics = isControlled ? propsMetrics : internalMetrics;
     const activeLoading = isControlled ? Boolean(propsLoading) : internalLoading;
     const activeError = isControlled ? (propsError || null) : internalError;
+
+    const granularity = useMemo(() => {
+        const { startDate, endDate } = getPeriodRange(activePreset, activeCustomStart, activeCustomEnd);
+        return getGranularity(activePreset, startDate, endDate);
+    }, [activePreset, activeCustomStart, activeCustomEnd]);
 
     const fetchInternalMetrics = useCallback(async () => {
         if (isControlled) return;
@@ -207,7 +212,8 @@ export default function SalesPerformance({
                             data={activeMetrics.dailyPoints}
                             metric={activeMetric}
                             periodAverage={activeMetrics.periodAverage}
-                            height={290}
+                            granularity={granularity}
+                            height={265}
                         />
                     )}
                 </>

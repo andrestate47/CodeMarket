@@ -4,8 +4,10 @@ import React, { useState, useMemo } from 'react';
 import {
     DailyAnalyticsPoint,
     MetricType,
+    TimeGranularity,
     calculateDynamicYMax,
     formatShortDateLabel,
+    getAverageLabel,
 } from './salesAnalyticsUtils';
 import { formatMoney } from '@/lib/money';
 import SalesTooltip from './SalesTooltip';
@@ -15,13 +17,15 @@ interface SalesChartProps {
     metric: MetricType;
     periodAverage: number;
     height?: number;
+    granularity?: TimeGranularity;
 }
 
 export default function SalesChart({
     data,
     metric,
     periodAverage,
-    height = 280,
+    height = 265,
+    granularity = 'day',
 }: SalesChartProps) {
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
@@ -45,13 +49,14 @@ export default function SalesChart({
         return formatMoney(val);
     };
 
-    // Format Period Average Label based on metric
+    // Format Period Average Label based on metric & granularity
     const formatAverageLabel = (avg: number): string => {
+        const label = getAverageLabel(granularity, metric);
         if (metric === 'orders') {
-            const formatted = avg % 1 === 0 ? avg.toString() : avg.toFixed(1);
-            return `Promedio: ${formatted} pedidos`;
+            const formatted = avg % 1 === 0 ? avg.toString() : (Math.round(avg * 100) / 100).toString();
+            return `${label}: ${formatted} pedidos`;
         }
-        return `Promedio: ${formatMoney(avg)}`;
+        return `${label}: ${formatMoney(avg)}`;
     };
 
     // SVG Dimensions
@@ -243,7 +248,7 @@ export default function SalesChart({
                         borderStyle: 'dashed',
                         display: 'inline-block',
                     }} />
-                    <span>─ Promedio diario</span>
+                    <span>─ {getAverageLabel(granularity, metric)}</span>
                 </div>
             </div>
         </div>

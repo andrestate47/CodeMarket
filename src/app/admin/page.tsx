@@ -132,7 +132,7 @@ export default function AdminDashboard() {
                     title="Ventas"
                     value={metrics ? formatMoney(metrics.paidSales) : 'S/ 0.00'}
                     icon="💵"
-                    subtitle={metrics ? `${metrics.paidOrdersCount} pedidos pagados (${metrics.paidSalesTrend.trendLabel})` : 'Cargando...'}
+                    subtitle={metrics ? `${metrics.diffPaidSales >= 0 ? '+' : ''}${formatMoney(metrics.diffPaidSales)} vs anterior (${metrics.paidSalesTrend.trendLabel})` : 'Cargando...'}
                     accentColor="#22c55e"
                 />
                 <AdminStatCard

@@ -152,6 +152,29 @@ export function getGranularity(preset: PresetPeriod, startDate: Date, endDate: D
 }
 
 /**
+ * Returns dynamic average line label based on granularity and active metric
+ */
+export function getAverageLabel(granularity: TimeGranularity, metric: MetricType): string {
+    const isTicket = metric === 'avg_ticket';
+
+    if (granularity === 'hour') {
+        if (isTicket) return 'Ticket promedio por franja';
+        return 'Promedio por franja';
+    }
+    if (granularity === 'week') {
+        if (isTicket) return 'Ticket promedio semanal';
+        return 'Promedio semanal';
+    }
+    if (granularity === 'month') {
+        if (isTicket) return 'Ticket promedio mensual';
+        return 'Promedio mensual';
+    }
+
+    if (isTicket) return 'Ticket promedio diario';
+    return 'Promedio diario';
+}
+
+/**
  * Safe percentage comparison vs previous period with exact rules for zero cases.
  */
 export function calculateComparison(currentVal: number, prevVal: number): PeriodComparison {
