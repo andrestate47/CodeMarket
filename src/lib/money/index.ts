@@ -1,24 +1,29 @@
-/**
- * Money utilities for CodeMarket
- * Formats numbers, strings, cents or soles cleanly with consistent currency symbol (S/).
- */
+export const minorUnitsToDecimal = (amount: number | undefined | null): number => {
+    if (amount === undefined || amount === null || isNaN(amount)) return 0;
+    const isCents = Number.isInteger(amount) && Math.abs(amount) >= 100;
+    return isCents ? amount / 100 : amount;
+};
 
 export const formatMoney = (val: number | string | undefined | null, currency: string = 'PEN'): string => {
     if (val === undefined || val === null) return 'S/ 0.00';
     const symbol = currency === 'USD' ? '$' : 'S/';
 
+    const formatNum = (num: number) => {
+        return num.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
+    };
+
     if (typeof val === 'string') {
         const clean = parseFloat(val.replace(/[^0-9.]/g, ''));
         if (isNaN(clean)) return `${symbol} 0.00`;
-        return `${symbol} ${clean.toFixed(2)}`;
+        return `${symbol} ${formatNum(clean)}`;
     }
 
     if (typeof val === 'number') {
-        // Integer amount >= 100 represents DB cents (e.g., 4900 = S/ 49.00).
-        // Float or amount < 100 represents Soles (e.g. 49 = S/ 49.00 or 49.90 = S/ 49.90).
-        const isCents = Number.isInteger(val) && val >= 100;
-        const soles = isCents ? val / 100 : val;
-        return `${symbol} ${soles.toFixed(2)}`;
+        const soles = minorUnitsToDecimal(val);
+        return `${symbol} ${formatNum(soles)}`;
     }
 
     return `${symbol} 0.00`;

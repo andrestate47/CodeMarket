@@ -6,22 +6,11 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { formatMoney, parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
+import CustomerSearchAutocomplete, { CustomerOption } from '@/components/admin/CustomerSearchAutocomplete';
 import { createManualOrderAction } from '@/modules/orders/actions';
 import { fetchCatalogProducts } from '@/modules/catalog/queries';
 
-interface CustomerOption {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    document_type?: string;
-    document_number?: string;
-    address_line?: string;
-    district?: string;
-    province?: string;
-    department?: string;
-    reference?: string;
-}
+export type { CustomerOption };
 
 interface ProductVariantOption {
     id: string;
@@ -62,8 +51,6 @@ export default function NewManualOrderPage() {
 
     // ─── STEP 1: CLIENTE STATE & MODES ─────────────────────────────
     const [customerMode, setCustomerMode] = useState<'search' | 'new' | 'guest'>('search');
-    const [customerSearchQuery, setCustomerSearchQuery] = useState('');
-    const [customerResults, setCustomerResults] = useState<CustomerOption[]>([]);
     const [selectedCustomer, setSelectedCustomer] = useState<CustomerOption | null>(null);
 
     // Form inputs
@@ -114,25 +101,6 @@ export default function NewManualOrderPage() {
     const [customerNotes, setCustomerNotes] = useState('');
     const [internalNotes, setInternalNotes] = useState('');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-    // ─── CUSTOMER SEARCH DEBOUNCE ────────────────────────────────────
-    useEffect(() => {
-        if (!customerSearchQuery.trim() || customerMode !== 'search') {
-            return;
-        }
-
-        const handler = setTimeout(async () => {
-            const { data } = await supabase
-                .from('customers')
-                .select('*')
-                .or(`name.ilike.%${customerSearchQuery}%,email.ilike.%${customerSearchQuery}%,phone.ilike.%${customerSearchQuery}%`)
-                .limit(5);
-
-            setCustomerResults(data || []);
-        }, 250);
-
-        return () => clearTimeout(handler);
-    }, [customerSearchQuery, customerMode]);
 
     // ─── PRODUCT SEARCH DEBOUNCE (CATÁLOGO + SUPABASE DB) ────────────
     useEffect(() => {
@@ -223,7 +191,6 @@ export default function NewManualOrderPage() {
         setCustPhone(c.phone || '');
         setCustDocType(c.document_type || 'DNI');
         setCustDocNum(c.document_number || '');
-        setCustomerResults([]);
 
         // Check if customer has known address
         const hasAddr = !!(c.address_line || c.district || c.province);
@@ -452,7 +419,7 @@ export default function NewManualOrderPage() {
                         <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
                             <button
                                 type="button"
-                                onClick={() => { setCustomerMode('search'); setSelectedCustomer(null); }}
+                                onClick={() => { setCustomerMode('search'); setSelectedCustomer(null); setCustName(''); setCustEmail(''); setCustPhone(''); }}
                                 style={{
                                     padding: '8px 14px',
                                     borderRadius: '8px',
@@ -468,7 +435,7 @@ export default function NewManualOrderPage() {
                             </button>
                             <button
                                 type="button"
-                                onClick={() => { setCustomerMode('new'); setSelectedCustomer(null); setCustName(''); setCustEmail(''); setCustPhone(''); }}
+                                onClick={() => { setCustomerMode('new'); setSelectedCustomer(null); setCustName(''); setCustEmail(''); setCustPhone(''); setCustDocNum(''); }}
                                 style={{
                                     padding: '8px 14px',
                                     borderRadius: '8px',
@@ -480,94 +447,35 @@ export default function NewManualOrderPage() {
                                     cursor: 'pointer',
                                 }}
                             >
-                                + Crear Nuevo Cliente
+                                ➕ Crear Nuevo Cliente
                             </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setCustomerMode('guest');
+                        </div>
+
+                        {/* Search Mode with Autocomplete and Prediction */}
+                        {customerMode === 'search' && (
+                            <CustomerSearchAutocomplete
+                                label="Buscador Inteligente de Clientes"
+                                placeholder="Escribe nombre, DNI/RUC, teléfono o correo para buscar..."
+                                selectedCustomer={selectedCustomer}
+                                onSelectCustomer={handleSelectCustomer}
+                                onClearSelected={() => {
                                     setSelectedCustomer(null);
                                     setCustName('');
                                     setCustEmail('');
                                     setCustPhone('');
+                                    setCustDocNum('');
+                                    setHasKnownAddress(false);
                                 }}
-                                style={{
-                                    padding: '8px 14px',
-                                    borderRadius: '8px',
-                                    border: customerMode === 'guest' ? '1.5px solid var(--robotina-orange)' : '1.5px solid var(--glass-border)',
-                                    background: customerMode === 'guest' ? 'rgba(249, 115, 22, 0.15)' : 'var(--input-bg)',
-                                    color: customerMode === 'guest' ? 'var(--robotina-orange)' : 'var(--text-muted)',
-                                    fontSize: '0.84rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
+                                onCreateNewCustomerClick={(suggestedName) => {
+                                    setCustomerMode('new');
+                                    setSelectedCustomer(null);
+                                    if (suggestedName) setCustName(suggestedName);
+                                    setCustEmail('');
+                                    setCustPhone('');
                                 }}
-                            >
-                                ⚡ Continuar sin registrar cliente
-                            </button>
-                        </div>
-
-                        {/* Mode: Search Customer */}
-                        {customerMode === 'search' && (
-                            <div style={{ position: 'relative', marginBottom: '14px' }}>
-                                <input
-                                    type="text"
-                                    value={customerSearchQuery}
-                                    onChange={e => {
-                                        const val = e.target.value;
-                                        setCustomerSearchQuery(val);
-                                        if (!val.trim()) setCustomerResults([]);
-                                    }}
-                                    placeholder="Buscar cliente existente por nombre, correo o teléfono..."
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px 14px',
-                                        background: 'var(--input-bg)',
-                                        border: '1.5px solid var(--glass-border)',
-                                        borderRadius: '8px',
-                                        color: 'var(--input-text)',
-                                        fontSize: '0.88rem',
-                                    }}
-                                />
-
-                                {customerResults.length > 0 && (
-                                    <div style={{
-                                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 30,
-                                        background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', marginTop: '4px',
-                                        maxHeight: '200px', overflowY: 'auto', boxShadow: '0 8px 24px rgba(0,0,0,0.15)'
-                                    }}>
-                                        {customerResults.map(c => (
-                                            <div
-                                                key={c.id}
-                                                onClick={() => handleSelectCustomer(c)}
-                                                style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--glass-border)' }}
-                                            >
-                                                <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{c.name}</div>
-                                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{c.email} • {c.phone || 'Sin teléfono'}</div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Customer Info Badge if Selected */}
-                        {selectedCustomer && (
-                            <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1.5px solid #22c55e', borderRadius: '10px', padding: '12px 16px', marginBottom: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: 800 }}>✓ CLIENTE SELECCIONADO</span>
-                                    <div style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.95rem' }}>{selectedCustomer.name}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{selectedCustomer.email} • {selectedCustomer.phone || 'Sin tel'}</div>
-                                </div>
-                                {hasKnownAddress && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleApplyKnownAddress(selectedCustomer)}
-                                        style={{ padding: '6px 12px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer' }}
-                                    >
-                                        📍 Usar dirección habitual
-                                    </button>
-                                )}
-                            </div>
+                                hasKnownAddress={hasKnownAddress}
+                                onApplyKnownAddress={handleApplyKnownAddress}
+                            />
                         )}
 
                         {/* Customer Input Fields */}

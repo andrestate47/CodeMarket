@@ -8,6 +8,8 @@ import AdminTopbar from '@/components/admin/AdminTopbar';
 import AdminMobileDrawer from '@/components/admin/AdminMobileDrawer';
 import AdminBreadcrumbs from '@/components/admin/AdminBreadcrumbs';
 
+import { hasAdminPanelAccess } from '@/lib/auth/permissions';
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -42,16 +44,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     return;
                 }
 
-                // Check profile role
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role, full_name, email')
-                    .eq('id', session.user.id)
-                    .single();
+                // Concurrently fetch profile role and pending orders count
+                const [profileRes, pendingOrdersRes] = await Promise.all([
+                    supabase
+                        .from('profiles')
+                        .select('role, full_name, email')
+                        .eq('id', session.user.id)
+                        .single(),
+                    supabase
+                        .from('orders')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('payment_status', 'pending')
+                ]);
+
+                const profile = profileRes.data;
+                const pendingCount = pendingOrdersRes.count || 0;
 
                 const role = profile?.role || (session.user.user_metadata?.role as string) || 'customer';
 
-                if (role !== 'admin') {
+                if (!hasAdminPanelAccess(role)) {
                     if (isMounted) {
                         router.push('/dashboard');
                     }
@@ -61,15 +72,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 if (isMounted) {
                     setAdminEmail(profile?.email || session.user.email || 'admin@codemarket.com');
                     setAdminName(profile?.full_name || session.user.user_metadata?.full_name || 'Administrador');
+                    setPendingOrdersCount(pendingCount);
                     setAuthorized(true);
-
-                    // Fetch pending orders count for badge
-                    const { count } = await supabase
-                        .from('orders')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('payment_status', 'pending');
-
-                    setPendingOrdersCount(count || 0);
                 }
             } catch {
                 if (isMounted) {
@@ -160,7 +164,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 />
 
                 <main style={{ flex: 1, padding: '24px 32px 48px 32px', overflowY: 'auto' }}>
-                    <AdminBreadcrumbs />
                     {children}
                 </main>
             </div>

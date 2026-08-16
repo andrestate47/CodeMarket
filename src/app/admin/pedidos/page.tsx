@@ -195,32 +195,12 @@ export default function AdminOrdersPage() {
             {/* Header & Metrics */}
             <AdminPageHeader
                 title="Gestión de Pedidos"
-                description="Centro operativo de ventas y procesamiento de pedidos de CodeMarket."
                 action={
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button
-                            onClick={handleExportCSV}
-                            disabled={isPending}
-                            style={{
-                                padding: '10px 16px',
-                                background: 'var(--input-bg)',
-                                border: '1.5px solid var(--glass-border)',
-                                color: 'var(--foreground)',
-                                borderRadius: '10px',
-                                fontSize: '0.88rem',
-                                fontWeight: 600,
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            📥 Exportar CSV
-                        </button>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <Link
                             href="/admin/pedidos/nuevo"
                             style={{
-                                padding: '10px 18px',
+                                padding: '8px 16px',
                                 background: 'var(--gradient-main)',
                                 color: 'white',
                                 borderRadius: '10px',
@@ -233,8 +213,27 @@ export default function AdminOrdersPage() {
                                 gap: '6px',
                             }}
                         >
-                            + Nuevo pedido
+                            + Pedido manual
                         </Link>
+                        <button
+                            onClick={handleExportCSV}
+                            disabled={isPending}
+                            style={{
+                                padding: '8px 14px',
+                                background: 'var(--input-bg)',
+                                border: '1.5px solid var(--glass-border)',
+                                color: 'var(--foreground)',
+                                borderRadius: '10px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
+                        >
+                            📥 Exportar CSV
+                        </button>
                     </div>
                 }
             />
@@ -261,7 +260,7 @@ export default function AdminOrdersPage() {
                 </div>
             )}
 
-            {/* METRIC CARDS */}
+            {/* METRIC CARDS FILTERS */}
             <div
                 style={{
                     display: 'grid',
@@ -270,34 +269,172 @@ export default function AdminOrdersPage() {
                     marginBottom: '24px',
                 }}
             >
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>TOTAL</span>
+                {/* TOTAL */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setOrderStatus('all');
+                        setPaymentStatus('all');
+                        setFulfillmentStatus('all');
+                    }}
+                    style={{
+                        background: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? 'rgba(255, 107, 0, 0.12)' : 'var(--card-bg)',
+                        border: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? '2px solid var(--robotina-orange)' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? '0 4px 14px rgba(255, 107, 0, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? 'translateY(-2px)' : 'none',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700 }}>TOTAL</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--foreground)' }}>{metrics.total}</span>
-                </div>
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#2563eb', display: 'block', fontWeight: 600 }}>NUEVOS</span>
+                </button>
+
+                {/* NUEVOS */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setOrderStatus('new');
+                        setPaymentStatus('all');
+                        setFulfillmentStatus('all');
+                    }}
+                    style={{
+                        background: orderStatus === 'new' ? 'rgba(37, 99, 235, 0.15)' : 'var(--card-bg)',
+                        border: orderStatus === 'new' ? '2px solid #2563eb' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: orderStatus === 'new' ? '0 4px 14px rgba(37, 99, 235, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: orderStatus === 'new' ? 'translateY(-2px)' : 'none',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: '#2563eb', display: 'block', fontWeight: 700 }}>NUEVOS</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563eb' }}>{metrics.new}</span>
-                </div>
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#d97706', display: 'block', fontWeight: 600 }}>PENDIENTES PAGO</span>
+                </button>
+
+                {/* PENDIENTES PAGO */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setPaymentStatus('pending');
+                        setOrderStatus('all');
+                        setFulfillmentStatus('all');
+                    }}
+                    style={{
+                        background: paymentStatus === 'pending' ? 'rgba(217, 119, 6, 0.15)' : 'var(--card-bg)',
+                        border: paymentStatus === 'pending' ? '2px solid #d97706' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: paymentStatus === 'pending' ? '0 4px 14px rgba(217, 119, 6, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: paymentStatus === 'pending' ? 'translateY(-2px)' : 'none',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: '#d97706', display: 'block', fontWeight: 700 }}>PENDIENTES PAGO</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#d97706' }}>{metrics.pendingPayment}</span>
-                </div>
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'block', fontWeight: 600 }}>PAGADOS</span>
+                </button>
+
+                {/* PAGADOS */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setPaymentStatus('paid');
+                        setOrderStatus('all');
+                        setFulfillmentStatus('all');
+                    }}
+                    style={{
+                        background: paymentStatus === 'paid' ? 'rgba(22, 163, 74, 0.15)' : 'var(--card-bg)',
+                        border: paymentStatus === 'paid' ? '2px solid #16a34a' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: paymentStatus === 'paid' ? '0 4px 14px rgba(22, 163, 74, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: paymentStatus === 'paid' ? 'translateY(-2px)' : 'none',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'block', fontWeight: 700 }}>PAGADOS</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#16a34a' }}>{metrics.paid}</span>
-                </div>
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#b45309', display: 'block', fontWeight: 600 }}>PREPARANDO</span>
+                </button>
+
+                {/* PREPARANDO */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFulfillmentStatus('preparing');
+                        setOrderStatus('all');
+                        setPaymentStatus('all');
+                    }}
+                    style={{
+                        background: fulfillmentStatus === 'preparing' ? 'rgba(180, 83, 9, 0.15)' : 'var(--card-bg)',
+                        border: fulfillmentStatus === 'preparing' ? '2px solid #b45309' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: fulfillmentStatus === 'preparing' ? '0 4px 14px rgba(180, 83, 9, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: fulfillmentStatus === 'preparing' ? 'translateY(-2px)' : 'none',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: '#b45309', display: 'block', fontWeight: 700 }}>PREPARANDO</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#b45309' }}>{metrics.preparing}</span>
-                </div>
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#0284c7', display: 'block', fontWeight: 600 }}>ENVIADOS</span>
+                </button>
+
+                {/* ENVIADOS */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFulfillmentStatus('shipped');
+                        setOrderStatus('all');
+                        setPaymentStatus('all');
+                    }}
+                    style={{
+                        background: fulfillmentStatus === 'shipped' ? 'rgba(2, 132, 199, 0.15)' : 'var(--card-bg)',
+                        border: fulfillmentStatus === 'shipped' ? '2px solid #0284c7' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: fulfillmentStatus === 'shipped' ? '0 4px 14px rgba(2, 132, 199, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        transform: fulfillmentStatus === 'shipped' ? 'translateY(-2px)' : 'none',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: '#0284c7', display: 'block', fontWeight: 700 }}>ENVIADOS</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>{metrics.shipped}</span>
-                </div>
-                <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '12px', padding: '14px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#059669', display: 'block', fontWeight: 600 }}>ENTREGADOS</span>
+                </button>
+
+                {/* ENTREGADOS */}
+                <button
+                    type="button"
+                    onClick={() => {
+                        setFulfillmentStatus('delivered');
+                        setOrderStatus('all');
+                        setPaymentStatus('all');
+                    }}
+                    style={{
+                        background: fulfillmentStatus === 'delivered' ? 'rgba(5, 150, 105, 0.15)' : 'var(--card-bg)',
+                        border: fulfillmentStatus === 'delivered' ? '2px solid #059669' : '1.5px solid var(--glass-border)',
+                        borderRadius: '12px',
+                        padding: '14px',
+                        textAlign: 'center',
+                        boxShadow: fulfillmentStatus === 'delivered' ? '0 4px 14px rgba(5, 150, 105, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                    }}
+                >
+                    <span style={{ fontSize: '0.75rem', color: '#059669', display: 'block', fontWeight: 700 }}>ENTREGADOS</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#059669' }}>{metrics.delivered}</span>
-                </div>
+                </button>
             </div>
 
             {/* SEARCH & FILTERS BAR */}
@@ -482,7 +619,7 @@ export default function AdminOrdersPage() {
                                 fontSize: '0.85rem',
                             }}
                         >
-                            + Crear pedido manual
+                            + Pedido manual
                         </Link>
                     }
                 />
@@ -741,7 +878,7 @@ export default function AdminOrdersPage() {
                     onConfirm={() => {
                         const id = cancelModalOrderId;
                         setCancelModalOrderId(null);
-                        handleSingleStatusUpdate(id, { orderStatus: 'cancelled' });
+                        if (id) handleSingleStatusUpdate(id, { orderStatus: 'cancelled' });
                     }}
                     onCancel={() => setCancelModalOrderId(null)}
                 />

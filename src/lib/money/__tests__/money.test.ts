@@ -1,6 +1,13 @@
-import { formatMoney, parseMoneyToCents } from '../index';
+import { formatMoney, parseMoneyToCents, minorUnitsToDecimal } from '../index';
 
 describe('Money Utilities', () => {
+    test('minorUnitsToDecimal converts cents to decimal soles', () => {
+        expect(minorUnitsToDecimal(4900)).toBe(49);
+        expect(minorUnitsToDecimal(232800)).toBe(2328);
+        expect(minorUnitsToDecimal(49.50)).toBe(49.50);
+        expect(minorUnitsToDecimal(0)).toBe(0);
+    });
+
     test('formatMoney formats PEN cents correctly', () => {
         expect(formatMoney(4900, 'PEN')).toBe('S/ 49.00');
         expect(formatMoney(9999, 'PEN')).toBe('S/ 99.99');

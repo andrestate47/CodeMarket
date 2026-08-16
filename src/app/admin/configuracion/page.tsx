@@ -14,11 +14,31 @@ export default function AdminSettingsPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
                 <Link
+                    href="/admin/configuracion/usuarios"
+                    style={{
+                        padding: '24px',
+                        background: 'var(--card-bg)',
+                        border: '1.5px solid var(--glass-border)',
+                        borderRadius: '16px',
+                        color: 'var(--foreground)',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '10px',
+                        transition: 'var(--transition)',
+                    }}
+                >
+                    <div style={{ fontSize: '2rem' }}>🔐</div>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Usuarios y Permisos</h3>
+                    <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.88rem' }}>Gestión de equipo, asignación de roles (Vendedor, Gerente, Soporte) y control granular de accesos.</p>
+                </Link>
+
+                <Link
                     href="/admin/configuracion/pagos"
                     style={{
                         padding: '24px',
                         background: 'var(--card-bg)',
-                        border: '1px solid var(--glass-border)',
+                        border: '1.5px solid var(--glass-border)',
                         borderRadius: '16px',
                         color: 'var(--foreground)',
                         textDecoration: 'none',
@@ -38,7 +58,7 @@ export default function AdminSettingsPage() {
                     style={{
                         padding: '24px',
                         background: 'var(--card-bg)',
-                        border: '1px solid var(--glass-border)',
+                        border: '1.5px solid var(--glass-border)',
                         borderRadius: '16px',
                         color: 'var(--foreground)',
                         textDecoration: 'none',

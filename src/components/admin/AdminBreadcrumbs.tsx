@@ -16,11 +16,17 @@ const routeLabels: Record<string, string> = {
     configuracion: 'Configuración',
     pagos: 'Métodos de Pago',
     envios: 'Envíos',
+    usuarios: 'Usuarios y Permisos',
     perfil: 'Mi Perfil',
     reviews: 'Reseñas',
 };
 
-export default function AdminBreadcrumbs() {
+interface AdminBreadcrumbsProps {
+    inline?: boolean;
+    marginBottom?: string;
+}
+
+export default function AdminBreadcrumbs({ inline = false, marginBottom = '16px' }: AdminBreadcrumbsProps) {
     const pathname = usePathname();
     const segments = pathname.split('/').filter(Boolean);
 
@@ -29,7 +35,18 @@ export default function AdminBreadcrumbs() {
     }
 
     return (
-        <nav aria-label="Breadcrumb" style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+        <nav
+            aria-label="Breadcrumb"
+            style={{
+                marginBottom: inline ? 0 : marginBottom,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.85rem',
+                color: 'var(--text-muted)',
+                lineHeight: 1,
+            }}
+        >
             {segments.map((segment, idx) => {
                 const href = '/' + segments.slice(0, idx + 1).join('/');
                 const isLast = idx === segments.length - 1;

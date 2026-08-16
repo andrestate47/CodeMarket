@@ -71,6 +71,7 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
             title: 'TIENDA',
             items: [
                 { label: 'Apariencia', href: '/admin/apariencia', icon: '🎨' },
+                { label: 'Usuarios y Permisos', href: '/admin/configuracion/usuarios', icon: '🔐' },
                 { label: 'Métodos de pago', href: '/admin/configuracion/pagos', icon: '💳' },
                 { label: 'Envíos', href: '/admin/configuracion/envios', icon: '🚚' },
                 { label: 'Dominio y SEO', href: '/admin/configuracion/dominio-seo', icon: '🌐' },
