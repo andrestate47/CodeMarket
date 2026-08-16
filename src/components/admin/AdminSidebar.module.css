@@ -2,7 +2,8 @@
   width: 260px;
   min-width: 260px;
   height: 100vh;
-  position: relative;
+  position: sticky;
+  top: 0;
   flex-shrink: 0;
   background: var(--card-bg, #121212);
   border-right: 1.5px solid var(--glass-border, #3f3f46);
