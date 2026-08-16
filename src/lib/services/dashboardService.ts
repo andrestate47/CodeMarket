@@ -110,10 +110,15 @@ export async function getDashboardMetrics(
             .order('created_at', { ascending: false })
             .limit(400);
 
+        const toSoles = (val: number | undefined | null) => {
+            if (!val) return 0;
+            return Number.isInteger(val) && Math.abs(val) >= 100 ? val / 100 : val;
+        };
+
         const dbList = (dbOrders || []).map((o) => ({
             ...o,
-            total_amount: minorUnitsToDecimal(o.total_amount),
-            paid_amount: o.paid_amount ? minorUnitsToDecimal(o.paid_amount) : minorUnitsToDecimal(o.total_amount),
+            total_amount: toSoles(o.total_amount),
+            paid_amount: o.paid_amount ? toSoles(o.paid_amount) : toSoles(o.total_amount),
             payment_method: o.payment_method || 'yape',
             source: o.source || 'online_store',
             currency: o.currency || 'PEN',
@@ -121,8 +126,8 @@ export async function getDashboardMetrics(
 
         const localList = localOrders.map((o) => ({
             ...o,
-            total_amount: minorUnitsToDecimal(o.total_amount),
-            paid_amount: o.paid_amount ? minorUnitsToDecimal(o.paid_amount) : minorUnitsToDecimal(o.total_amount),
+            total_amount: toSoles(o.total_amount),
+            paid_amount: o.paid_amount ? toSoles(o.paid_amount) : toSoles(o.total_amount),
             payment_method: o.payment_method || 'yape',
             source: o.source || 'online_store',
             currency: o.currency || 'PEN',
@@ -189,38 +194,74 @@ export async function getDashboardMetrics(
     const averageTicket = paidOrdersCount > 0 ? paidSales / paidOrdersCount : 0;
     const paymentRate = createdOrdersCount > 0 ? (paidOrdersCount / createdOrdersCount) * 100 : 0;
 
-    // 4. Daily Chart Points Aggregation (America/Lima)
+    // 4. Daily / Hourly Chart Points Aggregation (America/Lima)
     const dailyMap: Record<string, DailyAnalyticsPoint> = {};
-    const currDate = new Date(startDate);
-    while (currDate <= endDate) {
-        const dateKey = getLimaDateKey(currDate);
-        if (!dailyMap[dateKey]) {
-            dailyMap[dateKey] = {
-                dateKey,
-                dateLabel: formatShortDateLabel(dateKey),
-                fullDateLabel: dateKey,
+
+    if (preset === 'today') {
+        const hourSlots = ['04:00', '08:00', '12:00', '16:00', '20:00', '22:00'];
+        hourSlots.forEach((hr) => {
+            dailyMap[hr] = {
+                dateKey: hr,
+                dateLabel: hr,
+                fullDateLabel: `Hoy ${hr} hrs`,
                 grossSales: 0,
                 refunds: 0,
                 netSales: 0,
                 paidOrdersCount: 0,
                 avgTicket: 0,
             };
+        });
+
+        currentOrders.forEach((o) => {
+            const d = new Date(o.created_at);
+            const hrNum = d.getHours();
+            let slotKey = '04:00';
+            if (hrNum >= 21) slotKey = '22:00';
+            else if (hrNum >= 18) slotKey = '20:00';
+            else if (hrNum >= 14) slotKey = '16:00';
+            else if (hrNum >= 10) slotKey = '12:00';
+            else if (hrNum >= 6) slotKey = '08:00';
+
+            const amount = Number(o.paid_amount || o.total_amount || 0);
+            if (o.payment_status === 'paid') {
+                dailyMap[slotKey].grossSales += amount;
+                dailyMap[slotKey].paidOrdersCount += 1;
+            } else if (o.payment_status === 'refunded') {
+                dailyMap[slotKey].refunds += amount;
+            }
+        });
+    } else {
+        const currDate = new Date(startDate);
+        while (currDate <= endDate) {
+            const dateKey = getLimaDateKey(currDate);
+            if (!dailyMap[dateKey]) {
+                dailyMap[dateKey] = {
+                    dateKey,
+                    dateLabel: formatShortDateLabel(dateKey),
+                    fullDateLabel: dateKey,
+                    grossSales: 0,
+                    refunds: 0,
+                    netSales: 0,
+                    paidOrdersCount: 0,
+                    avgTicket: 0,
+                };
+            }
+            currDate.setDate(currDate.getDate() + 1);
         }
-        currDate.setDate(currDate.getDate() + 1);
+
+        currentOrders.forEach((o) => {
+            const dateKey = getLimaDateKey(o.created_at);
+            if (!dailyMap[dateKey]) return;
+
+            const amount = Number(o.paid_amount || o.total_amount || 0);
+            if (o.payment_status === 'paid') {
+                dailyMap[dateKey].grossSales += amount;
+                dailyMap[dateKey].paidOrdersCount += 1;
+            } else if (o.payment_status === 'refunded') {
+                dailyMap[dateKey].refunds += amount;
+            }
+        });
     }
-
-    currentOrders.forEach((o) => {
-        const dateKey = getLimaDateKey(o.created_at);
-        if (!dailyMap[dateKey]) return;
-
-        const amount = Number(o.paid_amount || o.total_amount || 0);
-        if (o.payment_status === 'paid') {
-            dailyMap[dateKey].grossSales += amount;
-            dailyMap[dateKey].paidOrdersCount += 1;
-        } else if (o.payment_status === 'refunded') {
-            dailyMap[dateKey].refunds += amount;
-        }
-    });
 
     let bestDayAmount = 0;
     let bestDayLabel = '—';

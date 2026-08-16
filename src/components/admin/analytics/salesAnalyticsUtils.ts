@@ -203,6 +203,28 @@ export function generateDemoSalesOrders(): RawOrderRecord[] {
     // Past 60 days
     for (let i = 0; i < 60; i++) {
         const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+
+        if (i === 0) {
+            // TODAY: Create 4 realistic paid sales at different hours today
+            const hours = [8, 11, 14, 18];
+            const amounts = [120, 85, 180, 140];
+
+            hours.forEach((hr, idx) => {
+                const orderDate = new Date(date);
+                orderDate.setHours(hr, 15, 0, 0);
+
+                demo.push({
+                    id: `demo-today-order-${idx}`,
+                    order_number: `ORD-HOY-${100 + idx}`,
+                    total_amount: amounts[idx],
+                    paid_amount: amounts[idx],
+                    payment_status: 'paid',
+                    created_at: orderDate.toISOString(),
+                });
+            });
+            continue;
+        }
+
         // Vary order count by day (some days 0, some days 1-4)
         if (i % 6 === 0) continue; // rest day
 

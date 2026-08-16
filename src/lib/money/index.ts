@@ -1,10 +1,9 @@
 export const minorUnitsToDecimal = (amount: number | undefined | null): number => {
     if (amount === undefined || amount === null || isNaN(amount)) return 0;
-    const isCents = Number.isInteger(amount) && Math.abs(amount) >= 100;
-    return isCents ? amount / 100 : amount;
+    return amount;
 };
 
-export const formatMoney = (val: number | string | undefined | null, currency: string = 'PEN'): string => {
+export const formatMoney = (val: number | string | undefined | null, currency: string = 'PEN', isCents: boolean = false): string => {
     if (val === undefined || val === null) return 'S/ 0.00';
     const symbol = currency === 'USD' ? '$' : 'S/';
 
@@ -22,7 +21,7 @@ export const formatMoney = (val: number | string | undefined | null, currency: s
     }
 
     if (typeof val === 'number') {
-        const soles = minorUnitsToDecimal(val);
+        const soles = isCents ? val / 100 : val;
         return `${symbol} ${formatNum(soles)}`;
     }
 
