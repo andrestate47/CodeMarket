@@ -18,7 +18,7 @@ interface NavbarProps {
 }
 
 export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProps) {
-    const { toggleCart, items } = useCart();
+    const { toggleCart, items, itemCount } = useCart();
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
 
@@ -124,7 +124,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
     const rootCategories = categories.filter(c => !c.parent_id);
     const getSubcategories = (parentId: string) => categories.filter(c => c.parent_id === parentId);
 
-    const totalCartCount = items.length;
+    const totalCartCount = itemCount ?? items.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
     return (
         <header className={styles.header}>

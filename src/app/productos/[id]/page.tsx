@@ -342,26 +342,25 @@ export default function ProductPage() {
         }
     };
 
+    const [selectedQty, setSelectedQty] = useState<number>(1);
+    const [selectedVariant, setSelectedVariant] = useState<{ id: string; name: string; price: string } | null>(null);
+
     const originalPriceVal = parseFloat(product.price.replace(/[^0-9.]/g, ''));
-    const finalPriceVal = originalPriceVal * (1 - appliedDiscount);
-    const finalPriceStr = `$${finalPriceVal.toFixed(2)}`;
+    const activePriceStr = selectedVariant?.price || product.price;
+    const activePriceVal = parseFloat(activePriceStr.replace(/[^0-9.]/g, ''));
+    const finalPriceVal = activePriceVal * (1 - appliedDiscount);
+    const finalPriceStr = `S/ ${finalPriceVal.toFixed(2)}`;
 
     const productToCart = {
         ...product,
         price: finalPriceStr,
     };
 
-    const isInCart = items.some(item => item.id === product.id);
+    const isInCart = items.some(item => item.id === product.id && (!selectedVariant || item.selectedVariant?.id === selectedVariant.id));
 
     const handleAddToCart = () => {
-        if (isInCart) {
-            setCartMessage('Este producto digital ya ha sido elegido y está en tu carrito.');
-            setTimeout(() => setCartMessage(null), 3500);
-            toast.warning('Este producto ya está en tu carrito');
-            return;
-        }
-        addItem(productToCart);
-        toast.success(`Añadido al carrito: ${product.title}`);
+        addItem(productToCart, selectedQty, selectedVariant || undefined);
+        toast.success(`Añadido al carrito (${selectedQty}x): ${product.title}`);
         try {
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 99999 });
         } catch (err) {
@@ -544,6 +543,86 @@ export default function ProductPage() {
                         <p className={styles.taxInfo}>
                             📨 <strong>Entrega automática.</strong> Al completar tu compra, recibirás de inmediato un correo oficial con todos los detalles y el acceso seguro a tu plataforma.
                         </p>
+
+                        {product.variants && product.variants.length > 0 && (
+                            <div style={{ marginBottom: '20px' }}>
+                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                                    Opciones Disponibles:
+                                </label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {product.variants.map(v => {
+                                        const isSelected = selectedVariant?.id === v.id;
+                                        return (
+                                            <button
+                                                key={v.id}
+                                                type="button"
+                                                onClick={() => setSelectedVariant(isSelected ? null : v)}
+                                                style={{
+                                                    background: isSelected ? 'rgba(255, 107, 0, 0.15)' : 'var(--background)',
+                                                    border: isSelected ? '2px solid var(--robotina-orange)' : '1px solid var(--glass-border)',
+                                                    color: isSelected ? 'var(--robotina-orange)' : 'var(--foreground)',
+                                                    borderRadius: '8px',
+                                                    padding: '8px 14px',
+                                                    fontWeight: 700,
+                                                    fontSize: '0.85rem',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.2s ease'
+                                                }}
+                                            >
+                                                {v.name} {v.price ? `(${v.price})` : ''}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                                Cantidad:
+                            </label>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', background: 'var(--background)', border: '1px solid var(--glass-border)', borderRadius: '10px', padding: '4px 8px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedQty(prev => Math.max(1, prev - 1))}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--foreground)',
+                                        width: '32px',
+                                        height: '32px',
+                                        fontSize: '1.2rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        borderRadius: '6px'
+                                    }}
+                                    aria-label="Restar cantidad"
+                                >
+                                    −
+                                </button>
+                                <span style={{ fontSize: '1.1rem', fontWeight: 900, minWidth: '24px', textAlign: 'center', color: 'var(--foreground)' }}>
+                                    {selectedQty}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedQty(prev => prev + 1)}
+                                    style={{
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--foreground)',
+                                        width: '32px',
+                                        height: '32px',
+                                        fontSize: '1.2rem',
+                                        fontWeight: 800,
+                                        cursor: 'pointer',
+                                        borderRadius: '6px'
+                                    }}
+                                    aria-label="Sumar cantidad"
+                                >
+                                    +
+                                </button>
+                            </div>
+                        </div>
 
                         <div className={styles.divider}></div>
 

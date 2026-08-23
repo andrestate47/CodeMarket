@@ -37,7 +37,7 @@ export default function CheckoutPage() {
             customerPhone: formData.phone,
             paymentMethod,
             notes: formData.notes,
-            items: items.map(i => ({ productId: i.id, quantity: 1 })),
+            items: items.map(i => ({ productId: i.id, quantity: i.quantity || 1 })),
         };
 
         const result = await processCheckoutAction(checkoutPayload);

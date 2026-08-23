@@ -2,13 +2,13 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { useCart } from '@/context/CartContext';
+import { useCart, parseItemPrice } from '@/context/CartContext';
 import { formatMoney } from '@/lib/money';
 import styles from './CartDrawer.module.css';
 import { useRouter } from 'next/navigation';
 
 export default function CartDrawer() {
-    const { items, isOpen, toggleCart, removeItem, total } = useCart();
+    const { items, isOpen, toggleCart, removeItem, updateQuantity, total, itemCount } = useCart();
     const router = useRouter();
 
     const handleCheckout = () => {
@@ -28,7 +28,7 @@ export default function CartDrawer() {
                     <div className={styles.headerTitleRow}>
                         <span className={styles.headerIcon}>🛒</span>
                         <h2 className={styles.title}>Tu Carrito</h2>
-                        <span className={styles.badgeCount}>{items.length}</span>
+                        <span className={styles.badgeCount}>{itemCount}</span>
                     </div>
                     <button
                         className={styles.closeBtn}
@@ -52,7 +52,10 @@ export default function CartDrawer() {
                     ) : (
                         <div className={styles.itemsList}>
                             {items.map((item) => {
-                                const priceNum = (item as unknown as { price_amount?: number }).price_amount || parseFloat(String(item.price).replace(/[^0-9.]/g, '')) || 0;
+                                const unitPriceStr = item.selectedVariant?.price || item.price;
+                                const unitPriceNum = parseItemPrice(unitPriceStr);
+                                const itemSubtotal = unitPriceNum * (item.quantity || 1);
+
                                 return (
                                     <div key={item.cartId} className={styles.cartItem}>
                                         <div className={styles.itemThumb}>
@@ -72,7 +75,33 @@ export default function CartDrawer() {
                                         </div>
                                         <div className={styles.itemInfo}>
                                             <div className={styles.itemTitle}>{item.title}</div>
-                                            <div className={styles.itemMeta}>1 × {formatMoney(priceNum)}</div>
+                                            {item.selectedVariant && (
+                                                <div className={styles.variantBadge}>
+                                                    {item.selectedVariant.name}
+                                                </div>
+                                            )}
+                                            <div className={styles.itemMeta}>
+                                                {formatMoney(itemSubtotal)}
+                                            </div>
+                                            <div className={styles.qtyContainer}>
+                                                <button 
+                                                    className={styles.qtyBtn} 
+                                                    onClick={() => updateQuantity(item.cartId, -1)}
+                                                    aria-label="Disminuir cantidad"
+                                                    title="Disminuir cantidad"
+                                                >
+                                                    −
+                                                </button>
+                                                <span className={styles.qtyValue}>{item.quantity || 1}</span>
+                                                <button 
+                                                    className={styles.qtyBtn} 
+                                                    onClick={() => updateQuantity(item.cartId, 1)}
+                                                    aria-label="Aumentar cantidad"
+                                                    title="Aumentar cantidad"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
                                         </div>
                                         <button
                                             className={styles.removeBtn}
@@ -92,7 +121,7 @@ export default function CartDrawer() {
                 {items.length > 0 && (
                     <div className={styles.footer}>
                         <div className={styles.subtotalRow}>
-                            <span className={styles.subtotalLabel}>Subtotal</span>
+                            <span className={styles.subtotalLabel}>Subtotal ({itemCount} {itemCount === 1 ? 'unidad' : 'unidades'})</span>
                             <span className={styles.subtotalValue}>{formatMoney(total)}</span>
                         </div>
                         <p className={styles.taxNote}>Impuestos y envío calculados al finalizar la compra.</p>
@@ -111,3 +140,4 @@ export default function CartDrawer() {
         </>
     );
 }
+
