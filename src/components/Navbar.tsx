@@ -327,14 +327,14 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                                     onMouseEnter={() => setOpenCategoryDropdownId(cat.id)}
                                     onMouseLeave={() => setOpenCategoryDropdownId(null)}
                                 >
-                                    <Link href={`/#productos?categoria=${cat.id}`} className={styles.catLink}>
+                                    <Link href={`/?categoria=${cat.slug || cat.id}#productos`} className={styles.catLink}>
                                         {cat.name} <span className={styles.catCaret}>▾</span>
                                     </Link>
 
                                     {openCategoryDropdownId === cat.id && (
                                         <div className={styles.catDropdownMenu}>
                                             <Link
-                                                href={`/#productos?categoria=${cat.id}`}
+                                                href={`/?categoria=${cat.slug || cat.id}#productos`}
                                                 className={styles.catDropdownHeaderLink}
                                             >
                                                 Ver todo en {cat.name} →
@@ -343,7 +343,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                                             {subs.map(sub => (
                                                 <Link
                                                     key={sub.id}
-                                                    href={`/#productos?categoria=${sub.id}`}
+                                                    href={`/?categoria=${sub.slug || sub.id}#productos`}
                                                     className={styles.catDropdownItem}
                                                 >
                                                     ↳ {sub.name}
@@ -358,7 +358,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                         return (
                             <Link
                                 key={cat.id}
-                                href={`/#productos?categoria=${cat.id}`}
+                                href={`/?categoria=${cat.slug || cat.id}#productos`}
                                 className={styles.catLink}
                             >
                                 {cat.name}
@@ -366,7 +366,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                         );
                     })}
 
-                    <Link href="/#productos?ofertas=true" className={styles.offersTagLink}>
+                    <Link href="/?categoria=ofertas#productos" className={styles.offersTagLink}>
                         🔥 Ofertas Especiales
                     </Link>
                 </div>
@@ -414,7 +414,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                                     <div key={cat.id} className={styles.mobileCatGroup}>
                                         <div className={styles.mobileCatHeader}>
                                             <Link
-                                                href={`/#productos?categoria=${cat.id}`}
+                                                href={`/?categoria=${cat.slug || cat.id}#productos`}
                                                 onClick={() => setMobileMenuOpen(false)}
                                                 className={styles.mobileCatItem}
                                             >
@@ -435,7 +435,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                                                 {subs.map(sub => (
                                                     <Link
                                                         key={sub.id}
-                                                        href={`/#productos?categoria=${sub.id}`}
+                                                        href={`/?categoria=${sub.slug || sub.id}#productos`}
                                                         onClick={() => setMobileMenuOpen(false)}
                                                         className={styles.mobileSubItem}
                                                     >

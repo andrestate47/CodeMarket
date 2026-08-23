@@ -286,9 +286,15 @@ export async function getPublicCatalogProductsAction(params: GetCatalogProductsP
             };
         });
 
-        // Filter by category slug if specified
-        if (categorySlug && categorySlug !== 'all' && categorySlug !== 'todos') {
-            mapped = mapped.filter(p => p.category_slug === categorySlug || p.category_name?.toLowerCase() === categorySlug.toLowerCase());
+        // Filter by category slug or special offer filter
+        const isOfferFilter = categorySlug === 'ofertas' || categorySlug === 'ofertas-especiales' || categorySlug === 'descuentos';
+        if (isOfferFilter) {
+            mapped = mapped.filter(p => (p.discount_percentage && p.discount_percentage > 0) || (p.compare_at_amount && p.compare_at_amount > p.price_amount) || p.is_featured);
+            if (mapped.length === 0) {
+                mapped = (data as unknown as Record<string, unknown>[]).map(p => p as any).filter(p => p.featured || p.compare_at_price_cents);
+            }
+        } else if (categorySlug && categorySlug !== 'all' && categorySlug !== 'todos') {
+            mapped = mapped.filter(p => p.category_slug === categorySlug || p.category_name?.toLowerCase() === categorySlug.toLowerCase() || p.category_id === categorySlug);
         }
 
         // Paginate results
@@ -356,9 +362,12 @@ function processLocalDemoProducts(
     // Deduplicate by ID
     let unique = combined.filter((p, index, self) => index === self.findIndex(t => t.id === p.id));
 
-    // Category filter
-    if (categorySlug && categorySlug !== 'all' && categorySlug !== 'todos') {
-        unique = unique.filter(p => p.category_slug === categorySlug || p.category_name?.toLowerCase() === categorySlug.toLowerCase());
+    // Category or offer filter
+    const isOfferFilter = categorySlug === 'ofertas' || categorySlug === 'ofertas-especiales' || categorySlug === 'descuentos';
+    if (isOfferFilter) {
+        unique = unique.filter(p => (p.discount_percentage && p.discount_percentage > 0) || (p.compare_at_amount && p.compare_at_amount > p.price_amount) || p.is_featured);
+    } else if (categorySlug && categorySlug !== 'all' && categorySlug !== 'todos') {
+        unique = unique.filter(p => p.category_slug === categorySlug || p.category_name?.toLowerCase() === categorySlug.toLowerCase() || p.category_id === categorySlug);
     }
 
     // Sort

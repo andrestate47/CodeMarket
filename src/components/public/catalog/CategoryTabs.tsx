@@ -44,6 +44,14 @@ export default function CategoryTabs({
                     Todos
                 </button>
 
+                <button
+                    className={`${styles.tabBtn} ${activeSlug === 'ofertas' || activeSlug === 'ofertas-especiales' ? styles.activeTab : ''}`}
+                    onClick={() => onSelectCategory('ofertas')}
+                    style={{ color: activeSlug === 'ofertas' ? '#ffffff' : 'var(--robotina-orange)' }}
+                >
+                    🔥 Ofertas Especiales
+                </button>
+
                 {rootCategories.map((cat) => {
                     const subcats = categories.filter(sub => sub.parent_id === cat.id && sub.is_active);
                     const hasSubcats = subcats.length > 0;

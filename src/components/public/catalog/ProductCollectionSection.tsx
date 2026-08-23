@@ -23,7 +23,7 @@ export default function ProductCollectionSection({
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const catFromUrl = searchParams.get('categoria') || 'all';
+    const catFromUrl = searchParams.get('categoria') || (searchParams.get('ofertas') === 'true' ? 'ofertas' : 'all');
     const [activeCategorySlug, setActiveCategorySlug] = useState<string>(catFromUrl);
     const [sortBy, setSortBy] = useState<SortOptionValue>('newest');
     const [products, setProducts] = useState<PublicProductItem[]>([]);
@@ -36,7 +36,14 @@ export default function ProductCollectionSection({
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
 
     // Effective category slug prioritized from URL
-    const effectiveCategorySlug = searchParams.get('categoria') || activeCategorySlug || 'all';
+    const effectiveCategorySlug = searchParams.get('categoria') || (searchParams.get('ofertas') === 'true' ? 'ofertas' : activeCategorySlug) || 'all';
+
+    // Keep activeCategorySlug in sync with searchParams
+    useEffect(() => {
+        if (catFromUrl && catFromUrl !== activeCategorySlug) {
+            setActiveCategorySlug(catFromUrl);
+        }
+    }, [catFromUrl, activeCategorySlug]);
 
     // Fetch products
     const loadProducts = useCallback(async (catSlug: string, sort: SortOptionValue, pageNum: number) => {
@@ -78,6 +85,7 @@ export default function ProductCollectionSection({
 
         // Update URL search params gracefully without full page reload
         const params = new URLSearchParams(window.location.search);
+        params.delete('ofertas');
         if (slug === 'all' || slug === 'todos') {
             params.delete('categoria');
         } else {
@@ -94,8 +102,11 @@ export default function ProductCollectionSection({
     };
 
     // Find category display name
-    const activeCategoryObj = initialCategories.find(c => c.slug === activeCategorySlug);
-    const activeCategoryName = activeCategoryObj ? activeCategoryObj.name : (activeCategorySlug === 'all' ? 'Todos' : activeCategorySlug);
+    const isOffersMode = effectiveCategorySlug === 'ofertas' || effectiveCategorySlug === 'ofertas-especiales';
+    const activeCategoryObj = initialCategories.find(c => c.slug === effectiveCategorySlug);
+    const activeCategoryName = isOffersMode
+        ? '🔥 Ofertas Especiales'
+        : (activeCategoryObj ? activeCategoryObj.name : (effectiveCategorySlug === 'all' ? 'Todos' : effectiveCategorySlug));
 
     return (
         <section className={styles.section} id="productos">
@@ -103,9 +114,15 @@ export default function ProductCollectionSection({
                 {/* 1. SECTION HEADER */}
                 <div className={styles.sectionHeader}>
                     <div className={styles.titleGroup}>
-                        <span className={styles.sectionBadge}>CATÁLOGO COMPLETO</span>
+                        <span className={styles.sectionBadge}>
+                            {isOffersMode ? 'DESCUENTOS Y PROMOCIONES' : 'CATÁLOGO COMPLETO'}
+                        </span>
                         <h2 className={styles.sectionTitle}>
-                            COLECCIÓN DE <span className="text-gradient">PRODUCTOS</span>
+                            {isOffersMode ? (
+                                <>OFERTAS <span className="text-gradient">ESPECIALES</span></>
+                            ) : (
+                                <>COLECCIÓN DE <span className="text-gradient">PRODUCTOS</span></>
+                            )}
                         </h2>
                     </div>
 
