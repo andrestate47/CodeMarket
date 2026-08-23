@@ -120,6 +120,7 @@ export default function HeroHeroBanner({
                             fill
                             priority={currentIndex === 0}
                             sizes="100vw"
+                            unoptimized
                             className={styles.heroImageDesktop}
                             style={{ objectFit: 'cover' }}
                         />
@@ -130,6 +131,7 @@ export default function HeroHeroBanner({
                                 fill
                                 priority={currentIndex === 0}
                                 sizes="100vw"
+                                unoptimized
                                 className={styles.heroImageMobile}
                                 style={{ objectFit: 'cover' }}
                             />
