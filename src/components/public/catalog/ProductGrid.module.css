@@ -1,0 +1,105 @@
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    width: 100%;
+}
+
+.gridCol {
+    display: flex;
+    flex-direction: column;
+}
+
+/* RESPONSIVE BREAKPOINTS */
+
+/* Laptop: 3 columns */
+@media (max-width: 1200px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+    }
+}
+
+/* Tablet: 2 columns */
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 20px;
+    }
+}
+
+/* Mobile: 1 column on small screens to guarantee card legibility */
+@media (max-width: 600px) {
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
+
+/* SKELETON ANIMATIONS */
+.skeletonCard {
+    background: var(--card-bg, #121212);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 440px;
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.6; }
+    50% { opacity: 1; }
+}
+
+.skeletonImage {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    background: var(--surface-bg, #181818);
+}
+
+.skeletonContent {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.skeletonBadge {
+    width: 30%;
+    height: 14px;
+    background: var(--surface-bg);
+    border-radius: 4px;
+}
+
+.skeletonTitle {
+    width: 85%;
+    height: 18px;
+    background: var(--surface-bg);
+    border-radius: 4px;
+}
+
+.skeletonTitleShort {
+    width: 50%;
+    height: 18px;
+    background: var(--surface-bg);
+    border-radius: 4px;
+}
+
+.skeletonPrice {
+    width: 40%;
+    height: 24px;
+    background: var(--surface-bg);
+    border-radius: 4px;
+    margin-top: 6px;
+}
+
+.skeletonButton {
+    width: 100%;
+    height: 42px;
+    background: var(--surface-bg);
+    border-radius: 10px;
+    margin-top: auto;
+}

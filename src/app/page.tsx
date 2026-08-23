@@ -1,20 +1,23 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import styles from "./page.module.css";
 import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import Navbar from "@/components/Navbar";
 import PromoBar from "@/components/public/PromoBar";
 import HeroHeroBanner from "@/components/public/HeroHeroBanner";
-import ProductCatalogGrid from "@/components/public/ProductCatalogGrid";
+import ProductCollectionSection from "@/components/public/catalog/ProductCollectionSection";
+import ProductGridSkeleton from "@/components/public/catalog/ProductGridSkeleton";
 import { getHeroBannersAction, getStoreAppearanceAction } from "@/modules/appearance/actions";
+import { getCategoriesListAction } from "@/modules/categories/actions";
 
 export const revalidate = 60; // Cache page for 60 seconds
 
 export default async function Home() {
-    // Fetch store appearance and hero banners in parallel on the server
-    const [appearanceRes, bannersRes] = await Promise.all([
+    // Fetch store appearance, hero banners, and categories in parallel on the server
+    const [appearanceRes, bannersRes, categoriesRes] = await Promise.all([
         getStoreAppearanceAction(),
         getHeroBannersAction(),
+        getCategoriesListAction(),
     ]);
 
     const appearance = appearanceRes.appearance || {
@@ -33,6 +36,7 @@ export default async function Home() {
     };
 
     const banners = bannersRes.banners || [];
+    const categories = categoriesRes.categories || [];
 
     return (
         <main className={styles.main}>
@@ -57,8 +61,10 @@ export default async function Home() {
                 storeName={appearance.store_name}
             />
 
-            {/* PRODUCT CATALOG GRID */}
-            <ProductCatalogGrid />
+            {/* PRODUCT COLLECTION SECTION WRAPPED IN SUSPENSE */}
+            <Suspense fallback={<ProductGridSkeleton count={8} />}>
+                <ProductCollectionSection initialCategories={categories} />
+            </Suspense>
 
             {/* TESTIMONIALS SECTION */}
             <Testimonials />
