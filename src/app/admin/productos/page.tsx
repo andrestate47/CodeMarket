@@ -888,14 +888,22 @@ export default function AdminProductsList() {
                                                     setOpenMenuId(isMenuOpen ? null : prod.id);
                                                 }}
                                                 style={{
-                                                    padding: '6px 12px',
+                                                    width: '26px',
+                                                    height: '26px',
+                                                    minWidth: '26px',
+                                                    minHeight: '26px',
+                                                    padding: 0,
                                                     background: 'var(--glass-bg)',
                                                     border: '1px solid var(--glass-border)',
-                                                    borderRadius: '8px',
+                                                    borderRadius: '50%',
                                                     color: 'var(--foreground)',
-                                                    fontSize: '1.1rem',
+                                                    fontSize: '0.9rem',
                                                     fontWeight: 800,
                                                     cursor: 'pointer',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    lineHeight: 1,
                                                 }}
                                                 title="Opciones del producto"
                                             >
@@ -1018,22 +1026,29 @@ export default function AdminProductsList() {
                                     }}
                                     style={{
                                         position: 'absolute',
-                                        top: '10px',
-                                        right: '10px',
-                                        width: '32px',
-                                        height: '32px',
+                                        top: '8px',
+                                        right: '8px',
+                                        width: '26px',
+                                        height: '26px',
+                                        minWidth: '26px',
+                                        minHeight: '26px',
                                         borderRadius: '50%',
                                         background: 'var(--card-bg)',
                                         border: '1px solid var(--glass-border)',
-                                        boxShadow: '0 3px 10px rgba(0,0,0,0.25)',
+                                        boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
                                         color: 'var(--foreground)',
                                         cursor: 'pointer',
-                                        display: 'inline-flex',
+                                        display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
+                                        padding: 0,
+                                        margin: 0,
+                                        lineHeight: 1,
                                         zIndex: 30,
-                                        fontSize: '1.1rem',
+                                        fontSize: '0.9rem',
                                         fontWeight: 800,
+                                        boxSizing: 'border-box',
+                                        flexShrink: 0,
                                     }}
                                     title="Opciones del producto"
                                 >
@@ -1046,8 +1061,8 @@ export default function AdminProductsList() {
                                         onClick={(e) => e.stopPropagation()}
                                         style={{
                                             position: 'absolute',
-                                            top: '46px',
-                                            right: '10px',
+                                            top: '38px',
+                                            right: '8px',
                                             background: 'var(--card-bg)',
                                             border: '1px solid var(--glass-border)',
                                             borderRadius: '12px',
