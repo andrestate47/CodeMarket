@@ -5,7 +5,6 @@ import styles from "./page.module.css";
 import ProductCard from "@/components/ProductCard";
 import Carousel from "@/components/Carousel";
 import Testimonials from "@/components/Testimonials";
-import TechBanner from "@/components/TechBanner";
 import FAQ from "@/components/FAQ";
 import { products } from "@/data/products";
 
@@ -66,9 +65,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      {/* Technology Banner */}
-      <TechBanner />
 
       {/* Testimonials Section */}
       <Testimonials />
