@@ -1,0 +1,201 @@
+.summaryCard {
+    background: var(--card-bg, #121212);
+    border: 1px solid var(--glass-border, #27272a);
+    border-radius: 20px;
+    padding: 24px;
+    position: sticky;
+    top: 90px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.headerRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+.title {
+    font-size: 1.1rem;
+    font-weight: 900;
+    margin: 0;
+    color: var(--foreground);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.editCartBtn {
+    background: transparent;
+    border: 1px solid var(--glass-border);
+    color: var(--robotina-orange, #FF6B00);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.editCartBtn:hover {
+    background: rgba(255, 107, 0, 0.15);
+    border-color: var(--robotina-orange);
+}
+
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-height: 340px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.itemRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.itemThumb {
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #18181b;
+    position: relative;
+    border: 1px solid var(--glass-border);
+}
+
+.thumbImg {
+    object-fit: cover;
+}
+
+.colorPlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    color: white;
+}
+
+.itemDetails {
+    flex: 1;
+    min-width: 0;
+}
+
+.itemTitle {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0;
+}
+
+.itemMeta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.variantTag {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.72rem;
+}
+
+.itemPrice {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: var(--foreground);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.breakdown {
+    border-top: 1px solid var(--glass-border);
+    padding-top: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.breakdownRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.breakdownRow.discountRow {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+.breakdownRow.totalRow {
+    padding-top: 10px;
+    border-top: 1px dashed var(--glass-border);
+    font-size: 1.25rem;
+    font-weight: 900;
+    color: var(--foreground);
+}
+
+.totalAmount {
+    color: var(--robotina-orange, #FF6B00);
+}
+
+/* Mobile Accordion Drawer Header */
+.mobileAccordionToggle {
+    display: none;
+    width: 100%;
+    background: var(--card-bg, #121212);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px 18px;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--foreground);
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    margin-bottom: 16px;
+}
+
+.mobileAccordionToggle:hover {
+    border-color: var(--robotina-orange);
+}
+
+.mobileTotalLabel {
+    color: var(--robotina-orange);
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+@media (max-width: 900px) {
+    .summaryCard {
+        position: static;
+        top: 0;
+        margin-bottom: 24px;
+    }
+
+    .mobileAccordionToggle {
+        display: flex;
+    }
+
+    .summaryCard.collapsed {
+        display: none;
+    }
+}

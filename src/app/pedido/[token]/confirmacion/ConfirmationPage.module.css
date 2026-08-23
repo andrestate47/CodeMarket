@@ -1,0 +1,267 @@
+.pageWrapper {
+    min-height: 100vh;
+    background: var(--background, #09090b);
+    color: var(--foreground, #fafafa);
+    padding: 40px 20px 80px 20px;
+}
+
+.container {
+    max-width: 760px;
+    margin: 0 auto;
+}
+
+.card {
+    background: var(--card-bg, #121212);
+    border: 1px solid var(--glass-border, #27272a);
+    border-radius: 24px;
+    padding: 40px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.headerIcon {
+    font-size: 3.5rem;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.title {
+    font-size: 2rem;
+    font-weight: 900;
+    text-align: center;
+    margin: 0 0 12px 0;
+    color: var(--foreground);
+}
+
+.subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0 0 24px 0;
+}
+
+.orderBadgeRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 32px;
+}
+
+.orderNumberTag {
+    background: rgba(255, 107, 0, 0.12);
+    color: var(--robotina-orange, #FF6B00);
+    border: 1px solid rgba(255, 107, 0, 0.3);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+}
+
+.statusTag {
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.statusPending {
+    background: rgba(250, 204, 21, 0.15);
+    color: #facc15;
+    border: 1px solid rgba(250, 204, 21, 0.3);
+}
+
+.statusUnderReview {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.statusPaid {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.paymentBox {
+    background: rgba(24, 24, 27, 0.8);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 32px;
+}
+
+.paymentBoxTitle {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--foreground);
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.qrContainer {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.qrImage {
+    border-radius: 12px;
+    border: 1px solid var(--glass-border);
+    background: white;
+    padding: 8px;
+}
+
+.paymentMetaList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+}
+
+.metaItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.copyBtn {
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copyBtn:hover {
+    border-color: var(--robotina-orange);
+    color: var(--robotina-orange);
+}
+
+.banksGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 16px;
+}
+
+.bankCard {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px;
+}
+
+.bankName {
+    font-weight: 800;
+    color: var(--robotina-orange);
+    margin-bottom: 8px;
+}
+
+/* Upload Receipt Section */
+.receiptSection {
+    background: rgba(255, 107, 0, 0.06);
+    border: 1px dashed rgba(255, 107, 0, 0.3);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 32px;
+}
+
+.receiptTitle {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0 0 8px 0;
+    color: var(--foreground);
+}
+
+.receiptForm {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.fileInput {
+    background: var(--background);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--foreground);
+    font-size: 0.9rem;
+}
+
+.uploadBtn {
+    background: var(--robotina-orange, #FF6B00);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    align-self: flex-start;
+    transition: background 0.2s ease;
+}
+
+.uploadBtn:hover {
+    background: #FF8A00;
+}
+
+.uploadBtn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.actionsRow {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.homeBtn {
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.homeBtn:hover {
+    border-color: var(--foreground);
+}
+
+.whatsappBtn {
+    background: #25D366;
+    color: white;
+    border: none;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 800;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s ease;
+}
+
+.whatsappBtn:hover {
+    background: #1da851;
+}

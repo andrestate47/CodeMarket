@@ -253,6 +253,8 @@ export default function ProductPage() {
     const [timeLeft, setTimeLeft] = React.useState({ hours: 14, minutes: 28, seconds: 59 });
     const [viewers] = useState(() => Math.floor(Math.random() * 7) + 2);
     const [cartMessage, setCartMessage] = React.useState<string | null>(null);
+    const [selectedQty, setSelectedQty] = useState<number>(1);
+    const [selectedVariant, setSelectedVariant] = useState<{ id: string; name: string; price: string } | null>(null);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -341,9 +343,6 @@ export default function ProductPage() {
             setCouponMessage(null);
         }
     };
-
-    const [selectedQty, setSelectedQty] = useState<number>(1);
-    const [selectedVariant, setSelectedVariant] = useState<{ id: string; name: string; price: string } | null>(null);
 
     const originalPriceVal = parseFloat(product.price.replace(/[^0-9.]/g, ''));
     const activePriceStr = selectedVariant?.price || product.price;

@@ -35,35 +35,32 @@ export function parseItemPrice(priceStrOrNum: string | number): number {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-    const [items, setItems] = useState<CartItem[]>([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    // Load cart from localStorage on mount
-    useEffect(() => {
-        try {
-            const savedCart = localStorage.getItem('codemarket_cart');
-            if (savedCart) {
-                const parsed = JSON.parse(savedCart);
-                if (Array.isArray(parsed)) {
-                    setItems(parsed);
+    const [items, setItems] = useState<CartItem[]>(() => {
+        if (typeof window !== 'undefined') {
+            try {
+                const savedCart = localStorage.getItem('codemarket_cart');
+                if (savedCart) {
+                    const parsed = JSON.parse(savedCart);
+                    if (Array.isArray(parsed)) return parsed;
                 }
+            } catch {
+                // fallback
             }
-        } catch (e) {
-            console.error('Failed to load cart from localStorage', e);
         }
-        setIsLoaded(true);
-    }, []);
+        return [];
+    });
+    const [isOpen, setIsOpen] = useState(false);
 
     // Save cart to localStorage on changes
     useEffect(() => {
-        if (!isLoaded) return;
-        try {
-            localStorage.setItem('codemarket_cart', JSON.stringify(items));
-        } catch (e) {
-            console.error('Failed to save cart to localStorage', e);
+        if (typeof window !== 'undefined') {
+            try {
+                localStorage.setItem('codemarket_cart', JSON.stringify(items));
+            } catch (e) {
+                console.error('Failed to save cart to localStorage', e);
+            }
         }
-    }, [items, isLoaded]);
+    }, [items]);
 
     const addItem = (
         product: Product, 
