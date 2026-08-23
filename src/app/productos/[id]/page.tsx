@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { products } from '@/data/products';
+import { products, Product } from '@/data/products';
+import { getInstantProducts, fetchCatalogProducts } from '@/modules/catalog/queries';
 import { useCart } from '@/context/CartContext';
 import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
@@ -236,14 +237,40 @@ export default function ProductPage() {
     const { addItem, items } = useCart();
     
     const id = params.id as string;
-    const product = products.find(p => p.id === id);
 
+    const [product, setProduct] = useState<Product | null>(() => {
+        const staticMatch = products.find(p => p.id === id);
+        if (staticMatch) return staticMatch;
+        const instant = getInstantProducts();
+        const instantMatch = instant.find(p => p.id === id || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === id);
+        return instantMatch ? (instantMatch as unknown as Product) : null;
+    });
+
+    const [loadingProduct, setLoadingProduct] = useState<boolean>(!product);
     const [couponInput, setCouponInput] = React.useState('');
     const [appliedDiscount, setAppliedDiscount] = React.useState(0);
     const [couponMessage, setCouponMessage] = React.useState<{type: 'success' | 'error', text: string} | null>(null);
     const [timeLeft, setTimeLeft] = React.useState({ hours: 14, minutes: 28, seconds: 59 });
     const [viewers] = useState(() => Math.floor(Math.random() * 7) + 2);
     const [cartMessage, setCartMessage] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        let isMounted = true;
+        (async () => {
+            if (!product && id) {
+                setLoadingProduct(true);
+                const all = await fetchCatalogProducts();
+                const found = all.find(p => p.id === id || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === id);
+                if (isMounted && found) {
+                    setProduct(found as unknown as Product);
+                }
+                if (isMounted) setLoadingProduct(false);
+            }
+        })();
+        return () => {
+            isMounted = false;
+        };
+    }, [id, product]);
 
     React.useEffect(() => {
         const timer = setInterval(() => {
@@ -270,9 +297,20 @@ export default function ProductPage() {
         return () => clearInterval(timer);
     }, []);
 
+    if (loadingProduct) {
+        return (
+            <main className={styles.main}>
+                <Navbar />
+                <div style={{ textAlign: 'center', padding: '100px 24px', color: 'var(--text-muted)' }}>
+                    <h2>Cargando producto...</h2>
+                </div>
+            </main>
+        );
+    }
+
     if (!product) {
         return (
-            <main className={styles.container}>
+            <main className={styles.main}>
                 <Navbar />
                 <div className={styles.notFound}>
                     <h1>Producto no encontrado</h1>
@@ -561,7 +599,7 @@ export default function ProductPage() {
                             <div className={styles.features}>
                                 <h3 className={styles.accordionTitle}>Características clave</h3>
                                 <ul className={styles.featureList}>
-                                    {product.features.map((feature, index) => (
+                                    {(product.features || []).map((feature, index) => (
                                         <li key={index}>
                                             <span className={styles.bullet}></span>
                                             {feature}
