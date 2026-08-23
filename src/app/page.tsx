@@ -1,81 +1,113 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from "./page.module.css";
 import ProductCard from "@/components/ProductCard";
-import Carousel from "@/components/Carousel";
 import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
 import { products } from "@/data/products";
-
 import Navbar from "@/components/Navbar";
+import PromoBar from "@/components/public/PromoBar";
+import HeroHeroBanner from "@/components/public/HeroHeroBanner";
+import { getHeroBannersAction, getStoreAppearanceAction, HeroBannerRecord, StoreAppearanceRecord } from "@/modules/appearance/actions";
 
 export default function Home() {
-  const [filter, setFilter] = useState('Todos');
+    const [filter, setFilter] = useState('Todos');
+    const [banners, setBanners] = useState<HeroBannerRecord[]>([]);
+    const [appearance, setAppearance] = useState<StoreAppearanceRecord>({
+        store_name: 'CODEMARKET',
+        logo_url: null,
+        promo_bar_enabled: true,
+        promo_bar_text: '🚀 Envíos gratis a todo el Perú por compras desde S/ 150 | Delivery en 24h en Lima',
+        promo_bar_link: '/#productos',
+        promo_bar_bg_color: '#FF6B00',
+        promo_bar_text_color: '#FFFFFF',
+        primary_color: '#FF6B00',
+        secondary_color: '#FF8A00',
+        background_color: '#070707',
+        surface_color: '#121212',
+        text_color: '#FFFFFF',
+    });
 
-  const filteredProducts = filter === 'Todos' 
-    ? products 
-    : products.filter(p => p.type === (filter === 'Servicios' ? 'service' : 'digital'));
+    useEffect(() => {
+        getStoreAppearanceAction().then(res => {
+            if (res.success && res.appearance) {
+                setAppearance(res.appearance);
+            }
+        });
 
-  return (
-    <main className={styles.main}>
-      <Navbar />
+        getHeroBannersAction().then(res => {
+            if (res.success && res.banners) {
+                setBanners(res.banners);
+            }
+        });
+    }, []);
 
-      {/* Hero Carousel */}
-      <section style={{ paddingTop: '20px' }}>
-        <Carousel />
-      </section>
+    const filteredProducts = filter === 'Todos' 
+        ? products 
+        : products.filter(p => p.type === (filter === 'Servicios' ? 'service' : 'digital'));
 
-      {/* Hero Section */}
-      <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <h1 className={styles.title}>
-            El próximo nivel de tu negocio <br /> <span className="text-gradient">empieza online.</span>
-          </h1>
-          <p className={styles.subtitle}>
-            Soluciones digitales para el crecimiento de tu negocio.
-            <br className="hidden md:block" />
-            Tecnología, diseño y estrategia combinados en productos digitales que impulsan tu marca y te ayudan a escalar de forma inteligente.
-          </p>
-        </div>
-      </section>
+    return (
+        <main className={styles.main}>
+            {/* TOP PROMOTIONAL ANNOUNCEMENT BAR */}
+            <PromoBar
+                enabled={appearance.promo_bar_enabled}
+                text={appearance.promo_bar_text}
+                link={appearance.promo_bar_link}
+                bgColor={appearance.promo_bar_bg_color}
+                textColor={appearance.promo_bar_text_color}
+            />
 
-      {/* Store Section */}
-      <section className={styles.storeSection}>
-        <div className={styles.storeHeader}>
-          <h2 className={styles.storeTitle}>
-            <span className="text-gradient">Colección</span>
-          </h2>
-          <div className={styles.filterBar}>
-            {['Todos', 'Digital', 'Servicios'].map((item) => (
-              <span
-                key={item}
-                className={`${styles.filterItem} ${filter === item ? styles.active : ''}`}
-                onClick={() => setFilter(item)}
-              >
-                {item}
-              </span>
-            ))}
-          </div>
-        </div>
+            {/* PUBLIC HEADER */}
+            <Navbar
+                storeName={appearance.store_name}
+                logoUrl={appearance.logo_url}
+            />
 
-        <div className={styles.grid}>
-          {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
+            {/* PUBLIC HERO BANNER */}
+            <HeroHeroBanner
+                banners={banners}
+                storeName={appearance.store_name}
+            />
 
-      {/* Testimonials Section */}
-      <Testimonials />
+            {/* STORE SECTION */}
+            <section className={styles.storeSection} id="productos">
+                <div className={styles.storeHeader}>
+                    <h2 className={styles.storeTitle}>
+                        <span className="text-gradient">Colección de Productos</span>
+                    </h2>
+                    <div className={styles.filterBar}>
+                        {['Todos', 'Digital', 'Servicios'].map((item) => (
+                            <span
+                                key={item}
+                                className={`${styles.filterItem} ${filter === item ? styles.active : ''}`}
+                                onClick={() => setFilter(item)}
+                            >
+                                {item}
+                            </span>
+                        ))}
+                    </div>
+                </div>
 
-      {/* FAQ Section */}
-      <FAQ />
+                <div className={styles.grid}>
+                    {filteredProducts.map((product) => (
+                        <ProductCard key={product.id} product={product} />
+                    ))}
+                </div>
+            </section>
 
-      <footer style={{ background: 'var(--card-bg)', color: 'var(--text-muted)', padding: '60px 24px', textAlign: 'center', marginTop: 'auto', borderTop: '1px solid var(--glass-border)' }}>
-        <div style={{ fontWeight: 900, fontSize: '2rem', marginBottom: '20px', letterSpacing: '-1px', color: 'var(--foreground)' }}>CODEMARKET ///</div>
-        <p style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>© 2026 CodeMarket Inc.</p>
-      </footer>
-    </main>
-  );
+            {/* TESTIMONIALS SECTION */}
+            <Testimonials />
+
+            {/* FAQ SECTION */}
+            <FAQ />
+
+            <footer style={{ background: 'var(--card-bg)', color: 'var(--text-muted)', padding: '60px 24px', textAlign: 'center', marginTop: 'auto', borderTop: '1px solid var(--glass-border)' }}>
+                <div style={{ fontWeight: 900, fontSize: '2rem', marginBottom: '20px', letterSpacing: '-1px', color: 'var(--foreground)' }}>
+                    {appearance.store_name} {'///'}
+                </div>
+                <p style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>© 2026 {appearance.store_name} Inc. Todos los derechos reservados.</p>
+            </footer>
+        </main>
+    );
 }

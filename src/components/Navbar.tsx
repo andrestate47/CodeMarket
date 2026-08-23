@@ -1,132 +1,481 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useTheme } from "@/context/ThemeContext";
-import { useCart } from "@/context/CartContext";
-import { supabase } from "@/lib/supabase";
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useCart } from "@/context/CartContext";
+import { useTheme } from "@/context/ThemeContext";
+import { supabase } from "@/lib/supabase";
+import { User } from '@supabase/supabase-js';
+import { getCategoriesListAction, CategoryRecord } from '@/modules/categories/actions';
+import { searchProductsAction, SearchResultItem } from '@/modules/search/actions';
 import styles from './Navbar.module.css';
 
-import { User } from '@supabase/supabase-js';
+interface NavbarProps {
+    storeName?: string;
+    logoUrl?: string | null;
+}
 
-export default function Navbar() {
-  const { toggleCart, items } = useCart();
-  const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = React.useState<User | null>(null);
-  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [mounted, setMounted] = React.useState(false);
-  const router = useRouter();
+export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProps) {
+    const { toggleCart, items } = useCart();
+    const { theme, toggleTheme } = useTheme();
+    const router = useRouter();
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-       router.push(`/?q=${encodeURIComponent(searchQuery)}`);
-    }
-  };
+    const [user, setUser] = useState<User | null>(null);
+    const [categories, setCategories] = useState<CategoryRecord[]>([]);
+    const [openCategoryDropdownId, setOpenCategoryDropdownId] = useState<string | null>(null);
+    
+    // Search state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<SearchResultItem[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showSearchOverlay, setShowSearchOverlay] = useState(false);
+    const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+    const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    setMounted(true);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
+    // User menu dropdown
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const userMenuRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <header className={`${styles.header} glass`}>
-      <div className={styles.container}>
-        <Link href="/" className={styles.brand}>
-          CODEMARKET ///
-        </Link>
-        
-        <nav className={styles.nav}>
-          {/* Animated Search Bar */}
-          <form 
-            onSubmit={handleSearch} 
-            className={`${styles.searchForm} ${isSearchOpen ? styles.searchFormOpen : ''}`}
-          >
-            <button 
-              type={isSearchOpen ? "submit" : "button"}
-              onClick={() => {
-                if (!isSearchOpen) setIsSearchOpen(true);
-              }}
-              className={styles.searchButton}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            </button>
-            <input 
-              type="text"
-              placeholder="Buscar..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onBlur={() => !searchQuery && setIsSearchOpen(false)}
-              className={styles.searchInput}
-              style={{
-                width: isSearchOpen ? '150px' : '0px',
-                opacity: isSearchOpen ? 1 : 0,
-              }}
-            />
-          </form>
+    // Mobile Drawer state
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [expandedMobileCategoryId, setExpandedMobileCategoryId] = useState<string | null>(null);
 
-          {/* Theme Toggle */}
-          <button
-            onClick={toggleTheme}
-            className={styles.themeToggle}
-            aria-label="Toggle Theme"
-          >
-            {!mounted || theme === 'dark' ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1" x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1" y1="12" x2="3" y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-              </svg>
-            ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-              </svg>
+    // Sync Auth user session
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user ?? null);
+        });
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // Load public active categories
+    useEffect(() => {
+        let isCurrent = true;
+        getCategoriesListAction().then(res => {
+            if (isCurrent && res.success) {
+                const activeCats = res.categories.filter(c => c.is_active !== false);
+                setCategories(activeCats);
+            }
+        });
+        return () => { isCurrent = false; };
+    }, []);
+
+    // Handle outside clicks to close search overlay and user dropdown
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+                setShowSearchOverlay(false);
+            }
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+                setUserMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Real-time debounced search
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setSearchQuery(val);
+
+        if (searchDebounceRef.current) {
+            clearTimeout(searchDebounceRef.current);
+        }
+
+        if (!val.trim()) {
+            setSearchResults([]);
+            setShowSearchOverlay(false);
+            return;
+        }
+
+        setIsSearching(true);
+        setShowSearchOverlay(true);
+
+        searchDebounceRef.current = setTimeout(async () => {
+            const res = await searchProductsAction(val);
+            if (res.success) {
+                setSearchResults(res.products);
+            }
+            setIsSearching(false);
+        }, 300);
+    };
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (searchQuery.trim()) {
+            setShowSearchOverlay(false);
+            router.push(`/#productos?q=${encodeURIComponent(searchQuery.trim())}`);
+        }
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        setUserMenuOpen(false);
+        router.refresh();
+    };
+
+    // Separate Root Categories & Subcategories
+    const rootCategories = categories.filter(c => !c.parent_id);
+    const getSubcategories = (parentId: string) => categories.filter(c => c.parent_id === parentId);
+
+    const totalCartCount = items.length;
+
+    return (
+        <header className={styles.header}>
+            {/* MAIN HEADER CONTAINER */}
+            <div className={styles.container}>
+                {/* 1. BRAND LOGO */}
+                <Link href="/" className={styles.brand}>
+                    {logoUrl ? (
+                        <Image
+                            src={logoUrl}
+                            alt={storeName}
+                            width={160}
+                            height={40}
+                            className={styles.logoImg}
+                            priority
+                        />
+                    ) : (
+                        <span className={styles.brandText}>
+                            {storeName} <span className={styles.brandAccent}>{'///'}</span>
+                        </span>
+                    )}
+                </Link>
+
+                {/* 2. DESKTOP SEARCH BAR (CENTER) */}
+                <div className={styles.searchContainer} ref={searchContainerRef}>
+                    <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
+                        <input
+                            type="text"
+                            placeholder="🔍 Buscar por nombre, categoría o sabor..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            onFocus={() => searchQuery.trim() && setShowSearchOverlay(true)}
+                            className={styles.searchInput}
+                            aria-label="Buscar productos"
+                        />
+                        <button type="submit" className={styles.searchSubmitBtn} aria-label="Ejecutar búsqueda">
+                            🔍
+                        </button>
+                    </form>
+
+                    {/* SEARCH RESULTS OVERLAY POPOVER */}
+                    {showSearchOverlay && (
+                        <div className={styles.searchOverlay}>
+                            {isSearching ? (
+                                <div className={styles.searchLoading}>Buscando productos...</div>
+                            ) : searchResults.length === 0 ? (
+                                <div className={styles.searchEmpty}>
+                                    No se encontraron productos para &quot;{searchQuery}&quot;
+                                </div>
+                            ) : (
+                                <div className={styles.searchResultsList}>
+                                    <div className={styles.searchResultsHeader}>Resultados rápidos ({searchResults.length})</div>
+                                    {searchResults.map(prod => (
+                                        <Link
+                                            key={prod.id}
+                                            href={`/productos/${prod.id}`}
+                                            onClick={() => setShowSearchOverlay(false)}
+                                            className={styles.searchItem}
+                                        >
+                                            <div className={styles.searchItemThumb}>
+                                                {prod.image_url ? (
+                                                    <Image
+                                                        src={prod.image_url}
+                                                        alt={prod.title}
+                                                        width={44}
+                                                        height={44}
+                                                        style={{ objectFit: 'cover', borderRadius: '6px' }}
+                                                    />
+                                                ) : (
+                                                    <div className={styles.searchItemPlaceholder}>📦</div>
+                                                )}
+                                            </div>
+                                            <div className={styles.searchItemInfo}>
+                                                <div className={styles.searchItemTitle}>{prod.title}</div>
+                                                {prod.category_name && (
+                                                    <div className={styles.searchItemCategory}>{prod.category_name}</div>
+                                                )}
+                                                <div className={styles.searchItemPriceRow}>
+                                                    <span className={styles.searchItemPrice}>{prod.price}</span>
+                                                    {prod.is_out_of_stock && (
+                                                        <span className={styles.searchItemBadgeOut}>Agotado</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    <button
+                                        onClick={handleSearchSubmit}
+                                        className={styles.viewAllSearchBtn}
+                                    >
+                                        Ver todos los resultados para &quot;{searchQuery}&quot; →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. RIGHT ACTIONS (ACCOUNT, CART, THEME) */}
+                <div className={styles.actionsGroup}>
+                    {/* Theme Toggle */}
+                    <button
+                        onClick={toggleTheme}
+                        className={styles.iconBtn}
+                        aria-label="Cambiar tema de color"
+                        title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+                    >
+                        {theme === 'dark' ? '☀️' : '🌙'}
+                    </button>
+
+                    {/* User Account Button */}
+                    <div className={styles.userMenuWrapper} ref={userMenuRef}>
+                        {user ? (
+                            <>
+                                <button
+                                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                    className={styles.userAccountBtn}
+                                >
+                                    <span className={styles.userIcon}>👤</span>
+                                    <span className={styles.userLabel}>Mi Cuenta</span>
+                                    <span className={styles.caret}>▾</span>
+                                </button>
+
+                                {userMenuOpen && (
+                                    <div className={styles.userDropdown}>
+                                        <div className={styles.userDropdownHeader}>
+                                            <div className={styles.userEmail}>{user.email}</div>
+                                        </div>
+                                        <Link
+                                            href="/admin/pedidos"
+                                            onClick={() => setUserMenuOpen(false)}
+                                            className={styles.userDropdownLink}
+                                        >
+                                            📦 Mis Pedidos
+                                        </Link>
+                                        <Link
+                                            href="/admin/perfil"
+                                            onClick={() => setUserMenuOpen(false)}
+                                            className={styles.userDropdownLink}
+                                        >
+                                            👤 Mi Perfil & Direcciones
+                                        </Link>
+                                        <button
+                                            onClick={handleLogout}
+                                            className={styles.userDropdownLogout}
+                                        >
+                                            🚪 Cerrar Sesión
+                                        </button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <Link href="/login" className={styles.loginBtn}>
+                                <span className={styles.userIcon}>👤</span>
+                                <span>Acceder</span>
+                            </Link>
+                        )}
+                    </div>
+
+                    {/* Cart Trigger Button */}
+                    <button
+                        onClick={toggleCart}
+                        className={styles.cartButton}
+                        aria-label={`Ver carrito (${totalCartCount} productos)`}
+                    >
+                        <span className={styles.cartIcon}>🛒</span>
+                        <span className={styles.cartText}>CARRITO</span>
+                        {totalCartCount > 0 && (
+                            <span className={styles.cartBadge}>{totalCartCount}</span>
+                        )}
+                    </button>
+
+                    {/* Mobile Hamburger Toggle */}
+                    <button
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        className={styles.mobileHamburgerBtn}
+                        aria-label="Abrir menú de navegación"
+                    >
+                        ☰
+                    </button>
+                </div>
+            </div>
+
+            {/* 4. CATEGORIES NAVIGATION BAR (DESKTOP) */}
+            <nav className={styles.categoriesBar} aria-label="Navegación de categorías">
+                <div className={styles.categoriesContainer}>
+                    <Link href="/" className={styles.catLinkActive}>
+                        Inicio
+                    </Link>
+
+                    {rootCategories.map(cat => {
+                        const subs = getSubcategories(cat.id);
+                        const hasSubs = subs.length > 0;
+
+                        if (hasSubs) {
+                            return (
+                                <div
+                                    key={cat.id}
+                                    className={styles.catDropdownWrapper}
+                                    onMouseEnter={() => setOpenCategoryDropdownId(cat.id)}
+                                    onMouseLeave={() => setOpenCategoryDropdownId(null)}
+                                >
+                                    <Link href={`/#productos?categoria=${cat.id}`} className={styles.catLink}>
+                                        {cat.name} <span className={styles.catCaret}>▾</span>
+                                    </Link>
+
+                                    {openCategoryDropdownId === cat.id && (
+                                        <div className={styles.catDropdownMenu}>
+                                            <Link
+                                                href={`/#productos?categoria=${cat.id}`}
+                                                className={styles.catDropdownHeaderLink}
+                                            >
+                                                Ver todo en {cat.name} →
+                                            </Link>
+                                            <div className={styles.catDropdownDivider} />
+                                            {subs.map(sub => (
+                                                <Link
+                                                    key={sub.id}
+                                                    href={`/#productos?categoria=${sub.id}`}
+                                                    className={styles.catDropdownItem}
+                                                >
+                                                    ↳ {sub.name}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        }
+
+                        return (
+                            <Link
+                                key={cat.id}
+                                href={`/#productos?categoria=${cat.id}`}
+                                className={styles.catLink}
+                            >
+                                {cat.name}
+                            </Link>
+                        );
+                    })}
+
+                    <Link href="/#productos?ofertas=true" className={styles.offersTagLink}>
+                        🔥 Ofertas Especiales
+                    </Link>
+                </div>
+            </nav>
+
+            {/* 5. MOBILE DRAWER MENU */}
+            {mobileMenuOpen && (
+                <div className={styles.mobileDrawerOverlay} onClick={() => setMobileMenuOpen(false)}>
+                    <div className={styles.mobileDrawerContent} onClick={e => e.stopPropagation()}>
+                        <div className={styles.mobileDrawerHeader}>
+                            <span className={styles.mobileDrawerTitle}>{storeName}</span>
+                            <button
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={styles.mobileDrawerCloseBtn}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Mobile Search */}
+                        <form onSubmit={handleSearchSubmit} className={styles.mobileSearchForm}>
+                            <input
+                                type="text"
+                                placeholder="🔍 Buscar productos..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className={styles.mobileSearchInput}
+                            />
+                        </form>
+
+                        <div className={styles.mobileCategoriesList}>
+                            <Link
+                                href="/"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={styles.mobileCatItem}
+                            >
+                                🏠 Inicio
+                            </Link>
+
+                            {rootCategories.map(cat => {
+                                const subs = getSubcategories(cat.id);
+                                const isExpanded = expandedMobileCategoryId === cat.id;
+
+                                return (
+                                    <div key={cat.id} className={styles.mobileCatGroup}>
+                                        <div className={styles.mobileCatHeader}>
+                                            <Link
+                                                href={`/#productos?categoria=${cat.id}`}
+                                                onClick={() => setMobileMenuOpen(false)}
+                                                className={styles.mobileCatItem}
+                                            >
+                                                {cat.name}
+                                            </Link>
+                                            {subs.length > 0 && (
+                                                <button
+                                                    onClick={() => setExpandedMobileCategoryId(isExpanded ? null : cat.id)}
+                                                    className={styles.mobileAccordionBtn}
+                                                >
+                                                    {isExpanded ? '▲' : '▼'}
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {subs.length > 0 && isExpanded && (
+                                            <div className={styles.mobileSubGroup}>
+                                                {subs.map(sub => (
+                                                    <Link
+                                                        key={sub.id}
+                                                        href={`/#productos?categoria=${sub.id}`}
+                                                        onClick={() => setMobileMenuOpen(false)}
+                                                        className={styles.mobileSubItem}
+                                                    >
+                                                        ↳ {sub.name}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className={styles.mobileDrawerFooter}>
+                            {user ? (
+                                <>
+                                    <Link
+                                        href="/admin/pedidos"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className={styles.mobileUserBtn}
+                                    >
+                                        📦 Mis Pedidos
+                                    </Link>
+                                    <button onClick={handleLogout} className={styles.mobileLogoutBtn}>
+                                        🚪 Cerrar Sesión
+                                    </button>
+                                </>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={styles.mobileLoginBtn}
+                                >
+                                    👤 Acceder a mi cuenta
+                                </Link>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
-          </button>
-
-          {user ? (
-            <Link href="/dashboard" className={styles.accountLink}>
-              Mi Cuenta
-            </Link>
-          ) : (
-            <Link href="/login" className={styles.accountLink}>
-              Acceder
-            </Link>
-          )}
-
-          <div className={styles.cartWrapper}>
-            <span className={styles.cartLabel}>CARRITO</span>
-            <button
-              onClick={toggleCart}
-              className={styles.cartButton}
-              aria-label="Cart"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="9" cy="21" r="1"></circle>
-                <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-              </svg>
-              {items.length > 0 && (
-                <span className={styles.cartBadge}>{items.length}</span>
-              )}
-            </button>
-          </div>
-        </nav>
-      </div>
-    </header>
-  );
+        </header>
+    );
 }

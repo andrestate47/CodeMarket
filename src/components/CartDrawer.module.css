@@ -1,15 +1,12 @@
 .overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(4px);
-    z-index: 999;
+    z-index: 190;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.25s ease;
 }
 
 .overlay.open {
@@ -21,18 +18,17 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 100%;
-    max-width: 400px;
-    height: 100vh;
-    height: 100dvh;
-    background: #0f1014;
-    border-left: 1px solid var(--glass-border);
-    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
-    transform: translateX(100%);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1000;
+    bottom: 0;
+    width: 380px;
+    max-width: 90vw;
+    background: var(--card-bg, #121212);
+    border-left: 1px solid var(--glass-border, #3f3f46);
+    box-shadow: -10px 0 35px rgba(0, 0, 0, 0.5);
+    z-index: 200;
     display: flex;
     flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .drawer.open {
@@ -40,131 +36,234 @@
 }
 
 .header {
-    padding: 24px;
+    padding: 20px 24px;
     border-bottom: 1px solid var(--glass-border);
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+}
+
+.headerTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.headerIcon {
+    font-size: 1.2rem;
 }
 
 .title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: -0.5px;
-    color: #ffffff;
+    font-size: 1.15rem;
+    font-weight: 900;
+    margin: 0;
+    color: var(--foreground);
+}
+
+.badgeCount {
+    background: var(--robotina-orange, #FF6B00);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 999px;
 }
 
 .closeBtn {
-    background: transparent;
-    color: #888;
-    font-size: 1.5rem;
-    line-height: 1;
-    padding: 8px;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     cursor: pointer;
-    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
 .closeBtn:hover {
+    background: var(--robotina-orange);
     color: white;
 }
 
 .body {
     flex: 1;
     overflow-y: auto;
-    padding: 24px;
+    padding: 20px 24px;
 }
 
 .emptyState {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
-    color: #666;
-    margin-top: 40px;
+    gap: 12px;
+    color: var(--text-muted);
+}
+
+.emptyIcon {
+    font-size: 3rem;
+}
+
+.emptyTitle {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--foreground);
+    margin: 0;
+}
+
+.emptySubtitle {
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.continueBtn {
+    margin-top: 12px;
+    padding: 10px 20px;
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--foreground);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.continueBtn:hover {
+    border-color: var(--robotina-orange);
+    color: var(--robotina-orange);
+}
+
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .cartItem {
     display: flex;
-    gap: 16px;
-    margin-bottom: 24px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     align-items: center;
+    gap: 14px;
+    padding: 12px;
+    background: var(--surface-bg, #181818);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
 }
 
-.itemImage {
-    width: 60px;
-    height: 60px;
+.itemThumb {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
     border-radius: 8px;
+    overflow: hidden;
+}
+
+.itemColorPlaceholder {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 800;
     color: white;
-    font-weight: bold;
-    font-size: 1.2rem;
-    flex-shrink: 0;
 }
 
 .itemInfo {
     flex: 1;
+    min-width: 0;
 }
 
 .itemTitle {
-    font-size: 1rem;
-    font-weight: 600;
-    color: white;
-    margin-bottom: 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.itemPrice {
-    font-size: 0.9rem;
-    color: #888;
+.itemMeta {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--robotina-orange, #FF6B00);
+    margin-top: 4px;
 }
 
 .removeBtn {
     background: transparent;
-    color: #ef4444;
-    font-size: 0.8rem;
-    padding: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 6px;
+    border-radius: 6px;
     opacity: 0.7;
+    transition: opacity 0.2s ease;
 }
 
 .removeBtn:hover {
     opacity: 1;
-    text-decoration: underline;
 }
 
 .footer {
-    padding: 24px;
-    background: #0a0a0a;
+    padding: 20px 24px;
     border-top: 1px solid var(--glass-border);
+    background: var(--card-bg);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
-.totalRow {
+.subtotalRow {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #ffffff;
 }
 
-@media (max-width: 480px) {
-    .drawer {
-        max-width: 100%;
-    }
-    .header, .body, .footer {
-        padding: 12px 16px;
-    }
-    .itemImage {
-        width: 50px;
-        height: 50px;
-    }
-    .totalRow {
-        margin-bottom: 16px;
-        font-size: 1.1rem;
-    }
+.subtotalLabel {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.subtotalValue {
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--foreground);
+}
+
+.taxNote {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.actionButtonsRow {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
 }
 
 .checkoutBtn {
-    width: 100%;
+    flex: 1;
+    padding: 14px;
+    background: var(--robotina-orange, #FF6B00);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 900;
+    font-size: 0.88rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(255, 107, 0, 0.35);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.checkoutBtn:hover {
+    background: #FF8A00;
+    transform: translateY(-1px);
 }

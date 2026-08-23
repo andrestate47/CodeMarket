@@ -31,18 +31,12 @@ export default function AdminProductsList() {
 
     // Filtering & Sorting State
     const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState(urlCategory);
+    const [categoryFilter, setCategoryFilter] = useState(urlCategory || 'all');
     const [statusFilter, setStatusFilter] = useState('all');
     const [stockFilter, setStockFilter] = useState('all');
     const [variantFilter, setVariantFilter] = useState('all');
     const [discountFilter, setDiscountFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'price_asc' | 'price_desc' | 'stock_asc' | 'stock_desc' | 'newest'>('newest');
-
-    useEffect(() => {
-        if (urlCategory && urlCategory !== 'all') {
-            setCategoryFilter(urlCategory);
-        }
-    }, [urlCategory]);
 
     useEffect(() => {
         (async () => {
@@ -184,7 +178,7 @@ export default function AdminProductsList() {
             if (sortBy === 'stock_desc') return stockB - stockA;
             return 0; // newest default order
         });
-    }, [productsList, searchQuery, categoryFilter, statusFilter, stockFilter, variantFilter, discountFilter, sortBy]);
+    }, [productsList, searchQuery, categoryFilter, statusFilter, stockFilter, variantFilter, discountFilter, sortBy, dbCategories]);
 
     // Pagination Calculation
     const totalCount = filteredProducts.length;

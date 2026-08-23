@@ -1,0 +1,43 @@
+.linkWrapper {
+    text-decoration: none;
+    display: block;
+}
+
+.promoBar {
+    width: 100%;
+    padding: 8px 16px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-align: center;
+    transition: filter 0.2s ease;
+    user-select: none;
+}
+
+.linkWrapper:hover .promoBar {
+    filter: brightness(1.08);
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.arrow {
+    font-size: 0.9rem;
+    transition: transform 0.2s ease;
+}
+
+.linkWrapper:hover .arrow {
+    transform: translateX(4px);
+}
