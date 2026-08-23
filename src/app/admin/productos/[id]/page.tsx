@@ -8,6 +8,8 @@ import { fetchCatalogProducts, getInstantProducts, CatalogProduct } from '@/modu
 import { parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
+import { getCategoriesListAction, CategoryRecord } from '@/modules/categories/actions';
+
 export default function AdminEditProductPage() {
     const params = useParams();
     const router = useRouter();
@@ -26,12 +28,23 @@ export default function AdminEditProductPage() {
     const [price, setPrice] = useState('0.00');
     const [comparePrice, setComparePrice] = useState('');
     const [productType, setProductType] = useState<'digital' | 'service' | 'physical'>('digital');
+    const [dbCategories, setDbCategories] = useState<CategoryRecord[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
     const [stockQuantity, setStockQuantity] = useState('10');
     const [trackInventory, setTrackInventory] = useState(false);
     const [featured, setFeatured] = useState(false);
     const [status, setStatus] = useState<'active' | 'draft'>('active');
     const [variants, setVariants] = useState<{ id: string; name: string; price: string; stock: number }[]>([]);
     const [wholesaleRules, setWholesaleRules] = useState<{ minQuantity: number; price: string }[]>([]);
+
+    useEffect(() => {
+        (async () => {
+            const res = await getCategoriesListAction();
+            if (res.success && res.categories) {
+                setDbCategories(res.categories);
+            }
+        })();
+    }, []);
 
     useEffect(() => {
         let isMounted = true;
@@ -70,6 +83,13 @@ export default function AdminEditProductPage() {
         setShortDescription(prod.description || '');
         setDescription(prod.longDescription || prod.description || '');
         setImageUrl(prod.image || '');
+
+        if (prod.category_id) {
+            setSelectedCategoryId(prod.category_id);
+        } else if (prod.category) {
+            const match = dbCategories.find(c => c.name.toLowerCase() === prod.category?.toLowerCase() || c.slug === prod.category?.toLowerCase());
+            if (match) setSelectedCategoryId(match.id);
+        }
 
         // Extract numerical price
         const numPrice = typeof prod.price === 'number'
@@ -147,10 +167,14 @@ export default function AdminEditProductPage() {
             const compareAtAmount = comparePrice ? parseMoneyToCents(comparePrice) : null;
             const finalImage = imageUrl || '/web-basica-hero.png';
 
+            const catObj = dbCategories.find(c => c.id === selectedCategoryId);
+            const catName = catObj ? catObj.name : 'General';
+
             const updatedProduct: CatalogProduct = {
                 id: productId,
                 title: name,
-                category: productType === 'service' ? 'Servicios' : (productType === 'physical' ? 'Físicos' : 'Digital'),
+                category: catName,
+                category_id: selectedCategoryId || undefined,
                 description: shortDescription,
                 longDescription: description,
                 price: `S/ ${parseFloat(price).toFixed(2)}`,
@@ -404,7 +428,22 @@ export default function AdminEditProductPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Categoría Comercial *</label>
+                        <select
+                            value={selectedCategoryId}
+                            onChange={e => setSelectedCategoryId(e.target.value)}
+                            style={{ width: '100%', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'var(--input-text)', outline: 'none' }}
+                        >
+                            {dbCategories.map(cat => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.parent_id ? `  ↳ ${cat.name}` : cat.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Tipo de Producto</label>
                         <select

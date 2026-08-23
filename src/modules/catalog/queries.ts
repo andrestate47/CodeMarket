@@ -13,6 +13,7 @@ export interface CatalogProduct {
     id: string;
     title: string;
     category: string;
+    category_id?: string;
     description: string;
     short_description?: string;
     price: string;

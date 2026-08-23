@@ -41,7 +41,7 @@ export default function SalesPerformance({
     // Internal state for uncontrolled mode
     const todayStr = useMemo(() => getLimaDateKey(new Date()), []);
 
-    const [internalPreset, setInternalPreset] = useState<PresetPeriod>('30d');
+    const [internalPreset, setInternalPreset] = useState<PresetPeriod>('today');
     const [internalMetric, setInternalMetric] = useState<MetricType>('sales');
     const [internalCustomStart, setInternalCustomStart] = useState<string>(todayStr);
     const [internalCustomEnd, setInternalCustomEnd] = useState<string>(todayStr);
@@ -52,7 +52,7 @@ export default function SalesPerformance({
 
     const isControlled = propsMetrics !== undefined;
 
-    const activePreset = isControlled ? (propsPreset || '30d') : internalPreset;
+    const activePreset = isControlled ? (propsPreset || 'today') : internalPreset;
     const activeMetric = isControlled ? (propsMetric || 'sales') : internalMetric;
     const activeCustomStart = isControlled ? (propsCustomStart || todayStr) : internalCustomStart;
     const activeCustomEnd = isControlled ? (propsCustomEnd || todayStr) : internalCustomEnd;

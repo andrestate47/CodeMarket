@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { formatMoney } from '@/lib/money';
-import { OrderRecord, OrderItemRecord } from '@/modules/orders/actions';
+import { OrderRecord, OrderItemRecord, getSingleOrderAction } from '@/modules/orders/actions';
 
 export default function PrintOrderPage() {
     const params = useParams();
@@ -20,25 +20,19 @@ export default function PrintOrderPage() {
             if (!orderId) return;
             setLoading(true);
 
-            const { data: orderData } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('id', orderId)
-                .single();
+            const res = await getSingleOrderAction(orderId);
 
-            if (orderData && isMounted) {
-                setOrder(orderData);
-                const { data: itemsData } = await supabase
-                    .from('order_items')
-                    .select('*')
-                    .eq('order_id', orderId);
-                setItems(itemsData || []);
+            if (res.success && res.order && isMounted) {
+                setOrder(res.order);
+                setItems(res.items || []);
                 setLoading(false);
 
                 // Trigger print automatically once rendered
                 setTimeout(() => {
                     window.print();
                 }, 500);
+            } else if (isMounted) {
+                setLoading(false);
             }
         })();
 
@@ -112,8 +106,19 @@ export default function PrintOrderPage() {
                     {items.map((item) => (
                         <tr key={item.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                             <td style={{ padding: '10px' }}>
-                                <strong>{item.product_name}</strong>
-                                {item.variant_name && <div style={{ fontSize: '11px', color: '#6b7280' }}>Variante: {item.variant_name}</div>}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {(item.image_url || item.image) && (
+                                        <img
+                                            src={item.image_url || item.image}
+                                            alt={item.product_name}
+                                            style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', border: '1px solid #e5e7eb', flexShrink: 0 }}
+                                        />
+                                    )}
+                                    <div>
+                                        <strong>{item.product_name}</strong>
+                                        {item.variant_name && <div style={{ fontSize: '11px', color: '#6b7280' }}>Variante: {item.variant_name}</div>}
+                                    </div>
+                                </div>
                             </td>
                             <td style={{ padding: '10px', color: '#6b7280' }}>{item.sku || '—'}</td>
                             <td style={{ padding: '10px', textAlign: 'right' }}>{formatMoney(item.unit_price_amount)}</td>

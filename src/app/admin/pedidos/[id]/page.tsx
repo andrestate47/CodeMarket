@@ -10,6 +10,7 @@ import AdminStatusBadge from '@/components/admin/AdminStatusBadge';
 import {
     updateOrderStatusAction,
     createOrderNoteAction,
+    getSingleOrderAction,
     OrderRecord,
     OrderItemRecord,
     OrderEventRecord,
@@ -40,55 +41,18 @@ export default function AdminOrderDetailPage() {
             if (!orderId) return;
             setLoading(true);
 
-            // Fetch Order
-            const { data: orderData } = await supabase
-                .from('orders')
-                .select('*')
-                .eq('id', orderId)
-                .single();
+            const res = await getSingleOrderAction(orderId);
 
-            if (orderData && isMounted) {
-                setOrder(orderData);
-
-                // Fetch Order Items
-                const { data: itemsData } = await supabase
-                    .from('order_items')
-                    .select('*')
-                    .eq('order_id', orderId);
-                setItems(itemsData || []);
-
-                // Fetch Order Events (History)
-                const { data: eventsData } = await supabase
-                    .from('order_events')
-                    .select('*')
-                    .eq('order_id', orderId)
-                    .order('created_at', { ascending: false });
-                setEvents(eventsData || []);
-
-                // Fetch Internal Notes
-                const { data: notesData } = await supabase
-                    .from('order_notes')
-                    .select('*')
-                    .eq('order_id', orderId)
-                    .order('created_at', { ascending: false });
-                setNotes(notesData || []);
-
-                // Fetch Customer history if customer_id exists
-                if (orderData.customer_id) {
-                    const { data: custOrders } = await supabase
-                        .from('orders')
-                        .select('total_amount')
-                        .eq('customer_id', orderData.customer_id);
-
-                    if (custOrders && isMounted) {
-                        const totalSpent = custOrders.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
-                        setCustomerHistory({
-                            totalOrders: custOrders.length,
-                            totalSpent,
-                        });
-                    }
+            if (res.success && res.order && isMounted) {
+                setOrder(res.order);
+                setItems(res.items || []);
+                setEvents(res.events || []);
+                setNotes(res.notes || []);
+                if (res.customerHistory) {
+                    setCustomerHistory(res.customerHistory);
                 }
-
+            }
+            if (isMounted) {
                 setLoading(false);
             }
         })();
@@ -257,10 +221,36 @@ export default function AdminOrderDetailPage() {
                                 <tbody>
                                     {items.map((item) => (
                                         <tr key={item.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                            <td style={{ padding: '12px 10px' }}>
-                                                <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{item.product_name}</div>
-                                                {item.variant_name && <div style={{ fontSize: '0.78rem', color: '#2563eb' }}>{item.variant_name}</div>}
-                                            </td>
+                                             <td style={{ padding: '12px 10px' }}>
+                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                     <div style={{
+                                                         width: '46px',
+                                                         height: '46px',
+                                                         borderRadius: '10px',
+                                                         overflow: 'hidden',
+                                                         background: 'var(--input-bg)',
+                                                         border: '1.5px solid var(--glass-border)',
+                                                         flexShrink: 0,
+                                                         display: 'flex',
+                                                         alignItems: 'center',
+                                                         justifyContent: 'center',
+                                                     }}>
+                                                         {item.image_url || item.image ? (
+                                                             <img
+                                                                 src={item.image_url || item.image}
+                                                                 alt={item.product_name}
+                                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                             />
+                                                         ) : (
+                                                             <span style={{ fontSize: '1.2rem' }}>📦</span>
+                                                         )}
+                                                     </div>
+                                                     <div>
+                                                         <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{item.product_name}</div>
+                                                         {item.variant_name && <div style={{ fontSize: '0.78rem', color: '#2563eb' }}>{item.variant_name}</div>}
+                                                     </div>
+                                                 </div>
+                                             </td>
                                             <td style={{ padding: '12px 10px', color: 'var(--text-description)', fontSize: '0.8rem' }}>{item.sku || '—'}</td>
                                             <td style={{ padding: '12px 10px', textAlign: 'right', color: 'var(--foreground)' }}>{formatMoney(item.unit_price_amount)}</td>
                                             <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: 'var(--foreground)' }}>{item.quantity}</td>

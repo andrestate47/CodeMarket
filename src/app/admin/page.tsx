@@ -9,10 +9,11 @@ import AdminStatusBadge from '@/components/admin/AdminStatusBadge';
 import SalesPerformance from '@/components/admin/analytics/SalesPerformance';
 import { getDashboardMetrics, DashboardMetrics } from '@/lib/services/dashboardService';
 import { PresetPeriod, MetricType, getLimaDateKey } from '@/components/admin/analytics/salesAnalyticsUtils';
+import { createQuickTestOrderAction } from '@/modules/orders/actions';
 
 export default function AdminDashboard() {
     // Filter Controls State (Global Single Source of Truth Control)
-    const [preset, setPreset] = useState<PresetPeriod>('30d');
+    const [preset, setPreset] = useState<PresetPeriod>('today');
     const [metric, setMetric] = useState<MetricType>('sales');
 
     const todayStr = useMemo(() => getLimaDateKey(new Date()), []);
@@ -42,6 +43,16 @@ export default function AdminDashboard() {
         loadDashboardData();
     }, [loadDashboardData]);
 
+    const handleQuickTestOrder = async () => {
+        setLoading(true);
+        const res = await createQuickTestOrderAction();
+        if (res.success) {
+            loadDashboardData();
+        } else {
+            setLoading(false);
+        }
+    };
+
     return (
         <div style={{ paddingBottom: '60px' }}>
             {/* Page Header */}
@@ -63,6 +74,26 @@ export default function AdminDashboard() {
                                 🛠️ Modo Demo (Desarrollo)
                             </span>
                         )}
+                        <button
+                            type="button"
+                            onClick={handleQuickTestOrder}
+                            disabled={loading}
+                            style={{
+                                padding: '9px 16px',
+                                background: 'rgba(255, 107, 0, 0.15)',
+                                border: '1.5px solid rgba(255, 107, 0, 0.35)',
+                                color: 'var(--robotina-orange)',
+                                borderRadius: '10px',
+                                fontWeight: 700,
+                                fontSize: '0.86rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
+                        >
+                            ⚡ Simular Pedido de Prueba
+                        </button>
                         <Link
                             href="/admin/pedidos/nuevo"
                             style={{

@@ -12,6 +12,7 @@ import {
     updateOrderStatusAction,
     bulkUpdateOrdersAction,
     exportOrdersToCSVAction,
+    createQuickTestOrderAction,
     OrderFilterParams,
     OrderRecord
 } from '@/modules/orders/actions';
@@ -190,6 +191,18 @@ export default function AdminOrdersPage() {
         showToast(`Link de pago copiado: ${link}`);
     };
 
+    const handleCreateTestOrder = async () => {
+        startTransition(async () => {
+            const res = await createQuickTestOrderAction();
+            if (res.success && res.orderNumber) {
+                showToast(`⚡ Pedido de prueba ${res.orderNumber} generado exitosamente.`);
+                fetchOrders();
+            } else {
+                showToast(`Error al generar pedido de prueba: ${res.error}`);
+            }
+        });
+    };
+
     return (
         <div>
             {/* Header & Metrics */}
@@ -197,6 +210,26 @@ export default function AdminOrdersPage() {
                 title="Gestión de Pedidos"
                 action={
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <button
+                            onClick={handleCreateTestOrder}
+                            disabled={isPending}
+                            style={{
+                                padding: '8px 14px',
+                                background: 'rgba(255, 107, 0, 0.15)',
+                                color: 'var(--robotina-orange)',
+                                border: '1.5px solid rgba(255, 107, 0, 0.35)',
+                                borderRadius: '10px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            ⚡ Simular Pedido de Prueba
+                        </button>
                         <Link
                             href="/admin/pedidos/nuevo"
                             style={{

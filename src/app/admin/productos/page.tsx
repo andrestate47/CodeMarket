@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { fetchCatalogProducts, getInstantProducts, CatalogProduct } from '@/modules/catalog/queries';
+import { getCategoriesListAction, CategoryRecord } from '@/modules/categories/actions';
 import { supabase } from '@/lib/supabase';
 import { formatMoney, parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
@@ -12,9 +13,13 @@ import AdminEmptyState from '@/components/admin/AdminEmptyState';
 
 export default function AdminProductsList() {
     const pathname = usePathname();
+    const searchParams = useSearchParams();
+    const urlCategory = searchParams?.get('categoria') || 'all';
+
     const [productsList, setProductsList] = useState<CatalogProduct[]>(() => getInstantProducts());
+    const [dbCategories, setDbCategories] = useState<CategoryRecord[]>([]);
     const [loading, setLoading] = useState(false);
-    
+
     // View Mode (Default: 'list')
     const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
         if (typeof window !== 'undefined') {
@@ -26,12 +31,27 @@ export default function AdminProductsList() {
 
     // Filtering & Sorting State
     const [searchQuery, setSearchQuery] = useState('');
-    const [categoryFilter, setCategoryFilter] = useState('all');
+    const [categoryFilter, setCategoryFilter] = useState(urlCategory);
     const [statusFilter, setStatusFilter] = useState('all');
     const [stockFilter, setStockFilter] = useState('all');
     const [variantFilter, setVariantFilter] = useState('all');
     const [discountFilter, setDiscountFilter] = useState('all');
     const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'price_asc' | 'price_desc' | 'stock_asc' | 'stock_desc' | 'newest'>('newest');
+
+    useEffect(() => {
+        if (urlCategory && urlCategory !== 'all') {
+            setCategoryFilter(urlCategory);
+        }
+    }, [urlCategory]);
+
+    useEffect(() => {
+        (async () => {
+            const res = await getCategoriesListAction();
+            if (res.success && res.categories) {
+                setDbCategories(res.categories);
+            }
+        })();
+    }, []);
 
     // Selection & Bulk Action State
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -121,7 +141,15 @@ export default function AdminProductsList() {
                 sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 prod.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const matchesCategory = categoryFilter === 'all' || prod.category.toLowerCase() === categoryFilter.toLowerCase();
+            const targetCat = dbCategories.find(c => c.id === categoryFilter || c.slug === categoryFilter || c.name.toLowerCase() === categoryFilter.toLowerCase());
+            const targetCatName = targetCat ? targetCat.name.toLowerCase() : categoryFilter.toLowerCase();
+            const prodCat = (prod.category || '').toLowerCase();
+            const prodCatId = (prod.category_id || '').toLowerCase();
+
+            const matchesCategory = categoryFilter === 'all' ||
+                prodCatId === categoryFilter.toLowerCase() ||
+                prodCat === targetCatName ||
+                prodCat === categoryFilter.toLowerCase();
             const matchesStatus = statusFilter === 'all' || (prod.status || 'active').toLowerCase() === statusFilter.toLowerCase();
 
             const stock = prod.stock_quantity ?? 10;
@@ -565,7 +593,15 @@ export default function AdminProductsList() {
                         style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
                     >
                         <option value="all">Todas las categorías</option>
-                        {categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        {dbCategories.length > 0 ? (
+                            dbCategories.map(cat => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.parent_id ? `  ↳ ${cat.name}` : cat.name}
+                                </option>
+                            ))
+                        ) : (
+                            categoriesList.map(cat => <option key={cat} value={cat}>{cat}</option>)
+                        )}
                     </select>
 
                     <select

@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
+import { getCategoriesListAction, CategoryRecord } from '@/modules/categories/actions';
+
 export default function AdminNewProduct() {
     const router = useRouter();
     const [name, setName] = useState('');
@@ -16,6 +18,8 @@ export default function AdminNewProduct() {
     const [price, setPrice] = useState('49.00');
     const [comparePrice, setComparePrice] = useState('79.00');
     const [productType, setProductType] = useState<'digital' | 'service' | 'physical'>('digital');
+    const [dbCategories, setDbCategories] = useState<CategoryRecord[]>([]);
+    const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
     const [stockQuantity, setStockQuantity] = useState('10');
     const [trackInventory, setTrackInventory] = useState(false);
     const [featured, setFeatured] = useState(false);
@@ -23,6 +27,18 @@ export default function AdminNewProduct() {
     const [wholesaleRules, setWholesaleRules] = useState<{ minQuantity: number; price: string }[]>([]);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    React.useEffect(() => {
+        (async () => {
+            const res = await getCategoriesListAction();
+            if (res.success && res.categories) {
+                setDbCategories(res.categories);
+                if (res.categories.length > 0) {
+                    setSelectedCategoryId(res.categories[0].id);
+                }
+            }
+        })();
+    }, []);
 
     const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -86,8 +102,12 @@ export default function AdminNewProduct() {
                 // Keep default fallback ID
             }
 
+            const catObj = dbCategories.find(c => c.id === selectedCategoryId);
+            const catName = catObj ? catObj.name : 'General';
+
             const productPayload = {
                 store_id: storeId,
+                category_id: selectedCategoryId || null,
                 name,
                 slug: slug || `prod-${Date.now()}`,
                 short_description: shortDescription,
@@ -114,7 +134,8 @@ export default function AdminNewProduct() {
             const newProductObj = {
                 id: `prod-local-${Date.now()}`,
                 title: name,
-                category: productType === 'service' ? 'Servicios' : (productType === 'physical' ? 'Físicos' : 'Digital'),
+                category: catName,
+                category_id: selectedCategoryId || undefined,
                 description: shortDescription,
                 price: `S/ ${parseFloat(price).toFixed(2)}`,
                 comparePrice: comparePrice ? `S/ ${parseFloat(comparePrice).toFixed(2)}` : undefined,
@@ -351,7 +372,22 @@ export default function AdminNewProduct() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Categoría Comercial *</label>
+                        <select
+                            value={selectedCategoryId}
+                            onChange={e => setSelectedCategoryId(e.target.value)}
+                            style={{ width: '100%', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'var(--input-text)', outline: 'none' }}
+                        >
+                            {dbCategories.map(cat => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.parent_id ? `  ↳ ${cat.name}` : cat.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Tipo de Producto</label>
                         <select
@@ -375,7 +411,7 @@ export default function AdminNewProduct() {
                                 id="featuredCheck"
                                 style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: 'var(--robotina-orange)' }}
                             />
-                            <label htmlFor="featuredCheck" style={{ cursor: 'pointer', fontSize: '0.88rem', color: 'var(--text-muted)' }}>Mostrar en portada y destacados</label>
+                            <label htmlFor="featuredCheck" style={{ cursor: 'pointer', fontSize: '0.88rem', color: 'var(--text-muted)' }}>Mostrar en portada</label>
                         </div>
                     </div>
                 </div>

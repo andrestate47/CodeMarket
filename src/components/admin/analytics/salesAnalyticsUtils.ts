@@ -121,9 +121,9 @@ export function getPeriodRange(preset: PresetPeriod, customStart?: string, custo
         return { startDate: start, endDate: end };
     }
 
-    // Default fallback to 30d
-    const defaultStart = new Date(year, month, day - 29, 0, 0, 0, 0);
-    return { startDate: defaultStart, endDate: endOfToday };
+    // Default fallback to today
+    const startOfToday = new Date(year, month, day, 0, 0, 0, 0);
+    return { startDate: startOfToday, endDate: endOfToday };
 }
 
 /**

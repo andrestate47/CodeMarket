@@ -89,7 +89,7 @@ export interface DashboardMetrics {
 }
 
 export async function getDashboardMetrics(
-    preset: PresetPeriod = '30d',
+    preset: PresetPeriod = 'today',
     customStart?: string,
     customEnd?: string
 ): Promise<DashboardMetrics> {
