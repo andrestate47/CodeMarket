@@ -23,18 +23,29 @@
   --background: var(--robotina-black);
   --foreground: var(--robotina-white);
   --card-bg: var(--robotina-dark);
-  --glass-bg: rgba(18, 18, 18, 0.85);
+  --surface-bg: #18181b;
+  --glass-bg: rgba(18, 18, 18, 0.88);
   --glass-border: #3f3f46;
+
+  --header-bg: rgba(18, 18, 18, 0.92);
+  --header-border: #27272a;
+  --subnav-bg: rgba(10, 10, 10, 0.95);
+  --subnav-border: #27272a;
 
   /* Semantic Colors Dark */
   --text-muted: #cbd5e1;
   --text-description: #94a3b8;
   --input-bg: #18181b;
+  --input-border: #3f3f46;
   --input-text: var(--robotina-white);
   --btn-outline-color: #3f3f46;
   --btn-outline-text: var(--robotina-white);
   --btn-outline-hover-bg: var(--robotina-orange);
   --btn-outline-hover-text: var(--robotina-white);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5);
 
   /* Brand Gradients */
   --primary: var(--robotina-orange);
@@ -52,21 +63,32 @@
 }
 
 [data-theme='light'] {
-  --background: #f1f5f9;
+  --background: #f8fafc;
   --foreground: #0f172a;
   --card-bg: #ffffff;
-  --glass-bg: rgba(255, 255, 255, 0.95);
-  --glass-border: #94a3b8;
+  --surface-bg: #f1f5f9;
+  --glass-bg: rgba(255, 255, 255, 0.92);
+  --glass-border: #cbd5e1;
+
+  --header-bg: #ffffff;
+  --header-border: #e2e8f0;
+  --subnav-bg: #f1f5f9;
+  --subnav-border: #e2e8f0;
 
   /* Semantic Colors Light */
-  --text-muted: #334155;
-  --text-description: #475569;
-  --input-bg: #ffffff;
+  --text-muted: #475569;
+  --text-description: #64748b;
+  --input-bg: #f8fafc;
+  --input-border: #cbd5e1;
   --input-text: #0f172a;
-  --btn-outline-color: #94a3b8;
+  --btn-outline-color: #cbd5e1;
   --btn-outline-text: #0f172a;
   --btn-outline-hover-bg: var(--robotina-orange);
   --btn-outline-hover-text: #ffffff;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 html,

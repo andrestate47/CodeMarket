@@ -3,11 +3,11 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(18, 18, 18, 0.88);
+    background: var(--header-bg, var(--glass-bg, rgba(18, 18, 18, 0.88)));
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
-    transition: background 0.3s ease;
+    border-bottom: 1px solid var(--header-border, var(--glass-border, rgba(255, 255, 255, 0.1)));
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .container {
@@ -380,8 +380,10 @@
 /* CATEGORIES BAR (DESKTOP) */
 .categoriesBar {
     width: 100%;
-    background: rgba(10, 10, 10, 0.95);
-    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--subnav-bg, rgba(10, 10, 10, 0.95));
+    border-top: 1px solid var(--subnav-border, var(--glass-border, rgba(255, 255, 255, 0.05)));
+    border-bottom: 1px solid var(--subnav-border, var(--glass-border, rgba(255, 255, 255, 0.05)));
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .categoriesContainer {
