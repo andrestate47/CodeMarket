@@ -324,6 +324,9 @@ const MEMORY_DEMO_CATEGORIES: CategoryRecord[] = [
 
 import { generateSlug, isDescendant } from './utils';
 
+let categoriesCache: { data: CategoryRecord[]; timestamp: number } | null = null;
+const CATEGORIES_CACHE_TTL = 30000; // 30 seconds
+
 /**
  * Fetch all categories with product counts and parent names
  */
@@ -332,6 +335,10 @@ export async function getCategoriesListAction(): Promise<{
     categories: CategoryRecord[];
     error?: string;
 }> {
+    if (categoriesCache && (Date.now() - categoriesCache.timestamp < CATEGORIES_CACHE_TTL)) {
+        return { success: true, categories: categoriesCache.data };
+    }
+
     try {
         let dbCategories: CategoryRecord[] = [];
         try {
@@ -394,6 +401,7 @@ export async function getCategoriesListAction(): Promise<{
             }
         });
 
+        categoriesCache = { data: allCategories, timestamp: Date.now() };
         return {
             success: true,
             categories: allCategories,

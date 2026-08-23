@@ -1,20 +1,23 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styles from "./page.module.css";
-import ProductCard from "@/components/ProductCard";
 import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
-import { products } from "@/data/products";
 import Navbar from "@/components/Navbar";
 import PromoBar from "@/components/public/PromoBar";
 import HeroHeroBanner from "@/components/public/HeroHeroBanner";
-import { getHeroBannersAction, getStoreAppearanceAction, HeroBannerRecord, StoreAppearanceRecord } from "@/modules/appearance/actions";
+import ProductCatalogGrid from "@/components/public/ProductCatalogGrid";
+import { getHeroBannersAction, getStoreAppearanceAction } from "@/modules/appearance/actions";
 
-export default function Home() {
-    const [filter, setFilter] = useState('Todos');
-    const [banners, setBanners] = useState<HeroBannerRecord[]>([]);
-    const [appearance, setAppearance] = useState<StoreAppearanceRecord>({
+export const revalidate = 60; // Cache page for 60 seconds
+
+export default async function Home() {
+    // Fetch store appearance and hero banners in parallel on the server
+    const [appearanceRes, bannersRes] = await Promise.all([
+        getStoreAppearanceAction(),
+        getHeroBannersAction(),
+    ]);
+
+    const appearance = appearanceRes.appearance || {
         store_name: 'CODEMARKET',
         logo_url: null,
         promo_bar_enabled: true,
@@ -27,25 +30,9 @@ export default function Home() {
         background_color: '#070707',
         surface_color: '#121212',
         text_color: '#FFFFFF',
-    });
+    };
 
-    useEffect(() => {
-        getStoreAppearanceAction().then(res => {
-            if (res.success && res.appearance) {
-                setAppearance(res.appearance);
-            }
-        });
-
-        getHeroBannersAction().then(res => {
-            if (res.success && res.banners) {
-                setBanners(res.banners);
-            }
-        });
-    }, []);
-
-    const filteredProducts = filter === 'Todos' 
-        ? products 
-        : products.filter(p => p.type === (filter === 'Servicios' ? 'service' : 'digital'));
+    const banners = bannersRes.banners || [];
 
     return (
         <main className={styles.main}>
@@ -70,31 +57,8 @@ export default function Home() {
                 storeName={appearance.store_name}
             />
 
-            {/* STORE SECTION */}
-            <section className={styles.storeSection} id="productos">
-                <div className={styles.storeHeader}>
-                    <h2 className={styles.storeTitle}>
-                        <span className="text-gradient">Colección de Productos</span>
-                    </h2>
-                    <div className={styles.filterBar}>
-                        {['Todos', 'Digital', 'Servicios'].map((item) => (
-                            <span
-                                key={item}
-                                className={`${styles.filterItem} ${filter === item ? styles.active : ''}`}
-                                onClick={() => setFilter(item)}
-                            >
-                                {item}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                <div className={styles.grid}>
-                    {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-            </section>
+            {/* PRODUCT CATALOG GRID */}
+            <ProductCatalogGrid />
 
             {/* TESTIMONIALS SECTION */}
             <Testimonials />

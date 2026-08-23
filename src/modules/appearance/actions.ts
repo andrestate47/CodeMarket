@@ -102,6 +102,10 @@ const DEFAULT_STORE_APPEARANCE: StoreAppearanceRecord = {
     text_color: '#FFFFFF',
 };
 
+let appearanceCache: { data: StoreAppearanceRecord; timestamp: number } | null = null;
+let heroBannersCache: { data: HeroBannerRecord[]; timestamp: number } | null = null;
+const CACHE_TTL_MS = 30000; // 30 seconds cache
+
 /**
  * Fetch active Hero Banners for public homepage
  */
@@ -109,6 +113,10 @@ export async function getHeroBannersAction(): Promise<{
     success: boolean;
     banners: HeroBannerRecord[];
 }> {
+    if (heroBannersCache && (Date.now() - heroBannersCache.timestamp < CACHE_TTL_MS)) {
+        return { success: true, banners: heroBannersCache.data };
+    }
+
     try {
         const isPlaceholder = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project');
         if (isPlaceholder) {
@@ -145,6 +153,7 @@ export async function getHeroBannersAction(): Promise<{
             is_out_of_stock: false,
         }));
 
+        heroBannersCache = { data: banners, timestamp: Date.now() };
         return { success: true, banners };
     } catch {
         return { success: true, banners: DEFAULT_DEMO_BANNERS };
@@ -158,6 +167,9 @@ export async function getStoreAppearanceAction(): Promise<{
     success: boolean;
     appearance: StoreAppearanceRecord;
 }> {
+    if (appearanceCache && (Date.now() - appearanceCache.timestamp < CACHE_TTL_MS)) {
+        return { success: true, appearance: appearanceCache.data };
+    }
     try {
         const isPlaceholder = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project');
         if (isPlaceholder) {
@@ -190,25 +202,25 @@ export async function getStoreAppearanceAction(): Promise<{
             };
         }
 
-        return {
-            success: true,
-            appearance: {
-                id: String(appData.id),
-                store_id: appData.store_id ? String(appData.store_id) : undefined,
-                store_name: storeData?.name || 'CODEMARKET',
-                logo_url: storeData?.logo_url || appData.logo_url || null,
-                promo_bar_enabled: appData.promo_bar_enabled ?? true,
-                promo_bar_text: appData.promo_bar_text || DEFAULT_STORE_APPEARANCE.promo_bar_text,
-                promo_bar_link: appData.promo_bar_link || DEFAULT_STORE_APPEARANCE.promo_bar_link,
-                promo_bar_bg_color: appData.promo_bar_bg_color || DEFAULT_STORE_APPEARANCE.promo_bar_bg_color,
-                promo_bar_text_color: appData.promo_bar_text_color || DEFAULT_STORE_APPEARANCE.promo_bar_text_color,
-                primary_color: appData.primary_color || DEFAULT_STORE_APPEARANCE.primary_color,
-                secondary_color: appData.secondary_color || DEFAULT_STORE_APPEARANCE.secondary_color,
-                background_color: appData.background_color || DEFAULT_STORE_APPEARANCE.background_color,
-                surface_color: appData.surface_color || DEFAULT_STORE_APPEARANCE.surface_color,
-                text_color: appData.text_color || DEFAULT_STORE_APPEARANCE.text_color,
-            },
+        const resultAppearance: StoreAppearanceRecord = {
+            id: String(appData.id),
+            store_id: appData.store_id ? String(appData.store_id) : undefined,
+            store_name: storeData?.name || 'CODEMARKET',
+            logo_url: storeData?.logo_url || appData.logo_url || null,
+            promo_bar_enabled: appData.promo_bar_enabled ?? true,
+            promo_bar_text: appData.promo_bar_text || DEFAULT_STORE_APPEARANCE.promo_bar_text,
+            promo_bar_link: appData.promo_bar_link || DEFAULT_STORE_APPEARANCE.promo_bar_link,
+            promo_bar_bg_color: appData.promo_bar_bg_color || DEFAULT_STORE_APPEARANCE.promo_bar_bg_color,
+            promo_bar_text_color: appData.promo_bar_text_color || DEFAULT_STORE_APPEARANCE.promo_bar_text_color,
+            primary_color: appData.primary_color || DEFAULT_STORE_APPEARANCE.primary_color,
+            secondary_color: appData.secondary_color || DEFAULT_STORE_APPEARANCE.secondary_color,
+            background_color: appData.background_color || DEFAULT_STORE_APPEARANCE.background_color,
+            surface_color: appData.surface_color || DEFAULT_STORE_APPEARANCE.surface_color,
+            text_color: appData.text_color || DEFAULT_STORE_APPEARANCE.text_color,
         };
+
+        appearanceCache = { data: resultAppearance, timestamp: Date.now() };
+        return { success: true, appearance: resultAppearance };
     } catch {
         return { success: true, appearance: DEFAULT_STORE_APPEARANCE };
     }
