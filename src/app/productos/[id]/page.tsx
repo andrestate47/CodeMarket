@@ -617,8 +617,8 @@ export default function ProductPage() {
                         También te podría <span className="text-gradient">interesar</span>
                     </h2>
                     <div className={styles.grid} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px' }}>
-                        {products.filter(p => p.id !== id).slice(0, 4).map(p => (
-                            <ProductCard key={p.id} product={p} />
+                        {getInstantProducts().filter(p => p.id !== id).slice(0, 4).map(p => (
+                            <ProductCard key={p.id} product={p as unknown as Product} />
                         ))}
                     </div>
                 </div>
