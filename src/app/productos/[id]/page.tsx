@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar';
 import ProductCard from '@/components/ProductCard';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { getProductPricing } from '@/lib/pricing';
 import styles from './ProductPage.module.css';
 
 // Parses **text** into colored highlights and \n\n into paragraph breaks
@@ -436,21 +437,29 @@ export default function ProductPage() {
                             🔥 {viewers} personas están viendo este producto
                         </div>
                         
-                        <div className={styles.priceContainer}>
-                            <span className={styles.price}>{finalPriceStr}</span>
-                            {(appliedDiscount > 0 || product.comparePrice) && (() => {
-                                const originalStr = appliedDiscount > 0 ? product.price : product.comparePrice!;
-                                const original = parseFloat(originalStr.replace(/[^0-9.]/g, ''));
-                                const pct = Math.round((1 - finalPriceVal / original) * 100);
-                                return (
-                                    <>
-                                        <span className={styles.comparePrice}>{originalStr}</span>
-                                        <span className={styles.saleBadge}>Oferta</span>
-                                        <span className={styles.savingsBadge}>−{pct}% OFF</span>
-                                    </>
-                                );
-                            })()}
-                        </div>
+                        {(() => {
+                            const pricing = getProductPricing({
+                                price_amount: activePriceVal,
+                                compare_at_amount: product.comparePrice ? parseFloat(product.comparePrice.replace(/[^0-9.]/g, '')) : null,
+                                price: activePriceStr,
+                                compare_price: product.comparePrice,
+                            });
+                            return (
+                                <div className={styles.priceContainer}>
+                                    <span className={styles.price}>{pricing.currentPriceFormatted}</span>
+                                    {pricing.isOnSale && pricing.compareAtPriceFormatted && (
+                                        <>
+                                            <span className={styles.comparePrice}>{pricing.compareAtPriceFormatted}</span>
+                                            <span className={styles.saleBadge}>Oferta</span>
+                                            <span className={styles.savingsBadge}>-{pricing.discountPercentage}% OFF</span>
+                                            <span style={{ fontSize: '0.82rem', color: '#22c55e', fontWeight: 800 }}>
+                                                (Ahorras {pricing.amountSavedFormatted})
+                                            </span>
+                                        </>
+                                    )}
+                                </div>
+                            );
+                        })()}
                         
                         <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '300px' }}>
                             <div style={{ display: 'flex', gap: '8px' }}>

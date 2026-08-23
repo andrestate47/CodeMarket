@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { PublicProductItem } from '@/modules/catalog/publicActions';
 import { useCart } from '@/context/CartContext';
 import { Product } from '@/data/products';
+import { getProductPricing } from '@/lib/pricing';
 import ProductBadges from './ProductBadges';
 import ProductPrice from './ProductPrice';
 import styles from './ProductCard.module.css';
@@ -18,6 +19,8 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
     const { addItem, items } = useCart();
 
     const isAddedToCart = items.some(item => item.id === product.id);
+
+    const pricing = getProductPricing(product);
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -35,8 +38,8 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
             title: product.title,
             category: product.category_name || 'General',
             description: product.description,
-            price: product.price,
-            comparePrice: product.compare_price,
+            price: pricing.currentPriceFormatted,
+            comparePrice: pricing.compareAtPriceFormatted || undefined,
             features: [],
             type: product.type,
             cta: product.cta,
@@ -55,7 +58,8 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
                         isOutOfStock={product.is_out_of_stock}
                         isLowStock={product.is_low_stock}
                         stockQuantity={product.stock_quantity}
-                        discountPercentage={product.discount_percentage}
+                        discountPercentage={pricing.isOnSale ? pricing.discountPercentage : 0}
+                        displayBadgeText={pricing.displayBadgeText}
                         isFeatured={product.is_featured}
                     />
 
@@ -102,9 +106,9 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
 
                 {/* PRICE SECTION */}
                 <ProductPrice
-                    price={product.price}
-                    comparePrice={product.compare_price}
-                    discountPercentage={product.discount_percentage}
+                    price={pricing.currentPriceFormatted}
+                    comparePrice={pricing.compareAtPriceFormatted || undefined}
+                    discountPercentage={pricing.isOnSale ? pricing.discountPercentage : undefined}
                 />
 
                 {/* CTA BUTTON */}

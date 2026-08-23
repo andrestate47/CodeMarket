@@ -635,8 +635,8 @@ export default function AdminProductsList() {
                         style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
                     >
                         <option value="all">Todas las ofertas</option>
-                        <option value="with">Con descuento (% OFF)</option>
-                        <option value="without">Sin descuento</option>
+                        <option value="with">En oferta</option>
+                        <option value="without">Sin oferta</option>
                     </select>
 
                     <select

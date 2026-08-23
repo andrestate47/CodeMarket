@@ -35,15 +35,7 @@ export default function ProductCollectionSection({
     const [error, setError] = useState<string | null>(null);
     const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
 
-    // Effective category slug prioritized from URL
     const effectiveCategorySlug = searchParams.get('categoria') || (searchParams.get('ofertas') === 'true' ? 'ofertas' : activeCategorySlug) || 'all';
-
-    // Keep activeCategorySlug in sync with searchParams
-    useEffect(() => {
-        if (catFromUrl && catFromUrl !== activeCategorySlug) {
-            setActiveCategorySlug(catFromUrl);
-        }
-    }, [catFromUrl, activeCategorySlug]);
 
     // Fetch products
     const loadProducts = useCallback(async (catSlug: string, sort: SortOptionValue, pageNum: number) => {

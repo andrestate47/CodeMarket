@@ -291,7 +291,37 @@ export async function getPublicCatalogProductsAction(params: GetCatalogProductsP
         if (isOfferFilter) {
             mapped = mapped.filter(p => (p.discount_percentage && p.discount_percentage > 0) || (p.compare_at_amount && p.compare_at_amount > p.price_amount) || p.is_featured);
             if (mapped.length === 0) {
-                mapped = (data as unknown as Record<string, unknown>[]).map(p => p as any).filter(p => p.featured || p.compare_at_price_cents);
+                mapped = (data as unknown as Record<string, unknown>[]).map(p => {
+                    const priceAmount = Number(p.price_cents || p.price_amount || 0);
+                    const compareAmount = Number(p.compare_at_price_cents || p.compare_at_amount || 0);
+                    return {
+                        id: String(p.id),
+                        title: String(p.name || p.title || 'Producto'),
+                        slug: String(p.slug || ''),
+                        category_id: p.category_id ? String(p.category_id) : undefined,
+                        category_name: p.categories && typeof p.categories === 'object' && 'name' in p.categories ? String((p.categories as { name: unknown }).name) : undefined,
+                        category_slug: p.categories && typeof p.categories === 'object' && 'slug' in p.categories ? String((p.categories as { slug: unknown }).slug) : undefined,
+                        description: String(p.short_description || p.description || ''),
+                        price: `S/ ${(priceAmount / 100).toFixed(2)}`,
+                        compare_price: compareAmount > 0 ? `S/ ${(compareAmount / 100).toFixed(2)}` : undefined,
+                        price_amount: priceAmount,
+                        compare_at_amount: compareAmount > 0 ? compareAmount : undefined,
+                        currency: 'PEN',
+                        discount_percentage: compareAmount > priceAmount ? Math.round(((compareAmount - priceAmount) / compareAmount) * 100) : 0,
+                        type: (p.product_type as 'digital' | 'service' | 'physical') || 'digital',
+                        cta: p.product_type === 'service' ? 'Cotizar Proyecto' : 'Comprar',
+                        image_url: p.image_url ? String(p.image_url) : '',
+                        track_inventory: Boolean(p.track_inventory),
+                        low_stock_threshold: Number(p.low_stock_threshold || 5),
+                        stock_quantity: Number(p.stock_quantity || 0),
+                        is_out_of_stock: Boolean(p.track_inventory && Number(p.stock_quantity || 0) <= 0),
+                        is_low_stock: Boolean(p.track_inventory && Number(p.stock_quantity || 0) > 0 && Number(p.stock_quantity || 0) <= 5),
+                        is_featured: Boolean(p.featured || p.is_featured),
+                        has_variants: false,
+                        variant_count: 0,
+                        created_at: p.created_at ? String(p.created_at) : undefined,
+                    };
+                }).filter(p => p.is_featured || (p.compare_at_amount && p.compare_at_amount > p.price_amount));
             }
         } else if (categorySlug && categorySlug !== 'all' && categorySlug !== 'todos') {
             mapped = mapped.filter(p => p.category_slug === categorySlug || p.category_name?.toLowerCase() === categorySlug.toLowerCase() || p.category_id === categorySlug);

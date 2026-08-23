@@ -8,6 +8,7 @@ interface ProductBadgesProps {
     isLowStock?: boolean;
     stockQuantity?: number;
     discountPercentage?: number;
+    displayBadgeText?: string | null;
     isFeatured?: boolean;
 }
 
@@ -16,6 +17,7 @@ export default function ProductBadges({
     isLowStock,
     stockQuantity,
     discountPercentage,
+    displayBadgeText,
     isFeatured,
 }: ProductBadgesProps) {
     return (
@@ -26,9 +28,9 @@ export default function ProductBadges({
                 </span>
             ) : (
                 <>
-                    {discountPercentage && discountPercentage > 0 && (
+                    {(displayBadgeText || (discountPercentage && discountPercentage > 0)) && (
                         <span className={`${styles.badge} ${styles.badgeDiscount}`}>
-                            -{discountPercentage}% OFF
+                            {displayBadgeText || `-${discountPercentage}% OFF`}
                         </span>
                     )}
                     {isLowStock && (
@@ -36,7 +38,7 @@ export default function ProductBadges({
                             ÚLTIMAS {stockQuantity ? stockQuantity : ''} UDS.
                         </span>
                     )}
-                    {isFeatured && !discountPercentage && !isLowStock && (
+                    {isFeatured && !discountPercentage && !displayBadgeText && !isLowStock && (
                         <span className={`${styles.badge} ${styles.badgeFeatured}`}>
                             DESTACADO
                         </span>

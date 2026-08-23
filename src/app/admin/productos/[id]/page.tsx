@@ -406,7 +406,7 @@ export default function AdminEditProductPage() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Precio (S/) *</label>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Precio Actual (S/) *</label>
                         <input
                             type="number"
                             step="0.01"
@@ -417,7 +417,10 @@ export default function AdminEditProductPage() {
                         />
                     </div>
                     <div>
-                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Precio Anterior / Tachado (S/)</label>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '4px', color: 'var(--foreground)' }}>Precio de Comparación (S/)</label>
+                        <span style={{ display: 'block', fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '8px', lineHeight: 1.3 }}>
+                            El precio de comparación permite mostrar al cliente el precio anterior cuando el producto está en oferta.
+                        </span>
                         <input
                             type="number"
                             step="0.01"
@@ -425,6 +428,11 @@ export default function AdminEditProductPage() {
                             onChange={e => setComparePrice(e.target.value)}
                             style={{ width: '100%', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '12px 16px', color: 'var(--input-text)', outline: 'none' }}
                         />
+                        {comparePrice && parseFloat(comparePrice) > 0 && parseFloat(comparePrice) <= (parseFloat(price) || 0) && (
+                            <span style={{ display: 'block', fontSize: '0.78rem', color: '#f59e0b', fontWeight: 700, marginTop: '4px' }}>
+                                ⚠️ El precio de comparación debe ser mayor que el precio actual para mostrar una oferta.
+                            </span>
+                        )}
                     </div>
                 </div>
 

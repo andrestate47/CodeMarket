@@ -366,8 +366,8 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                         );
                     })}
 
-                    <Link href="/?categoria=ofertas#productos" className={styles.offersTagLink}>
-                        🔥 Ofertas Especiales
+                    <Link href="/ofertas" className={styles.offersTagLink}>
+                        🔥 Ofertas
                     </Link>
                 </div>
             </nav>

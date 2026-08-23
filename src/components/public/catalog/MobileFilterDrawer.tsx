@@ -79,17 +79,6 @@ export default function MobileFilterDrawer({
                                 Todas las categorías
                             </button>
 
-                            <button
-                                className={`${styles.catBtn} ${activeSlug === 'ofertas' || activeSlug === 'ofertas-especiales' ? styles.activeCatBtn : ''}`}
-                                onClick={() => {
-                                    onSelectCategory('ofertas');
-                                    onClose();
-                                }}
-                                style={{ color: activeSlug === 'ofertas' ? '#ffffff' : 'var(--robotina-orange)', fontWeight: 800 }}
-                            >
-                                🔥 Ofertas Especiales
-                            </button>
-
                             {rootCategories.map(cat => {
                                 const subcats = categories.filter(s => s.parent_id === cat.id && s.is_active);
                                 const isCatActive = activeSlug === cat.slug;

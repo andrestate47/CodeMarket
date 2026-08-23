@@ -1,0 +1,119 @@
+.main {
+    min-height: 100vh;
+    background: var(--background, #070707);
+    color: var(--foreground, #ffffff);
+    padding-bottom: 80px;
+}
+
+.container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+}
+
+.pageHeader {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.badge {
+    align-self: flex-start;
+    padding: 4px 12px;
+    background: rgba(255, 107, 0, 0.12);
+    border: 1px solid rgba(255, 107, 0, 0.3);
+    color: var(--robotina-orange, #FF6B00);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 999px;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin: 0;
+    color: var(--foreground);
+}
+
+.subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    background: var(--card-bg, #121212);
+    border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+    border-radius: 14px;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.countText {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.sortSelect {
+    background: var(--input-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    color: var(--foreground);
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+}
+
+.emptyBox {
+    text-align: center;
+    padding: 80px 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.emptyIcon {
+    font-size: 3rem;
+}
+
+.emptyTitle {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0;
+}
+
+.emptyText {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--robotina-orange);
+    color: white;
+    font-weight: 800;
+    border-radius: 10px;
+    text-decoration: none;
+    margin-top: 8px;
+}

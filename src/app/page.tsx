@@ -5,6 +5,7 @@ import FAQ from "@/components/FAQ";
 import Navbar from "@/components/Navbar";
 import PromoBar from "@/components/public/PromoBar";
 import HeroHeroBanner from "@/components/public/HeroHeroBanner";
+import HomeOffersSection from "@/components/public/catalog/HomeOffersSection";
 import ProductCollectionSection from "@/components/public/catalog/ProductCollectionSection";
 import ProductGridSkeleton from "@/components/public/catalog/ProductGridSkeleton";
 import { getHeroBannersAction, getStoreAppearanceAction } from "@/modules/appearance/actions";
@@ -60,6 +61,9 @@ export default async function Home() {
                 banners={banners}
                 storeName={appearance.store_name}
             />
+
+            {/* COMMERCIAL OFFERS SECTION (AUTOMATICALLY HIDDEN IF 0 OFFERS) */}
+            <HomeOffersSection />
 
             {/* PRODUCT COLLECTION SECTION WRAPPED IN SUSPENSE */}
             <Suspense fallback={<ProductGridSkeleton count={8} />}>
