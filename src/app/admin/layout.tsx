@@ -151,6 +151,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     onLogout={handleLogout}
                     pendingOrdersCount={pendingOrdersCount}
                     onNavItemClick={() => setMobileMenuOpen(false)}
+                    isMobileDrawer
                 />
             </AdminMobileDrawer>
 

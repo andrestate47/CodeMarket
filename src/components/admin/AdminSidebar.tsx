@@ -23,9 +23,10 @@ interface AdminSidebarProps {
     pendingOrdersCount?: number;
     className?: string;
     onNavItemClick?: () => void;
+    isMobileDrawer?: boolean;
 }
 
-export default function AdminSidebar({ onLogout, pendingOrdersCount, className, onNavItemClick }: AdminSidebarProps) {
+export default function AdminSidebar({ onLogout, pendingOrdersCount, className, onNavItemClick, isMobileDrawer }: AdminSidebarProps) {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
@@ -63,27 +64,22 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
             title: 'VENTAS',
             items: [
                 { label: 'Clientes', href: '/admin/clientes', icon: '👥' },
-                { label: 'Descuentos', href: '/admin/descuentos', icon: '🎟️' },
+                { label: 'Descuentos', href: '/admin/descuentos', icon: '🏷️' },
+            ],
+        },
+        {
+            title: 'ANÁLISIS',
+            items: [
                 { label: 'Reportes', href: '/admin/reportes', icon: '📈' },
+                { label: 'Valoraciones', href: '/admin/reviews', icon: '⭐' },
             ],
         },
         {
             title: 'TIENDA',
             items: [
                 { label: 'Apariencia', href: '/admin/apariencia', icon: '🎨' },
-                { label: 'Usuarios y Permisos', href: '/admin/configuracion/usuarios', icon: '🔐' },
-                { label: 'Métodos de pago', href: '/admin/configuracion/pagos', icon: '💳' },
-                { label: 'Envíos', href: '/admin/configuracion/envios', icon: '🚚' },
-                { label: 'Dominio y SEO', href: '/admin/configuracion/dominio-seo', icon: '🌐' },
-                { label: 'Integraciones', href: '/admin/configuracion/integraciones', icon: '🔌' },
-                { label: 'Configuración', href: '/admin/configuracion', exact: true, icon: '⚙️' },
-            ],
-        },
-        {
-            title: 'CUENTA',
-            items: [
-                { label: 'Mi perfil', href: '/admin/perfil', icon: '👤' },
-                { label: 'Ver tienda', href: '/', icon: '🛍️' },
+                { label: 'Configuración', href: '/admin/configuracion', icon: '⚙️' },
+                { label: 'Ver Tienda', href: '/', icon: '👁️' },
             ],
         },
     ];
@@ -101,8 +97,8 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
         return pathname === href || pathname.startsWith(href + '/');
     };
 
-    return (
-        <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ''} ${className || ''}`}>
+    const asideContent = (
+        <aside className={`${styles.sidebar} ${isMobileDrawer ? styles.mobileSidebar : ''} ${collapsed ? styles.sidebarCollapsed : ''} ${className || ''}`}>
             {/* Header */}
             <div className={styles.header}>
                 <Link href="/admin" className={styles.brand} onClick={onNavItemClick}>
@@ -181,5 +177,16 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
                 )}
             </div>
         </aside>
+    );
+
+    if (isMobileDrawer) {
+        return asideContent;
+    }
+
+    return (
+        <>
+            <div className={`${styles.sidebarSpacer} ${collapsed ? styles.sidebarSpacerCollapsed : ''}`} aria-hidden="true" />
+            {asideContent}
+        </>
     );
 }
