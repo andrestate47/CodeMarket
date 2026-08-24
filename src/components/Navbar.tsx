@@ -22,6 +22,9 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
 
+    const cartItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
+    const totalCartCount = itemCount || cartItemsCount;
+
     const [user, setUser] = useState<User | null>(null);
     const [categories, setCategories] = useState<CategoryRecord[]>([]);
     const [openCategoryDropdownId, setOpenCategoryDropdownId] = useState<string | null>(null);
@@ -123,8 +126,6 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
     // Separate Root Categories & Subcategories
     const rootCategories = categories.filter(c => !c.parent_id);
     const getSubcategories = (parentId: string) => categories.filter(c => c.parent_id === parentId);
-
-    const totalCartCount = itemCount ?? items.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
     return (
         <header className={styles.header}>
@@ -289,11 +290,12 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                         onClick={toggleCart}
                         className={styles.cartButton}
                         aria-label={`Ver carrito (${totalCartCount} productos)`}
+                        suppressHydrationWarning
                     >
                         <span className={styles.cartIcon}>🛒</span>
                         <span className={styles.cartText}>CARRITO</span>
                         {totalCartCount > 0 && (
-                            <span className={styles.cartBadge}>{totalCartCount}</span>
+                            <span className={styles.cartBadge} suppressHydrationWarning>{totalCartCount}</span>
                         )}
                     </button>
 
