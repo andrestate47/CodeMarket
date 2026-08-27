@@ -170,19 +170,27 @@ export default function HeroHeroBanner({
                                 </div>
                             )}
 
-                            {/* CTA BUTTON */}
+                            {/* CTA BUTTONS */}
                             <div className={styles.ctaRow}>
                                 {currentBanner.is_out_of_stock ? (
                                     <span className={styles.outOfStockBadge}>
                                         PRODUCTO AGOTADO
                                     </span>
                                 ) : (
-                                    <Link
-                                        href={currentBanner.button_url || '/#productos'}
-                                        className={styles.primaryCtaBtn}
-                                    >
-                                        {currentBanner.button_text || 'COMPRAR AHORA'}
-                                    </Link>
+                                    <>
+                                        <Link
+                                            href={currentBanner.button_url || '/#productos'}
+                                            className={styles.primaryCtaBtn}
+                                        >
+                                            {currentBanner.button_text || 'COMPRAR AHORA'}
+                                        </Link>
+                                        <Link
+                                            href="/#categorias"
+                                            className={styles.secondaryCtaBtn}
+                                        >
+                                            VER CATEGORÍAS
+                                        </Link>
+                                    </>
                                 )}
                             </div>
                         </div>

@@ -21,9 +21,14 @@ export default function AdminTopbar({
     onLogout,
 }: AdminTopbarProps) {
     const { theme, toggleTheme } = useTheme();
-    const [mounted, setMounted] = useState(() => typeof window !== 'undefined');
+    const [mounted, setMounted] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {

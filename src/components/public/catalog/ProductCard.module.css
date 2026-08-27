@@ -241,3 +241,35 @@
     border-color: var(--glass-border);
     color: var(--foreground);
 }
+
+/* RESPONSIVE FOR MOBILE 2-COLUMN GRID */
+@media (max-width: 600px) {
+    .cardDetails {
+        padding: 12px 10px;
+        gap: 6px;
+    }
+    .productTitle {
+        font-size: 0.88rem;
+        min-height: 2.6em;
+    }
+    .mainPrice {
+        font-size: 1.1rem;
+    }
+    .comparePrice {
+        font-size: 0.82rem;
+    }
+    .cartBtn, .optionsBtn, .disabledBtn {
+        padding: 10px 6px;
+        font-size: 0.8rem;
+        min-height: 40px;
+    }
+    .badgeContainer {
+        top: 6px;
+        left: 6px;
+    }
+    .badge {
+        padding: 3px 6px;
+        font-size: 0.62rem;
+    }
+}
+

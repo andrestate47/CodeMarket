@@ -36,6 +36,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
     const [showSearchOverlay, setShowSearchOverlay] = useState(false);
     const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
     const searchContainerRef = useRef<HTMLDivElement>(null);
+    const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
 
     // User menu dropdown
     const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -71,7 +72,10 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
     // Handle outside clicks to close search overlay and user dropdown
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+            const isOutsideDesktop = !searchContainerRef.current || !searchContainerRef.current.contains(e.target as Node);
+            const isOutsideMobile = !mobileSearchContainerRef.current || !mobileSearchContainerRef.current.contains(e.target as Node);
+
+            if (isOutsideDesktop && isOutsideMobile) {
                 setShowSearchOverlay(false);
             }
             if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
@@ -280,7 +284,7 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                         ) : (
                             <Link href="/login" className={styles.loginBtn}>
                                 <span className={styles.userIcon}>👤</span>
-                                <span>Acceder</span>
+                                <span className={styles.userLabel}>Acceder</span>
                             </Link>
                         )}
                     </div>
@@ -308,6 +312,81 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
                         ☰
                     </button>
                 </div>
+            </div>
+
+            {/* MOBILE QUICK SEARCH BAR */}
+            <div className={styles.mobileSearchContainer} ref={mobileSearchContainerRef}>
+                <form onSubmit={handleSearchSubmit} className={styles.mobileSearchFormInner}>
+                    <input
+                        type="text"
+                        placeholder="Buscar productos o categorías..."
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        onFocus={() => searchQuery.trim() && setShowSearchOverlay(true)}
+                        className={styles.mobileSearchInputHeader}
+                        aria-label="Buscar productos en móvil"
+                    />
+                    <button type="submit" className={styles.searchSubmitBtn} aria-label="Ejecutar búsqueda">
+                        🔍
+                    </button>
+                </form>
+
+                {/* SEARCH RESULTS OVERLAY POPOVER FOR MOBILE */}
+                {showSearchOverlay && (
+                    <div className={styles.searchOverlay}>
+                        {isSearching ? (
+                            <div className={styles.searchLoading}>⚡ Buscando coincidencias...</div>
+                        ) : searchResults.length === 0 ? (
+                            <div className={styles.searchEmpty}>
+                                No se encontraron productos para &quot;{searchQuery}&quot;
+                            </div>
+                        ) : (
+                            <div className={styles.searchResultsList}>
+                                <div className={styles.searchResultsHeader}>Sugerencias predichas ({searchResults.length})</div>
+                                {searchResults.map(prod => (
+                                    <Link
+                                        key={prod.id}
+                                        href={`/productos/${prod.id}`}
+                                        onClick={() => setShowSearchOverlay(false)}
+                                        className={styles.searchItem}
+                                    >
+                                        <div className={styles.searchItemThumb}>
+                                            {prod.image_url ? (
+                                                <Image
+                                                    src={prod.image_url}
+                                                    alt={prod.title}
+                                                    width={44}
+                                                    height={44}
+                                                    style={{ objectFit: 'cover', borderRadius: '6px' }}
+                                                />
+                                            ) : (
+                                                <div className={styles.searchItemPlaceholder}>📦</div>
+                                            )}
+                                        </div>
+                                        <div className={styles.searchItemInfo}>
+                                            <div className={styles.searchItemTitle}>{prod.title}</div>
+                                            {prod.category_name && (
+                                                <div className={styles.searchItemCategory}>{prod.category_name}</div>
+                                            )}
+                                            <div className={styles.searchItemPriceRow}>
+                                                <span className={styles.searchItemPrice}>{prod.price}</span>
+                                                {prod.is_out_of_stock && (
+                                                    <span className={styles.searchItemBadgeOut}>Agotado</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                ))}
+                                <button
+                                    onClick={handleSearchSubmit}
+                                    className={styles.viewAllSearchBtn}
+                                >
+                                    Ver todos los resultados para &quot;{searchQuery}&quot; →
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* 4. CATEGORIES NAVIGATION BAR (DESKTOP) */}

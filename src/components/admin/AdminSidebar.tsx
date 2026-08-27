@@ -31,7 +31,7 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('admin_sidebar_collapsed');
-            if (saved !== null) return saved === 'true';
+            return saved === 'true';
         }
         return false;
     });
@@ -39,8 +39,10 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
     const toggleCollapse = () => {
         const next = !collapsed;
         setCollapsed(next);
-        if (typeof window !== 'undefined') {
+        try {
             localStorage.setItem('admin_sidebar_collapsed', String(next));
+        } catch (e) {
+            console.error('Failed to save sidebar collapsed state', e);
         }
     };
 

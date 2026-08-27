@@ -713,6 +713,20 @@ export default function ProductPage() {
 
             <ReviewSection productId={id} />
 
+            {/* Mobile Sticky Buy Bar */}
+            <div className={styles.mobileStickyBuyBar}>
+                <div className={styles.stickyPriceInfo}>
+                    <span className={styles.stickyTitle}>{product.title}</span>
+                    <span className={styles.stickyPrice}>{selectedVariant ? selectedVariant.price : product.price}</span>
+                </div>
+                <button
+                    onClick={handleAddToCart}
+                    className={`${styles.stickyBuyBtn} ${isInCart ? styles.addedBtn : ''}`}
+                >
+                    {isInCart ? '✓ Añadido' : '🛒 Agregar al carrito'}
+                </button>
+            </div>
+
             <footer className={styles.footer}>
                 <div className="container">
                    <p>© 2026 CodeMarket. All rights reserved.</p>

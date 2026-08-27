@@ -79,15 +79,19 @@
 
 .badgeTag {
     align-self: flex-start;
-    padding: 5px 12px;
-    background: var(--robotina-orange, #FF6B00);
-    color: #FFFFFF;
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 16px;
+    background: rgba(255, 107, 0, 0.12);
+    border: 1.5px solid var(--robotina-orange, #FF6B00);
+    color: var(--robotina-orange, #FF6B00);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 1.2px;
     text-transform: uppercase;
-    border-radius: 999px;
-    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.35);
+    border-radius: 9999px;
+    box-shadow: 0 0 12px rgba(255, 107, 0, 0.15);
 }
 
 .heroTitle {
@@ -140,6 +144,10 @@
 /* CTA */
 .ctaRow {
     margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .primaryCtaBtn {
@@ -163,6 +171,30 @@
     background: #FF8A00;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(255, 107, 0, 0.5);
+}
+
+.secondaryCtaBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+    font-size: 0.92rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 12px;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+}
+
+.secondaryCtaBtn:hover {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: #FFFFFF;
+    transform: translateY(-2px);
 }
 
 .outOfStockBadge {
@@ -227,6 +259,8 @@
 .dotBtn {
     width: 10px;
     height: 10px;
+    min-height: 0 !important;
+    max-height: 10px;
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.35);
     border: none;
@@ -237,6 +271,9 @@
 
 .dotActive {
     width: 28px;
+    height: 10px;
+    min-height: 0 !important;
+    max-height: 10px;
     border-radius: 999px;
     background: var(--robotina-orange, #FF6B00);
 }
@@ -315,7 +352,8 @@
 
 @media (max-width: 600px) {
     .heroSection {
-        height: 440px;
+        min-height: 480px;
+        height: auto;
     }
     .heroImageDesktop {
         display: none;
@@ -326,26 +364,66 @@
     .heroOverlay {
         background: linear-gradient(
             180deg,
-            rgba(0, 0, 0, 0.4) 0%,
-            rgba(0, 0, 0, 0.85) 60%,
-            rgba(0, 0, 0, 0.95) 100%
+            rgba(0, 0, 0, 0.45) 0%,
+            rgba(0, 0, 0, 0.85) 55%,
+            rgba(0, 0, 0, 0.96) 100%
         );
     }
     .heroContentContainer {
         align-items: flex-end;
-        padding: 0 20px 48px 20px;
+        padding: 32px 16px 56px 16px;
+        min-height: 480px;
+    }
+    .heroContentBox {
+        gap: 10px;
+        width: 100%;
+    }
+    .badgeTag {
+        font-size: 0.65rem;
+        padding: 3px 8px;
     }
     .heroTitle {
-        font-size: 1.65rem;
+        font-size: 1.45rem;
+        line-height: 1.18;
+        letter-spacing: -0.5px;
     }
     .heroSubtitle {
-        font-size: 0.88rem;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+    .mainPrice {
+        font-size: 1.35rem;
+    }
+    .comparePrice {
+        font-size: 0.95rem;
+    }
+    .ctaRow {
+        margin-top: 4px;
+        margin-bottom: 8px;
     }
     .primaryCtaBtn {
         width: 100%;
         padding: 12px;
+        font-size: 0.85rem;
+        border-radius: 10px;
     }
     .navArrow {
         display: none; /* Mobile relies mainly on touch swipe */
     }
+    .dotsContainer {
+        bottom: 12px;
+    }
+    .dotBtn {
+        width: 8px;
+        height: 8px;
+        min-height: 0 !important;
+        max-height: 8px;
+    }
+    .dotActive {
+        width: 22px;
+        height: 8px;
+        min-height: 0 !important;
+        max-height: 8px;
+    }
 }
+

@@ -34,14 +34,17 @@ export default function HomeOffersSection() {
     return (
         <section className={styles.section} style={{ paddingBottom: '20px' }}>
             <div className={styles.container}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
-                        <span className={styles.sectionBadge} style={{ background: 'rgba(255,107,0,0.15)', borderColor: 'var(--robotina-orange)' }}>
-                            🔥 DESCUENTOS DESTACADOS
+                        <span className={styles.sectionBadge}>
+                            🔥 TIEMPO LIMITADO
                         </span>
-                        <h2 className={styles.sectionTitle} style={{ marginTop: '6px' }}>
-                            OFERTAS <span className="text-gradient">ESPECIALES</span>
+                        <h2 className={styles.sectionTitle} style={{ marginTop: '6px', marginBottom: '4px' }}>
+                            Ofertas especiales
                         </h2>
+                        <p style={{ color: 'var(--text-muted, #a1a1aa)', fontSize: '0.92rem', margin: 0 }}>
+                            Aprovecha precios especiales en productos seleccionados por tiempo limitado.
+                        </p>
                     </div>
 
                     <Link

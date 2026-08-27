@@ -35,32 +35,36 @@ export function parseItemPrice(priceStrOrNum: string | number): number {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-    const [items, setItems] = useState<CartItem[]>(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                const savedCart = localStorage.getItem('codemarket_cart');
-                if (savedCart) {
-                    const parsed = JSON.parse(savedCart);
-                    if (Array.isArray(parsed)) return parsed;
-                }
-            } catch {
-                // fallback
-            }
-        }
-        return [];
-    });
+    const [items, setItems] = useState<CartItem[]>([]);
     const [isOpen, setIsOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
-    // Save cart to localStorage on changes
+    // Load cart from localStorage after mount to match SSR initial render
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                localStorage.setItem('codemarket_cart', JSON.stringify(items));
-            } catch (e) {
-                console.error('Failed to save cart to localStorage', e);
+        try {
+            const savedCart = localStorage.getItem('codemarket_cart');
+            if (savedCart) {
+                const parsed = JSON.parse(savedCart);
+                if (Array.isArray(parsed)) {
+                    // eslint-disable-next-line react-hooks/set-state-in-effect
+                    setItems(parsed);
+                }
             }
+        } catch (e) {
+            console.error('Failed to load cart from localStorage', e);
         }
-    }, [items]);
+        setIsMounted(true);
+    }, []);
+
+    // Save cart to localStorage on changes after initial mount
+    useEffect(() => {
+        if (!isMounted) return;
+        try {
+            localStorage.setItem('codemarket_cart', JSON.stringify(items));
+        } catch (e) {
+            console.error('Failed to save cart to localStorage', e);
+        }
+    }, [items, isMounted]);
 
     const addItem = (
         product: Product, 

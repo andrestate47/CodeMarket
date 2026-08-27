@@ -41,3 +41,17 @@
 .linkWrapper:hover .arrow {
     transform: translateX(4px);
 }
+
+@media (max-width: 600px) {
+    .promoBar {
+        padding: 6px 12px;
+        font-size: 0.76rem;
+    }
+    .text {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+        line-height: 1.25;
+    }
+}
+
