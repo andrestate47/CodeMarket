@@ -623,10 +623,6 @@
 }
 
 /* RESPONSIVE */
-@media (max-width: 900px) {
-    .container {
-        padding: 10px 16px;
-        padding-top: max(10px, env(safe-area-inset-top));
 .mobileHamburgerBtn {
     display: none;
 }
@@ -634,16 +630,17 @@
 @media (max-width: 900px) {
     .container {
         padding: 10px 14px;
+        padding-top: max(10px, env(safe-area-inset-top));
         gap: 8px;
     }
     .searchContainer {
-        display: none;
+        display: none !important;
     }
     .categoriesBar {
-        display: none;
+        display: none !important;
     }
     .mobileHamburgerBtn {
-        display: flex;
+        display: flex !important;
         align-items: center;
         justify-content: center;
         width: 36px;
@@ -755,30 +752,33 @@
     }
 }
 
-
-
 /* Mobile Search Expandable Bar */
 .mobileSearchContainer {
     display: none;
     width: 100%;
-    padding: 0 12px 8px 12px;
+    padding: 4px 12px 8px 12px;
     position: relative;
+    box-sizing: border-box;
 }
 
 @media (max-width: 900px) {
     .mobileSearchContainer {
-        display: block;
+        display: block !important;
     }
 }
 
 .mobileSearchFormInner {
-    display: flex;
-    align-items: center;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     background: var(--input-bg, rgba(255, 255, 255, 0.05));
     border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.15));
     border-radius: 999px;
     padding: 0 12px;
     height: 38px;
+    box-sizing: border-box;
+    width: 100%;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -788,6 +788,7 @@
 }
 
 .mobileSearchInputHeader {
+    flex: 1;
     width: 100%;
     background: transparent !important;
     border: none !important;
