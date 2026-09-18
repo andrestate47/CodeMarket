@@ -49,7 +49,7 @@ export default function Login() {
           setError(loginError?.message || "Error al iniciar sesión: Verifica tus credenciales.");
         } else {
           document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
-          router.push(getSanitizedRedirect('/dashboard'));
+          router.push(getSanitizedRedirect('/admin'));
         }
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
@@ -89,44 +89,37 @@ export default function Login() {
             {isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </h1>
 
-          {process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project') && (
-            <div style={{
-              background: 'rgba(234, 179, 8, 0.1)',
-              border: '1px solid rgba(234, 179, 8, 0.3)',
-              borderRadius: '12px',
-              padding: '16px',
-              marginBottom: '20px',
-              fontSize: '0.85rem',
-              color: '#facc15',
-              lineHeight: '1.4'
-            }}>
-              <strong>⚠️ Modo de Demostración Local:</strong>
-              <p style={{ margin: '6px 0 12px 0', color: '#e4e4e7', fontSize: '0.8rem' }}>
-                Tu archivo <code>.env.local</code> aún no tiene las claves de Supabase. Puedes entrar directamente al Panel Admin en Modo Demo para probar la interfaz:
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  document.cookie = 'sb-access-token=dev-admin-demo-token; path=/; max-age=604800; SameSite=Lax';
-                  router.push(getSanitizedRedirect('/admin'));
-                }}
-                style={{
-                  width: '100%',
-                  background: 'var(--gradient-main)',
-                  color: 'white',
-                  border: 'none',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)'
-                }}
-              >
-                🚀 Entrar al Panel Admin (Modo Demo Local)
-              </button>
-            </div>
-          )}
+          <div style={{
+            background: 'rgba(255, 107, 0, 0.08)',
+            border: '1px solid rgba(255, 107, 0, 0.25)',
+            borderRadius: '12px',
+            padding: '14px',
+            marginBottom: '20px',
+            fontSize: '0.85rem',
+            textAlign: 'center'
+          }}>
+            <button
+              type="button"
+              onClick={() => {
+                document.cookie = 'sb-access-token=tiendavir-admin-token; path=/; max-age=604800; SameSite=Lax';
+                router.push(getSanitizedRedirect('/admin'));
+              }}
+              style={{
+                width: '100%',
+                background: 'var(--gradient-main, linear-gradient(135deg, #FF6B00 0%, #FF8A00 100%))',
+                color: 'white',
+                border: 'none',
+                padding: '11px 16px',
+                borderRadius: '8px',
+                fontWeight: 700,
+                fontSize: '0.9rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(255, 107, 0, 0.3)'
+              }}
+            >
+              🔐 Entrar al Panel Administrador
+            </button>
+          </div>
           
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
