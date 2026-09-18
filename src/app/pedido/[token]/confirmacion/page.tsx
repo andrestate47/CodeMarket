@@ -11,11 +11,14 @@ import styles from './ConfirmationPage.module.css';
 interface OrderRecord {
     id: string;
     order_number: string;
+    customer_name?: string;
+    customer_phone?: string;
     payment_method: string;
     payment_status: string;
     total_formatted: string;
     payment_receipt_url?: string;
     currency: string;
+    order_items?: { product_name: string; quantity: number }[];
 }
 
 interface OrderDataState {
@@ -306,19 +309,66 @@ export default function OrderConfirmationPage() {
                         </div>
                     )}
 
-                    <div className={styles.actionsRow}>
-                        <Link href="/" className={styles.homeBtn}>
-                            ← Volver a la Tienda
-                        </Link>
-                        <a
-                            href={`https://wa.me/${whatsappPhone.replace(/[^0-9]/g, '')}?text=Hola,%20tengo%20una%20consulta%20sobre%20mi%20pedido%20${order.order_number}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={styles.whatsappBtn}
-                        >
-                            <span>💬 Contactar por WhatsApp</span>
-                        </a>
-                    </div>
+                    {/* WHATSAPP AUTOMATIC AFFILIATION CARD */}
+                    {(() => {
+                        const cleanPhone = whatsappPhone.replace(/[^0-9]/g, '');
+                        const itemsSummary = order.order_items && order.order_items.length > 0
+                            ? order.order_items.map(i => `${i.product_name} (x${i.quantity})`).join(', ')
+                            : 'Productos varios';
+
+                        const messageText = `Hola TiendaVir, acabo de realizar una compra:\n\n` +
+                            `📋 *Pedido:* ${order.order_number}\n` +
+                            `👤 *Cliente:* ${order.customer_name || 'Cliente'}\n` +
+                            `📱 *Teléfono:* ${order.customer_phone || 'No especificado'}\n` +
+                            `📦 *Productos:* ${itemsSummary}\n` +
+                            `💵 *Total:* ${order.total_formatted}\n` +
+                            `💳 *Método de Pago:* ${methodConfig?.name || order.payment_method.toUpperCase()}\n\n` +
+                            `Adjunto mi comprobante para proceder con la entrega. ¡Muchas gracias!`;
+
+                        const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
+
+                        return (
+                            <div style={{
+                                marginTop: '24px',
+                                background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.04) 100%)',
+                                border: '1.5px solid rgba(34, 197, 94, 0.35)',
+                                borderRadius: '16px',
+                                padding: '20px',
+                                textAlign: 'center'
+                            }}>
+                                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💬</div>
+                                <h3 style={{ margin: '0 0 6px 0', color: '#22c55e', fontSize: '1.1rem', fontWeight: 800 }}>
+                                    ¡Notifica tu Compra al WhatsApp de la Tienda!
+                                </h3>
+                                <p style={{ margin: '0 0 16px 0', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                                    Haz clic en el botón a continuación para enviar los detalles de tu orden directamente a nuestro WhatsApp oficial con 1 solo tap:
+                                </p>
+
+                                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    <a
+                                        href={waLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={styles.whatsappBtn}
+                                        style={{
+                                            background: '#22c55e',
+                                            color: '#ffffff',
+                                            fontWeight: 800,
+                                            padding: '12px 24px',
+                                            borderRadius: '10px',
+                                            boxShadow: '0 4px 14px rgba(34, 197, 94, 0.35)'
+                                        }}
+                                    >
+                                        <span>📲 Enviar Pedido a WhatsApp ({order.order_number})</span>
+                                    </a>
+
+                                    <Link href="/" className={styles.homeBtn}>
+                                        ← Volver a la Tienda
+                                    </Link>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
         </div>

@@ -1,22 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminDataTable from '@/components/admin/AdminDataTable';
 import AdminEmptyState from '@/components/admin/AdminEmptyState';
-
-interface DBCustomer {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    created_at: string;
-}
+import { CustomerService, CustomerProfile } from '@/lib/services/customerService';
+import { formatMoney } from '@/lib/money';
 
 export default function AdminCustomersPage() {
-    const [customers, setCustomers] = useState<DBCustomer[]>([]);
+    const [customers, setCustomers] = useState<CustomerProfile[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -24,13 +17,9 @@ export default function AdminCustomersPage() {
         let isMounted = true;
         (async () => {
             setLoading(true);
-            const { data } = await supabase
-                .from('customers')
-                .select('*')
-                .order('created_at', { ascending: false });
-
+            const data = await CustomerService.getCustomersWithMetrics();
             if (isMounted) {
-                setCustomers(data || []);
+                setCustomers(data);
                 setLoading(false);
             }
         })();
@@ -38,175 +27,214 @@ export default function AdminCustomersPage() {
     }, []);
 
     // Filter customers based on search query
-    const filteredCustomers = customers.filter(c => {
-        if (!searchQuery.trim()) return true;
+    const filteredCustomers = useMemo(() => {
+        if (!searchQuery.trim()) return customers;
         const q = searchQuery.toLowerCase().trim();
-        return (
+        return customers.filter(c =>
             (c.name && c.name.toLowerCase().includes(q)) ||
             (c.email && c.email.toLowerCase().includes(q)) ||
-            (c.phone && c.phone.toLowerCase().includes(q))
+            (c.phone && c.phone.toLowerCase().includes(q)) ||
+            (c.document_number && c.document_number.includes(q))
         );
-    });
+    }, [customers, searchQuery]);
+
+    // Calculate CRM Metrics
+    const metrics = useMemo(() => {
+        const totalCount = customers.length;
+        const repeatCount = customers.filter(c => c.total_orders > 1).length;
+        const totalRevenueCents = customers.reduce((sum, c) => sum + c.total_spent_cents, 0);
+        const avgSpentCents = totalCount > 0 ? Math.round(totalRevenueCents / totalCount) : 0;
+
+        return {
+            totalCount,
+            repeatCount,
+            totalRevenueCents,
+            avgSpentCents,
+        };
+    }, [customers]);
 
     const columns = [
         {
             header: 'Cliente',
-            cell: (customer: DBCustomer) => (
+            cell: (customer: CustomerProfile) => (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
-                        width: '38px',
-                        height: '38px',
+                        width: '40px',
+                        height: '40px',
                         borderRadius: '50%',
-                        background: 'var(--gradient-main, linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%))',
+                        background: 'var(--gradient-main)',
                         color: 'white',
                         fontWeight: 800,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '0.85rem',
+                        fontSize: '0.88rem',
+                        boxShadow: '0 2px 8px rgba(255, 107, 0, 0.25)',
+                        flexShrink: 0,
                     }}>
                         {(customer.name || 'C').slice(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{customer.name || 'Sin nombre'}</div>
+                        <div style={{ fontWeight: 800, color: 'var(--foreground)' }}>{customer.name || 'Sin nombre'}</div>
                         <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{customer.email}</div>
                     </div>
                 </div>
             ),
         },
         {
-            header: 'Teléfono',
-            cell: (customer: DBCustomer) => (
-                <span style={{ color: 'var(--foreground)', fontSize: '0.88rem' }}>{customer.phone || 'No registrado'}</span>
+            header: 'Contacto / WhatsApp',
+            cell: (customer: CustomerProfile) => {
+                const rawPhone = customer.phone ? customer.phone.replace(/[^0-9]/g, '') : '';
+                const waNumber = rawPhone.length === 9 ? `51${rawPhone}` : rawPhone;
+                return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ color: 'var(--foreground)', fontSize: '0.86rem', fontWeight: 600 }}>
+                            {customer.phone || 'Sin teléfono'}
+                        </span>
+                        {rawPhone && (
+                            <a
+                                href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`Hola ${customer.name}, te escribimos desde TiendaVir.`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{
+                                    padding: '4px 8px',
+                                    background: 'rgba(37, 211, 102, 0.12)',
+                                    border: '1px solid rgba(37, 211, 102, 0.3)',
+                                    color: '#25d366',
+                                    borderRadius: '6px',
+                                    fontSize: '0.74rem',
+                                    fontWeight: 700,
+                                    textDecoration: 'none',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                }}
+                                title="Enviar mensaje de WhatsApp"
+                            >
+                                💬 WhatsApp
+                            </a>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            header: 'Pedidos Realizados',
+            cell: (customer: CustomerProfile) => (
+                <span style={{
+                    fontWeight: 800,
+                    fontSize: '0.85rem',
+                    background: customer.total_orders > 1 ? 'rgba(34, 197, 94, 0.15)' : 'var(--glass-bg)',
+                    color: customer.total_orders > 1 ? '#22c55e' : 'var(--foreground)',
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    border: '1px solid var(--glass-border)',
+                }}>
+                    {customer.total_orders} {customer.total_orders === 1 ? 'pedido' : 'pedidos'}
+                </span>
             ),
         },
         {
-            header: 'Fecha Registro',
-            cell: (customer: DBCustomer) => (
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                    {new Date(customer.created_at).toLocaleDateString('es-PE')}
+            header: 'Gasto Acumulado',
+            cell: (customer: CustomerProfile) => (
+                <span style={{ fontWeight: 800, color: 'var(--robotina-orange)', fontSize: '0.92rem' }}>
+                    {formatMoney(customer.total_spent_cents / 100, 'PEN')}
                 </span>
             ),
         },
         {
             header: 'Acción',
-            cell: (customer: DBCustomer) => (
+            cell: (customer: CustomerProfile) => (
                 <Link
                     href={`/admin/clientes/${customer.id}`}
                     style={{
                         padding: '6px 14px',
-                        background: 'rgba(255, 255, 255, 0.06)',
+                        background: 'var(--glass-bg)',
                         border: '1px solid var(--glass-border)',
                         borderRadius: '8px',
-                        color: 'var(--foreground)',
                         fontSize: '0.8rem',
+                        fontWeight: 700,
+                        color: 'var(--foreground)',
                         textDecoration: 'none',
-                        fontWeight: 600,
                     }}
                 >
-                    Ver Historial
+                    👤 Ficha Cliente
                 </Link>
             ),
         },
     ];
 
     return (
-        <div>
+        <div style={{ paddingBottom: '60px' }}>
             <AdminPageHeader
-                title="Base de Clientes"
-                description="Consulta la lista de compradores registrados y su información de contacto."
-                action={
-                    <Link
-                        href="/admin/pedidos/nuevo"
-                        style={{
-                            padding: '10px 18px',
-                            background: 'var(--robotina-orange, #f97316)',
-                            color: 'white',
-                            borderRadius: '10px',
-                            textDecoration: 'none',
-                            fontWeight: 700,
-                            fontSize: '0.88rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            boxShadow: '0 4px 14px rgba(249, 115, 22, 0.3)',
-                        }}
-                    >
-                        ➕ Pedido Manual / Préstamo
-                    </Link>
-                }
+                title="Gestión de Clientes (CRM)"
+                description="Directorio unificado de clientes, historial de compras, gasto acumulado y contacto directo."
             />
 
-            {/* Buscador con Lupita 🔍 */}
-            <div style={{ marginBottom: '20px', position: 'relative', maxWidth: '520px' }}>
-                <div style={{
-                    position: 'absolute',
-                    left: '14px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: searchQuery ? 'var(--robotina-orange)' : 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
+            {/* Top KPI Metrics Cards */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                marginBottom: '24px',
+            }}>
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px', padding: '16px 20px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Clientes</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--foreground)', marginTop: '4px' }}>{metrics.totalCount}</div>
                 </div>
+
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px', padding: '16px 20px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#22c55e', textTransform: 'uppercase' }}>Clientes Recurrentes</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: '#22c55e', marginTop: '4px' }}>{metrics.repeatCount}</div>
+                </div>
+
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px', padding: '16px 20px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Gasto Promedio por Cliente</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--robotina-orange)', marginTop: '4px' }}>{formatMoney(metrics.avgSpentCents / 100, 'PEN')}</div>
+                </div>
+
+                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px', padding: '16px 20px', boxShadow: 'var(--shadow-sm)' }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Facturación Acumulada</div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--foreground)', marginTop: '4px' }}>{formatMoney(metrics.totalRevenueCents / 100, 'PEN')}</div>
+                </div>
+            </div>
+
+            {/* Search Input Bar */}
+            <div style={{ marginBottom: '20px' }}>
                 <input
                     type="text"
                     value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    placeholder="🔍 Buscar cliente por nombre, teléfono o correo..."
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="🔍 Buscar cliente por nombre, correo, teléfono o DNI/RUC..."
                     style={{
+                        maxWidth: '420px',
                         width: '100%',
-                        padding: '11px 36px 11px 42px',
-                        background: 'var(--input-bg)',
-                        border: '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        color: 'var(--input-text)',
-                        fontSize: '0.9rem',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '10px',
+                        padding: '10px 14px',
+                        color: 'var(--foreground)',
                         outline: 'none',
                     }}
                 />
-                {searchQuery && (
-                    <button
-                        type="button"
-                        onClick={() => setSearchQuery('')}
-                        style={{
-                            position: 'absolute',
-                            right: '12px',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            fontSize: '0.85rem',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        ✕
-                    </button>
-                )}
             </div>
 
-            {customers.length === 0 && !loading ? (
-                <AdminEmptyState
-                    title="No hay clientes registrados"
-                    description="Cuando los usuarios registren sus datos en el checkout o se agreguen manualmente, sus datos aparecerán en esta lista."
-                />
-            ) : filteredCustomers.length === 0 && searchQuery ? (
-                <div style={{ padding: '30px', textAlign: 'center', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '14px' }}>
-                    <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>🔍</div>
-                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>No se encontraron clientes para &quot;{searchQuery}&quot;</div>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '4px' }}>Intenta buscar con otro nombre, correo o teléfono.</div>
+            {loading ? (
+                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    Cargando directorio de clientes...
                 </div>
+            ) : filteredCustomers.length === 0 ? (
+                <AdminEmptyState
+                    icon="👥"
+                    title="No se encontraron clientes"
+                    description="Los clientes se registrarán automáticamente al realizar pedidos en la tienda o desde el panel."
+                />
             ) : (
                 <AdminDataTable
                     columns={columns}
                     data={filteredCustomers}
-                    keyExtractor={c => c.id}
-                    loading={loading}
+                    keyExtractor={(item) => item.id}
+                    emptyText="No hay clientes coincidentes."
                 />
             )}
         </div>

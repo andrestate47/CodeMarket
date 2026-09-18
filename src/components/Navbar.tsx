@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { User } from '@supabase/supabase-js';
 import { getCategoriesListAction, CategoryRecord } from '@/modules/categories/actions';
 import { searchProductsAction, SearchResultItem } from '@/modules/search/actions';
+import TiendaVirLogo from '@/components/brand/TiendaVirLogo';
 import styles from './Navbar.module.css';
 
 interface NavbarProps {
@@ -17,13 +18,18 @@ interface NavbarProps {
     logoUrl?: string | null;
 }
 
-export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProps) {
+export default function Navbar({ storeName = 'TiendaVir', logoUrl = '/logo-TiendaVir.png' }: NavbarProps) {
     const { toggleCart, items, itemCount } = useCart();
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const cartItemsCount = items.reduce((acc, item) => acc + item.quantity, 0);
-    const totalCartCount = itemCount || cartItemsCount;
+    const totalCartCount = mounted ? (itemCount || cartItemsCount) : 0;
 
     const [user, setUser] = useState<User | null>(null);
     const [categories, setCategories] = useState<CategoryRecord[]>([]);
@@ -135,23 +141,8 @@ export default function Navbar({ storeName = 'CODEMARKET', logoUrl }: NavbarProp
         <header className={styles.header}>
             {/* MAIN HEADER CONTAINER */}
             <div className={styles.container}>
-                {/* 1. BRAND LOGO */}
-                <Link href="/" className={styles.brand}>
-                    {logoUrl ? (
-                        <Image
-                            src={logoUrl}
-                            alt={storeName}
-                            width={160}
-                            height={40}
-                            className={styles.logoImg}
-                            priority
-                        />
-                    ) : (
-                        <span className={styles.brandText}>
-                            {storeName} <span className={styles.brandAccent}>{'///'}</span>
-                        </span>
-                    )}
-                </Link>
+                {/* 1. BRAND LOGO (PURE VECTOR CSS/SVG) */}
+                <TiendaVirLogo size="medium" showTagline={false} />
 
                 {/* 2. DESKTOP SEARCH BAR (CENTER) */}
                 <div className={styles.searchContainer} ref={searchContainerRef}>

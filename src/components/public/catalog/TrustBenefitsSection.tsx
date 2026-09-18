@@ -6,53 +6,30 @@ import styles from './TrustBenefitsSection.module.css';
 interface BenefitItem {
     icon: string;
     title: string;
-    description: string;
+    subtitle: string;
 }
 
 const BENEFITS: BenefitItem[] = [
-    {
-        icon: '🚚',
-        title: 'Envíos rápidos',
-        description: 'Despachos garantizados a todo el país y delivery prioritario en Lima.',
-    },
-    {
-        icon: '🔒',
-        title: 'Compra segura',
-        description: 'Múltiples métodos de pago confiables con encriptación y protección total.',
-    },
-    {
-        icon: '💬',
-        title: 'Atención personalizada',
-        description: 'Equipo de soporte disponible para asesorarte antes y después de tu compra.',
-    },
-    {
-        icon: '📦',
-        title: 'Productos seleccionados',
-        description: 'Catálogo de alta calidad verificado directamente con los fabricantes oficiales.',
-    },
+    { icon: '🚚', title: 'Envíos Rápidos', subtitle: 'A todo el país' },
+    { icon: '🔒', title: 'Compra Segura', subtitle: 'Múltiples medios de pago' },
+    { icon: '💬', title: 'Atención Directa', subtitle: 'Soporte personalizado' },
+    { icon: '📦', title: '100% Original', subtitle: 'Productos garantizados' },
 ];
 
 export default function TrustBenefitsSection() {
     return (
-        <section className={styles.section}>
+        <div className={styles.trustBar}>
             <div className={styles.container}>
-                <div className={styles.header}>
-                    <span className={styles.badge}>GARANTÍA Y CONFIANZA</span>
-                    <h2 className={styles.title}>Compra con confianza</h2>
-                </div>
-
-                <div className={styles.grid}>
-                    {BENEFITS.map((b, idx) => (
-                        <div key={idx} className={styles.benefitCard}>
-                            <div className={styles.iconWrapper}>{b.icon}</div>
-                            <div>
-                                <h3 className={styles.benefitTitle}>{b.title}</h3>
-                                <p className={styles.benefitDesc}>{b.description}</p>
-                            </div>
+                {BENEFITS.map((b, idx) => (
+                    <div key={idx} className={styles.trustItem}>
+                        <span className={styles.icon}>{b.icon}</span>
+                        <div className={styles.textGroup}>
+                            <span className={styles.title}>{b.title}</span>
+                            <span className={styles.subtitle}>{b.subtitle}</span>
                         </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
             </div>
-        </section>
+        </div>
     );
 }

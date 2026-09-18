@@ -15,7 +15,7 @@ interface HeroHeroBannerProps {
 
 export default function HeroHeroBanner({
     banners,
-    storeName = 'CODEMARKET',
+    storeName = 'Tienda-Vir',
     storeDescription = 'La plataforma líder en e-commerce y tecnología.',
 }: HeroHeroBannerProps) {
     const [currentIndex, setCurrentIndex] = useState(0);

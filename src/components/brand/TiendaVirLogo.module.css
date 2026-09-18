@@ -1,0 +1,108 @@
+.logoWrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    user-select: none;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.logoWrapper:hover {
+    transform: translateY(-1px);
+    opacity: 0.95;
+}
+
+/* CART VECTOR ICON */
+.iconContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.cartSvg {
+    width: auto;
+    height: 100%;
+    filter: drop-shadow(0 2px 8px rgba(255, 107, 0, 0.3));
+}
+
+/* TYPOGRAPHY TEXT */
+.textGroup {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1;
+}
+
+.mainTitle {
+    font-size: 1.65rem;
+    font-weight: 900;
+    letter-spacing: -0.8px;
+    font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+    color: var(--foreground, #0f172a);
+    display: flex;
+    align-items: baseline;
+    gap: 0px;
+}
+
+.wordTienda {
+    color: var(--foreground, #0f172a);
+    font-weight: 900;
+}
+
+.wordVir {
+    background: linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 900;
+}
+
+.trademark {
+    font-size: 0.55em;
+    font-weight: 700;
+    vertical-align: super;
+    margin-left: 2px;
+    color: var(--text-muted, #94a3b8);
+    -webkit-text-fill-color: var(--text-muted, #94a3b8);
+}
+
+.tagline {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted, #64748b);
+    letter-spacing: 0.2px;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+/* SIZE VARIANTS */
+.sizeSmall .mainTitle {
+    font-size: 1.25rem;
+}
+.sizeSmall .tagline {
+    font-size: 0.55rem;
+}
+.sizeSmall .iconContainer {
+    height: 28px;
+}
+
+.sizeMedium .mainTitle {
+    font-size: 1.65rem;
+}
+.sizeMedium .tagline {
+    font-size: 0.65rem;
+}
+.sizeMedium .iconContainer {
+    height: 38px;
+}
+
+.sizeLarge .mainTitle {
+    font-size: 2.2rem;
+}
+.sizeLarge .tagline {
+    font-size: 0.8rem;
+}
+.sizeLarge .iconContainer {
+    height: 52px;
+}

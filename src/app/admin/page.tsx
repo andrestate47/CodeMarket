@@ -58,7 +58,7 @@ export default function AdminDashboard() {
             {/* Page Header */}
             <AdminPageHeader
                 title="Resumen"
-                description="Métricas reales y rendimiento operativo de CodeMarket."
+                description="Métricas reales y rendimiento operativo de Tienda-Vir."
                 action={
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                         {metrics?.isDemoData && (

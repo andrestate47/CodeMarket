@@ -40,44 +40,24 @@ export default function AdminNewProduct() {
         })();
     }, []);
 
-    const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [uploadingImage, setUploadingImage] = useState(false);
+
+    const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_SIZE = 400;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
-                } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
-
-                const compressed = canvas.toDataURL('image/jpeg', 0.75);
-                setImageUrl(compressed);
-            };
-            if (typeof event.target?.result === 'string') {
-                img.src = event.target.result;
+        setUploadingImage(true);
+        try {
+            const { StorageService } = await import('@/lib/services/storageService');
+            const res = await StorageService.uploadProductImage(file);
+            if (res.success && res.url) {
+                setImageUrl(res.url);
             }
-        };
-        reader.readAsDataURL(file);
+        } catch {
+            // Fallback
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -194,7 +174,7 @@ export default function AdminNewProduct() {
         <div style={{ maxWidth: '750px' }}>
             <AdminPageHeader
                 title="Crear Nuevo Producto"
-                description="Agrega un producto digital, servicio o artículo físico al catálogo de CodeMarket."
+                description="Agrega un producto digital, servicio o artículo físico al catálogo de TiendaVir."
                 action={
                     <Link
                         href="/admin/productos"

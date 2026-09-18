@@ -88,7 +88,7 @@ const DEFAULT_DEMO_BANNERS: HeroBannerRecord[] = [
 ];
 
 const DEFAULT_STORE_APPEARANCE: StoreAppearanceRecord = {
-    store_name: 'CODEMARKET',
+    store_name: 'Tienda-Vir',
     logo_url: null,
     promo_bar_enabled: true,
     promo_bar_text: '🚀 Envíos gratis a todo el Perú por compras desde S/ 150 | Delivery en 24h en Lima',
@@ -196,7 +196,7 @@ export async function getStoreAppearanceAction(): Promise<{
                 success: true,
                 appearance: {
                     ...DEFAULT_STORE_APPEARANCE,
-                    store_name: storeData?.name || 'CODEMARKET',
+                    store_name: storeData?.name || 'Tienda-Vir',
                     logo_url: storeData?.logo_url || null,
                 },
             };
@@ -205,7 +205,7 @@ export async function getStoreAppearanceAction(): Promise<{
         const resultAppearance: StoreAppearanceRecord = {
             id: String(appData.id),
             store_id: appData.store_id ? String(appData.store_id) : undefined,
-            store_name: storeData?.name || 'CODEMARKET',
+            store_name: storeData?.name || 'Tienda-Vir',
             logo_url: storeData?.logo_url || appData.logo_url || null,
             promo_bar_enabled: appData.promo_bar_enabled ?? true,
             promo_bar_text: appData.promo_bar_text || DEFAULT_STORE_APPEARANCE.promo_bar_text,

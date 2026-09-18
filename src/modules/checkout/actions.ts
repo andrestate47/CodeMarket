@@ -3,6 +3,8 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { formatMoney } from '@/lib/money';
 import { getCheckoutSettingsAction, PaymentMethodConfig, ShippingMethodConfig } from './checkoutSettingsActions';
+import { CouponService } from '@/lib/services/couponService';
+import { EmailService } from '@/lib/services/emailService';
 
 export interface CheckoutPayload {
     customerName: string;
@@ -198,16 +200,12 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
         // Calculate Shipping Fee from Server Configuration
         const shippingAmount = selectedShipping ? selectedShipping.price_amount : 0;
 
-        // Calculate Discount (validate coupon if any)
+        // Calculate Discount (validate coupon dynamically via CouponService)
         let discountAmount = 0;
         if (couponCode) {
-            const upperCode = couponCode.trim().toUpperCase();
-            if (upperCode === 'ROBOTINA10' || upperCode === 'PROMO10') {
-                discountAmount = Math.round(subtotalAmount * 0.10);
-            } else if (upperCode === 'DESC20') {
-                discountAmount = Math.round(subtotalAmount * 0.20);
-            } else if (upperCode === 'CODEMARKET') {
-                discountAmount = Math.round(subtotalAmount * 0.15);
+            const validation = await CouponService.validateCoupon(couponCode, subtotalAmount);
+            if (validation.valid) {
+                discountAmount = validation.discountAmountCents;
             }
         }
 
@@ -331,6 +329,37 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
         }
 
         const accessToken = createdOrder.access_token || createdOrder.id;
+
+        // 10. Send Transactional Emails (Customer & Admin)
+        try {
+            const emailOrderPayload = {
+                orderNumber: createdOrder.order_number,
+                customerName,
+                customerEmail: customerEmail || 'cliente@tiendavir.com',
+                customerPhone,
+                items: orderItemsToInsert.map(i => ({
+                    productName: i.product_name,
+                    variantName: i.variant_name || undefined,
+                    quantity: i.quantity,
+                    unitPriceFormatted: formatMoney(i.unit_price_amount / 100, 'PEN'),
+                    totalFormatted: formatMoney(i.total_amount / 100, 'PEN'),
+                })),
+                subtotalFormatted: formatMoney(subtotalAmount / 100, 'PEN'),
+                shippingFormatted: formatMoney(shippingAmount / 100, 'PEN'),
+                discountFormatted: discountAmount > 0 ? formatMoney(discountAmount / 100, 'PEN') : undefined,
+                totalFormatted: formatMoney(totalAmount / 100, 'PEN'),
+                paymentMethodLabel: selectedPayment?.name || paymentMethod.toUpperCase(),
+                shippingAddress: addressLine ? `${addressLine}, ${district || ''}` : undefined,
+                confirmationUrl: `http://localhost:3000/pedido/${accessToken}/confirmacion`,
+            };
+
+            await Promise.all([
+                EmailService.sendOrderConfirmationToCustomer(emailOrderPayload),
+                EmailService.sendNewOrderNotificationToAdmin(emailOrderPayload),
+            ]);
+        } catch (emailErr) {
+            console.warn('Error sending transactional emails:', emailErr);
+        }
 
         return {
             success: true,

@@ -1,0 +1,202 @@
+.footer {
+    width: 100%;
+    background: var(--surface-bg, #0d0d10);
+    color: var(--text-muted, #94a3b8);
+    border-top: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+    padding-top: 32px;
+    padding-bottom: 20px;
+    margin-top: auto;
+}
+
+.container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.mainGrid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+    gap: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.08));
+}
+
+.brandCol {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.brandDesc {
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--text-muted, #94a3b8);
+    max-width: 320px;
+    margin: 0;
+}
+
+.socialRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.socialBtn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--foreground, #ffffff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.socialBtn:hover {
+    background: var(--robotina-orange, #FF6B00);
+    border-color: var(--robotina-orange, #FF6B00);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+.colTitle {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--foreground, #ffffff);
+    letter-spacing: -0.2px;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+}
+
+.linkList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.linkItem a {
+    color: var(--text-muted, #94a3b8);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.2s ease, transform 0.2s ease;
+    display: inline-block;
+}
+
+.linkItem a:hover {
+    color: var(--robotina-orange, #FF6B00);
+    transform: translateX(2px);
+}
+
+.contactList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.contactItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.78rem;
+    line-height: 1.35;
+}
+
+.contactIcon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.contactText {
+    color: var(--text-muted, #94a3b8);
+}
+
+.contactText strong {
+    color: var(--foreground, #ffffff);
+    display: block;
+    margin-bottom: 1px;
+    font-size: 0.78rem;
+}
+
+/* BOTTOM BAR */
+.bottomBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.copyright {
+    font-size: 0.75rem;
+    color: var(--text-muted, #64748b);
+    margin: 0;
+}
+
+.paymentBadges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.badgePill {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--foreground, #e2e8f0);
+    letter-spacing: 0.3px;
+}
+
+.libroReclamaciones {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 107, 0, 0.1);
+    border: 1px solid rgba(255, 107, 0, 0.3);
+    color: var(--robotina-orange, #FF6B00);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.libroReclamaciones:hover {
+    background: var(--robotina-orange, #FF6B00);
+    color: #ffffff;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+    .mainGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .mainGrid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    .bottomBar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+}

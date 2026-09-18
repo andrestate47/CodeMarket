@@ -41,7 +41,7 @@ export default function SalesKpiCard({
             display: 'flex',
             flexDirection: 'column',
             gap: '8px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            boxShadow: 'var(--shadow-sm)',
             transition: 'all 0.2s ease',
         }}>
             <span style={{

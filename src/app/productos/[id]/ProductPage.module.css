@@ -505,13 +505,13 @@
 .trustBadges {
     display: flex;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
     margin-top: 24px;
-    padding: 20px 16px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(79, 172, 254, 0.06) 0%, rgba(0, 242, 254, 0.04) 100%);
-    border: 1px solid rgba(79, 172, 254, 0.18);
-    box-shadow: 0 2px 12px rgba(79, 172, 254, 0.08);
+    padding: 20px 18px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(255, 107, 0, 0.22) 0%, rgba(249, 115, 22, 0.14) 50%, rgba(255, 157, 0, 0.22) 100%);
+    border: 2px solid #FF6B00;
+    box-shadow: 0 6px 28px rgba(255, 107, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2);
     position: relative;
     overflow: hidden;
 }
@@ -524,8 +524,8 @@
         45deg,
         transparent,
         transparent 20px,
-        rgba(79, 172, 254, 0.02) 20px,
-        rgba(79, 172, 254, 0.02) 21px
+        rgba(255, 107, 0, 0.06) 20px,
+        rgba(255, 107, 0, 0.06) 21px
     );
     pointer-events: none;
 }
@@ -535,24 +535,55 @@
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-muted);
+    font-size: 0.88rem;
+    font-weight: 800;
     text-align: center;
     flex: 1;
-    padding: 12px 8px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(79, 172, 254, 0.1);
-    backdrop-filter: blur(4px);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    padding: 16px 12px;
+    border-radius: 12px;
+    backdrop-filter: blur(12px);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
     position: relative;
     z-index: 1;
 }
 
-.trustBadge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(79, 172, 254, 0.15);
+/* Color variant 1: Gold / Yellow for Pago Seguro */
+.trustBadgeGold {
+    background: rgba(255, 215, 0, 0.16);
+    border: 1.5px solid #FFD700;
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.25);
+}
+.trustBadgeGold:hover {
+    transform: translateY(-3px);
+    border-color: #FFE55C;
+    background: rgba(255, 215, 0, 0.28);
+    box-shadow: 0 8px 24px rgba(255, 215, 0, 0.45);
+}
+
+/* Color variant 2: Emerald Green for Garantía 30 días */
+.trustBadgeGreen {
+    background: rgba(34, 197, 94, 0.16);
+    border: 1.5px solid #22c55e;
+    box-shadow: 0 4px 16px rgba(34, 197, 94, 0.25);
+}
+.trustBadgeGreen:hover {
+    transform: translateY(-3px);
+    border-color: #4ade80;
+    background: rgba(34, 197, 94, 0.28);
+    box-shadow: 0 8px 24px rgba(34, 197, 94, 0.45);
+}
+
+/* Color variant 3: Electric Orange for Entrega 5 días */
+.trustBadgeOrange {
+    background: rgba(249, 115, 22, 0.16);
+    border: 1.5px solid #f97316;
+    box-shadow: 0 4px 16px rgba(249, 115, 22, 0.25);
+}
+.trustBadgeOrange:hover {
+    transform: translateY(-3px);
+    border-color: #fb923c;
+    background: rgba(249, 115, 22, 0.28);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.45);
 }
 
 .trustBadge svg {

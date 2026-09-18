@@ -55,7 +55,7 @@ export default function PrintOrderPage() {
             {/* PRINT HEADER */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #111827', paddingBottom: '20px', marginBottom: '24px' }}>
                 <div>
-                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#ea580c' }}>CodeMarket</h1>
+                    <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#ea580c' }}>TiendaVir</h1>
                     <div style={{ fontSize: '13px', color: '#4b5563' }}>Comprobante de Pedido & Hoja de Despacho</div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -168,7 +168,7 @@ export default function PrintOrderPage() {
 
             {/* FOOTER */}
             <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid #e5e7eb', textAlign: 'center', fontSize: '11px', color: '#9ca3af' }}>
-                ¡Gracias por tu compra en CodeMarket! • www.codemarket.pe
+                ¡Gracias por tu compra en TiendaVir! • www.tiendavir.pe
             </div>
         </div>
     );

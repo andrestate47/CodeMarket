@@ -1,57 +1,42 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { StorageService } from '@/lib/services/storageService';
 
 interface ImageUploaderProps {
     value: string;
     onChange: (url: string) => void;
     label?: string;
-    maxSize?: number;
 }
 
 export default function ImageUploader({
     value,
     onChange,
     label = 'Imagen del Producto',
-    maxSize = 400,
 }: ImageUploaderProps) {
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [uploading, setUploading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
+        setUploading(true);
+        setError(null);
 
-                if (width > height) {
-                    if (width > maxSize) {
-                        height *= maxSize / width;
-                        width = maxSize;
-                    }
-                } else {
-                    if (height > maxSize) {
-                        width *= maxSize / height;
-                        height = maxSize;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
-
-                const compressed = canvas.toDataURL('image/jpeg', 0.75);
-                onChange(compressed);
-            };
-            if (typeof event.target?.result === 'string') {
-                img.src = event.target.result;
+        try {
+            const res = await StorageService.uploadProductImage(file);
+            if (res.success && res.url) {
+                onChange(res.url);
+            } else {
+                setError(res.error || 'No se pudo subir la imagen.');
             }
-        };
-        reader.readAsDataURL(file);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error al procesar la imagen.';
+            setError(msg);
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
@@ -73,20 +58,24 @@ export default function ImageUploader({
                         border: '2px dashed var(--glass-border)',
                         borderRadius: '14px',
                         background: 'var(--input-bg)',
-                        cursor: 'pointer',
+                        cursor: uploading ? 'wait' : 'pointer',
                         textAlign: 'center',
+                        opacity: uploading ? 0.7 : 1,
                     }}
                 >
-                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📸</div>
+                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>
+                        {uploading ? '☁️' : '📸'}
+                    </div>
                     <span style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--foreground)', marginBottom: '4px' }}>
-                        Haz clic para subir imagen
+                        {uploading ? 'Subiendo a Supabase Storage...' : 'Haz clic para subir imagen'}
                     </span>
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                        PNG, JPG o WEBP (Formato optimizado automáticamente)
+                        Optimización WebP automática & Carga directa en nube
                     </span>
                     <input
                         type="file"
                         accept="image/*"
+                        disabled={uploading}
                         onChange={handleFileChange}
                         style={{ display: 'none' }}
                     />
@@ -116,7 +105,9 @@ export default function ImageUploader({
                         <img src={value} alt="Vista previa" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)' }}>Imagen cargada</span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#22c55e' }}>
+                            ✓ Imagen guardada en almacenamiento
+                        </span>
                         <div style={{ display: 'flex', gap: '10px' }}>
                             <label
                                 style={{
@@ -127,13 +118,14 @@ export default function ImageUploader({
                                     fontSize: '0.8rem',
                                     fontWeight: 600,
                                     color: 'var(--foreground)',
-                                    cursor: 'pointer',
+                                    cursor: uploading ? 'wait' : 'pointer',
                                 }}
                             >
-                                🔄 Cambiar
+                                {uploading ? 'Subiendo...' : '🔄 Cambiar'}
                                 <input
                                     type="file"
                                     accept="image/*"
+                                    disabled={uploading}
                                     onChange={handleFileChange}
                                     style={{ display: 'none' }}
                                 />
@@ -157,6 +149,12 @@ export default function ImageUploader({
                         </div>
                     </div>
                 </div>
+            )}
+
+            {error && (
+                <span style={{ fontSize: '0.8rem', color: '#ef4444', marginTop: '4px' }}>
+                    {error}
+                </span>
             )}
         </div>
     );

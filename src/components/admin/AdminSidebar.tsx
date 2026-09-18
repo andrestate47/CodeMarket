@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import styles from './AdminSidebar.module.css';
+import TiendaVirLogo from '../brand/TiendaVirLogo';
 
 interface NavItem {
     label: string;
@@ -103,10 +104,9 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
         <aside className={`${styles.sidebar} ${isMobileDrawer ? styles.mobileSidebar : ''} ${collapsed ? styles.sidebarCollapsed : ''} ${className || ''}`}>
             {/* Header */}
             <div className={styles.header}>
-                <Link href="/admin" className={styles.brand} onClick={onNavItemClick}>
-                    <div className={styles.logoIcon}>CM</div>
-                    {!collapsed && <span className={styles.brandText}>CodeMarket</span>}
-                </Link>
+                <div onClick={onNavItemClick} style={{ display: 'flex', alignItems: 'center' }}>
+                    <TiendaVirLogo href="/admin" size="small" showTagline={false} />
+                </div>
 
                 <button
                     onClick={toggleCollapse}

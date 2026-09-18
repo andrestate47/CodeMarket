@@ -6,6 +6,12 @@ export async function middleware(request: NextRequest) {
 
     // Check if accessing admin path
     if (pathname.startsWith('/admin')) {
+        // Sanitize path if it contains stray characters like closing braces '}' or '%7D'
+        if (/[\}%7D]/.test(pathname)) {
+            const cleanPath = pathname.replace(/[\}%7D]/g, '') || '/admin';
+            return NextResponse.redirect(new URL(cleanPath, request.url));
+        }
+
         // In Next.js middleware, check auth token cookie
         const token = request.cookies.get('sb-access-token')?.value || request.cookies.get('supabase-auth-token')?.value;
 
@@ -22,5 +28,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ['/admin/:path*'],
+    matcher: ['/(admin.*)'],
 };

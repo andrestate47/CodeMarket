@@ -2,6 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin';
 import { formatMoney, parseMoneyToCents } from '@/lib/money';
+import { EmailService } from '@/lib/services/emailService';
 
 export interface OrderFilterParams {
     searchQuery?: string;
@@ -857,6 +858,16 @@ export async function updateOrderStatusAction(
                 description: `Estado de entrega actualizado a ${updates.fulfillmentStatus}.`,
                 created_by: 'Administrador',
             });
+
+            if (currentOrder.customer_email && ['shipped', 'delivered', 'fulfilled'].includes(updates.fulfillmentStatus)) {
+                EmailService.sendShippingUpdateToCustomer({
+                    orderNumber: currentOrder.order_number,
+                    customerName: currentOrder.customer_name || 'Cliente',
+                    customerEmail: currentOrder.customer_email,
+                    fulfillmentStatus: updates.fulfillmentStatus,
+                    courierName: currentOrder.shipping_method_name || undefined,
+                }).catch(err => console.warn('Dispatched shipping email error:', err));
+            }
         }
 
         const { error: updateErr } = await adminClient

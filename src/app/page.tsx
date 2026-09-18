@@ -1,20 +1,16 @@
 import React, { Suspense } from 'react';
 import styles from "./page.module.css";
-import Testimonials from "@/components/Testimonials";
-import FAQ from "@/components/FAQ";
 import Navbar from "@/components/Navbar";
 import PromoBar from "@/components/public/PromoBar";
 import HeroHeroBanner from "@/components/public/HeroHeroBanner";
 import CategoryGridSection from "@/components/public/catalog/CategoryGridSection";
-import FeaturedProductsSection from "@/components/public/catalog/FeaturedProductsSection";
 import TrustBenefitsSection from "@/components/public/catalog/TrustBenefitsSection";
-import HomeOffersSection from "@/components/public/catalog/HomeOffersSection";
-import NewArrivalsSection from "@/components/public/catalog/NewArrivalsSection";
-import SecondaryCommercialBanner from "@/components/public/catalog/SecondaryCommercialBanner";
 import ProductCollectionSection from "@/components/public/catalog/ProductCollectionSection";
 import ProductGridSkeleton from "@/components/public/catalog/ProductGridSkeleton";
 import { getHeroBannersAction, getStoreAppearanceAction } from "@/modules/appearance/actions";
 import { getCategoriesListAction } from "@/modules/categories/actions";
+
+import Footer from "@/components/public/Footer";
 
 export const revalidate = 60; // Cache page for 60 seconds
 
@@ -27,7 +23,7 @@ export default async function Home() {
     ]);
 
     const appearance = appearanceRes.appearance || {
-        store_name: 'CODEMARKET',
+        store_name: 'Tienda-Vir',
         logo_url: null,
         promo_bar_enabled: true,
         promo_bar_text: 'Envíos gratis a todo el Perú por compras desde S/150 | Delivery en 24h en Lima',
@@ -70,37 +66,16 @@ export default async function Home() {
             {/* 2. EXPLORAR CATEGORÍAS */}
             <CategoryGridSection categories={categories} />
 
-            {/* 3. PRODUCTOS DESTACADOS / MÁS VENDIDOS */}
-            <FeaturedProductsSection />
-
-            {/* 4. BENEFICIOS DE COMPRAR EN LA TIENDA */}
-            <TrustBenefitsSection />
-
-            {/* 5. OFERTAS ESPECIALES (SE OCULTA AUTOMÁTICAMENTE SI HAY 0 OFERTAS) */}
-            <HomeOffersSection />
-
-            {/* 6. NOVEDADES / RECIÉN LLEGADOS */}
-            <NewArrivalsSection />
-
-            {/* 7. BANNER COMERCIAL SECUNDARIO */}
-            <SecondaryCommercialBanner />
-
-            {/* CATÁLOGO GENERAL INTERACTIVO */}
+            {/* 3. CATÁLOGO GENERAL INTERACTIVO (CON BUSCADOR Y FILTROS) */}
             <Suspense fallback={<ProductGridSkeleton count={8} />}>
                 <ProductCollectionSection initialCategories={categories} />
             </Suspense>
 
-            {/* TESTIMONIALES & FAQ */}
-            <Testimonials />
-            <FAQ />
+            {/* 4. BENEFICIOS Y GARANTÍAS DE COMPRAR EN LA TIENDA */}
+            <TrustBenefitsSection />
 
-            {/* 8. FOOTER */}
-            <footer style={{ background: 'var(--card-bg)', color: 'var(--text-muted)', padding: '60px 24px', textAlign: 'center', marginTop: 'auto', borderTop: '1px solid var(--glass-border)' }}>
-                <div style={{ fontWeight: 900, fontSize: '2rem', marginBottom: '20px', letterSpacing: '-1px', color: 'var(--foreground)' }}>
-                    {appearance.store_name} {'///'}
-                </div>
-                <p style={{ fontSize: '0.8rem', textTransform: 'uppercase' }}>© 2026 {appearance.store_name} Inc. Todos los derechos reservados.</p>
-            </footer>
+            {/* 5. FOOTER */}
+            <Footer storeName={appearance.store_name} />
         </main>
     );
 }

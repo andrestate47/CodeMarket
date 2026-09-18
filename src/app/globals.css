@@ -63,22 +63,22 @@
 }
 
 [data-theme='light'] {
-  --background: #f8fafc;
+  --background: #eef2f6;
   --foreground: #0f172a;
   --card-bg: #ffffff;
-  --surface-bg: #f1f5f9;
-  --glass-bg: rgba(255, 255, 255, 0.92);
+  --surface-bg: #e2e8f0;
+  --glass-bg: rgba(255, 255, 255, 0.96);
   --glass-border: #cbd5e1;
 
   --header-bg: #ffffff;
-  --header-border: #e2e8f0;
-  --subnav-bg: #f1f5f9;
-  --subnav-border: #e2e8f0;
+  --header-border: #cbd5e1;
+  --subnav-bg: #e2e8f0;
+  --subnav-border: #cbd5e1;
 
   /* Semantic Colors Light */
   --text-muted: #475569;
   --text-description: #64748b;
-  --input-bg: #f8fafc;
+  --input-bg: #ffffff;
   --input-border: #cbd5e1;
   --input-text: #0f172a;
   --btn-outline-color: #cbd5e1;
@@ -86,9 +86,9 @@
   --btn-outline-hover-bg: var(--robotina-orange);
   --btn-outline-hover-text: #ffffff;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 6px 18px rgba(15, 23, 42, 0.1);
+  --shadow-lg: 0 12px 32px rgba(15, 23, 42, 0.14);
 }
 
 html,

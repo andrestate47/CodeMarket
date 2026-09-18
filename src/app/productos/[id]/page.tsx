@@ -10,6 +10,7 @@ import ProductCard from '@/components/ProductCard';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { getProductPricing } from '@/lib/pricing';
+import dynamic from 'next/dynamic';
 import styles from './ProductPage.module.css';
 
 // Parses **text** into colored highlights and \n\n into paragraph breaks
@@ -230,7 +231,84 @@ function ReviewSection({ productId }: { productId: string }) {
         </div>
     );
 }
-// ──────────────────────────────────────────────────────────────────────
+const SocialProof = dynamic(() => Promise.resolve(function SocialProofInner() {
+    const [viewers, setViewers] = useState(5);
+    useEffect(() => {
+        setViewers(Math.floor(Math.random() * 7) + 3);
+    }, []);
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '0.9rem', color: '#f97316', fontWeight: 600 }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444', animation: 'liveBlink 1.2s ease-in-out infinite' }}></div>
+            🔥 {viewers} personas están viendo este producto
+        </div>
+    );
+}), { ssr: false });
+
+const LimitedTimeTimer = dynamic(() => Promise.resolve(function LimitedTimeTimerInner() {
+    const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 28, seconds: 59 });
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setTimeLeft(prev => {
+                let { hours, minutes, seconds } = prev;
+                if (seconds > 0) {
+                    seconds--;
+                } else {
+                    seconds = 59;
+                    if (minutes > 0) {
+                        minutes--;
+                    } else {
+                        minutes = 59;
+                        if (hours > 0) {
+                            hours--;
+                        } else {
+                            hours = 23;
+                        }
+                    }
+                }
+                return { hours, minutes, seconds };
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div style={{
+            marginTop: '20px',
+            marginBottom: '16px',
+            background: 'linear-gradient(270deg, #ef4444, #f97316, #ef4444)',
+            backgroundSize: '200% 200%',
+            animation: 'gradientShift 3s ease infinite, pulseBlink 2.5s infinite',
+            color: 'white',
+            padding: '12px 16px',
+            borderRadius: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontWeight: 800,
+            fontSize: '0.85rem',
+            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.4)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.5px'
+        }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                ¡Por tiempo limitado! Termina en:
+            </span>
+            <span style={{
+                background: 'rgba(0,0,0,0.3)',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontFamily: 'monospace',
+                fontSize: '1.05rem',
+                letterSpacing: '1px'
+            }}>
+                {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+            </span>
+        </div>
+    );
+}), { ssr: false });
 
 export default function ProductPage() {
     const params = useParams();
@@ -252,7 +330,13 @@ export default function ProductPage() {
     const [appliedDiscount, setAppliedDiscount] = React.useState(0);
     const [couponMessage, setCouponMessage] = React.useState<{type: 'success' | 'error', text: string} | null>(null);
     const [timeLeft, setTimeLeft] = React.useState({ hours: 14, minutes: 28, seconds: 59 });
-    const [viewers] = useState(() => Math.floor(Math.random() * 7) + 2);
+    const [mounted, setMounted] = useState<boolean>(false);
+    const [viewers, setViewers] = useState<number>(5);
+
+    React.useEffect(() => {
+        setMounted(true);
+        setViewers(Math.floor(Math.random() * 7) + 3);
+    }, []);
     const [cartMessage, setCartMessage] = React.useState<string | null>(null);
     const [selectedQty, setSelectedQty] = useState<number>(1);
     const [selectedVariant, setSelectedVariant] = useState<{ id: string; name: string; price: string } | null>(null);
@@ -422,7 +506,7 @@ export default function ProductPage() {
 
                     {/* Info Section */}
                     <div className={styles.infoColumn}>
-                        <div className={styles.vendorBadge}>Vendido por CodeMarket</div>
+                        <div className={styles.vendorBadge}>Vendido por Tienda-Vir</div>
                         <h1 className={styles.title} style={{ marginBottom: '8px' }}>{product.title}</h1>
                         
                         <style>{`
@@ -432,10 +516,7 @@ export default function ProductPage() {
                             }
                         `}</style>
                         {/* Social Proof */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px', fontSize: '0.9rem', color: '#f97316', fontWeight: 600 }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#EF4444', animation: 'liveBlink 1.2s ease-in-out infinite' }}></div>
-                            🔥 {viewers} personas están viendo este producto
-                        </div>
+                        <SocialProof />
                         
                         {(() => {
                             const pricing = getProductPricing({
@@ -514,39 +595,7 @@ export default function ProductPage() {
                                 50% { transform: scale(1.02); }
                             }
                         `}</style>
-                        <div style={{
-                            marginTop: '20px',
-                            marginBottom: '16px',
-                            background: 'linear-gradient(270deg, #ef4444, #f97316, #ef4444)',
-                            backgroundSize: '200% 200%',
-                            animation: 'gradientShift 3s ease infinite, pulseBlink 2.5s infinite',
-                            color: 'white',
-                            padding: '12px 16px',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            fontWeight: 800,
-                            fontSize: '0.85rem',
-                            boxShadow: '0 4px 20px rgba(239, 68, 68, 0.4)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                        }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                ¡Por tiempo limitado! Termina en:
-                            </span>
-                            <span style={{
-                                background: 'rgba(0,0,0,0.3)',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontFamily: 'monospace',
-                                fontSize: '1.05rem',
-                                letterSpacing: '1px'
-                            }}>
-                                {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-                            </span>
-                        </div>
+                        <LimitedTimeTimer />
                         
                         <p className={styles.taxInfo}>
                             📨 <strong>Entrega automática.</strong> Al completar tu compra, recibirás de inmediato un correo oficial con todos los detalles y el acceso seguro a tu plataforma.
@@ -661,15 +710,15 @@ export default function ProductPage() {
                         )}
 
                         <div className={styles.trustBadges}>
-                            <div className={styles.trustBadge}>
+                            <div className={`${styles.trustBadge} ${styles.trustBadgeGold}`}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                                 <span style={{ color: '#FFD700' }}>Pago seguro</span>
                             </div>
-                            <div className={styles.trustBadge}>
+                            <div className={`${styles.trustBadge} ${styles.trustBadgeGreen}`}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5L20 7"></path></svg>
                                 <span style={{ color: '#22c55e' }}>Garantía 30 días</span>
                             </div>
-                            <div className={styles.trustBadge}>
+                            <div className={`${styles.trustBadge} ${styles.trustBadgeOrange}`}>
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"></rect><path d="M16 8h4l3 5v3h-7V8z"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
                                 <span style={{ color: '#f97316' }}>Entrega 5 días</span>
                             </div>
@@ -729,7 +778,7 @@ export default function ProductPage() {
 
             <footer className={styles.footer}>
                 <div className="container">
-                   <p>© 2026 CodeMarket. All rights reserved.</p>
+                   <p>© 2026 Tienda-Vir. All rights reserved.</p>
                 </div>
             </footer>
         </main>

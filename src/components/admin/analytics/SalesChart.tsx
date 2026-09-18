@@ -91,7 +91,7 @@ export default function SalesChart({
             border: '1.5px solid var(--glass-border)',
             borderRadius: '16px',
             padding: '20px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            boxShadow: 'var(--shadow-sm)',
             marginTop: '16px',
         }}>
             {/* SVG Chart */}

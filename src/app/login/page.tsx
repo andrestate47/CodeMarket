@@ -15,6 +15,15 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
+  const getSanitizedRedirect = (defaultPath: string) => {
+    if (typeof window === 'undefined') return defaultPath;
+    const params = new URLSearchParams(window.location.search);
+    const raw = params.get('redirect');
+    if (!raw) return defaultPath;
+    const cleaned = raw.replace(/[\}%7D]/g, '').trim();
+    return cleaned.startsWith('/') ? cleaned : defaultPath;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -27,9 +36,7 @@ export default function Login() {
       if (isPlaceholderUrl) {
         // Fallback for instant local demo testing
         document.cookie = 'sb-access-token=dev-admin-demo-token; path=/; max-age=604800; SameSite=Lax';
-        const params = new URLSearchParams(window.location.search);
-        const redirect = params.get('redirect') || '/admin';
-        router.push(redirect);
+        router.push(getSanitizedRedirect('/admin'));
         return;
       }
 
@@ -42,9 +49,7 @@ export default function Login() {
           setError(loginError?.message || "Error al iniciar sesión: Verifica tus credenciales.");
         } else {
           document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
-          const params = new URLSearchParams(window.location.search);
-          const redirect = params.get('redirect') || '/dashboard';
-          router.push(redirect);
+          router.push(getSanitizedRedirect('/dashboard'));
         }
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
@@ -61,9 +66,7 @@ export default function Login() {
     } catch {
       // Auto-fallback to local demo admin if Supabase URL is unavailable
       document.cookie = 'sb-access-token=dev-admin-demo-token; path=/; max-age=604800; SameSite=Lax';
-      const params = new URLSearchParams(window.location.search);
-      const redirect = params.get('redirect') || '/admin';
-      router.push(redirect);
+      router.push(getSanitizedRedirect('/admin'));
     } finally {
       setLoading(false);
     }
@@ -105,9 +108,7 @@ export default function Login() {
                 type="button"
                 onClick={() => {
                   document.cookie = 'sb-access-token=dev-admin-demo-token; path=/; max-age=604800; SameSite=Lax';
-                  const params = new URLSearchParams(window.location.search);
-                  const redirect = params.get('redirect') || '/admin';
-                  router.push(redirect);
+                  router.push(getSanitizedRedirect('/admin'));
                 }}
                 style={{
                   width: '100%',
