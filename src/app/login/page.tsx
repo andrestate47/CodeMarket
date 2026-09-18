@@ -49,7 +49,7 @@ export default function Login() {
           setError(loginError?.message || "Error al iniciar sesión: Verifica tus credenciales.");
         } else {
           document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Lax`;
-          router.push(getSanitizedRedirect('/admin'));
+          window.location.href = getSanitizedRedirect('/admin');
         }
       } else {
         const { error: signUpError } = await supabase.auth.signUp({
@@ -66,7 +66,7 @@ export default function Login() {
     } catch {
       // Auto-fallback to local demo admin if Supabase URL is unavailable
       document.cookie = 'sb-access-token=dev-admin-demo-token; path=/; max-age=604800; SameSite=Lax';
-      router.push(getSanitizedRedirect('/admin'));
+      window.location.href = getSanitizedRedirect('/admin');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export default function Login() {
               type="button"
               onClick={() => {
                 document.cookie = 'sb-access-token=tiendavir-admin-token; path=/; max-age=604800; SameSite=Lax';
-                router.push(getSanitizedRedirect('/admin'));
+                window.location.href = getSanitizedRedirect('/admin');
               }}
               style={{
                 width: '100%',
