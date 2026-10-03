@@ -123,7 +123,7 @@
 }
 
 .publicStoreIcon {
-    height: 70px !important;
+    height: 85px !important;
 }
 
 @media (max-width: 600px) {
@@ -134,7 +134,7 @@
         height: 34px;
     }
     .publicStoreIcon {
-        height: 50px !important;
+        height: 60px !important;
     }
     .sizeMedium .mainTitle {
         font-size: 0.90rem;
