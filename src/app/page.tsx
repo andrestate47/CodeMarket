@@ -23,8 +23,8 @@ export default async function Home() {
     ]);
 
     const appearance = appearanceRes.appearance || {
-        store_name: 'Tienda-Vir',
-        logo_url: null,
+        store_name: 'VapeCommerce',
+        logo_url: '/LogoTienda.png',
         promo_bar_enabled: true,
         promo_bar_text: 'Envíos gratis a todo el Perú por compras desde S/150 | Delivery en 24h en Lima',
         promo_bar_link: '/#productos',

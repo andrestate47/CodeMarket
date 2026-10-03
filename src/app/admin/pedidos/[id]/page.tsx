@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { formatMoney } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge';
@@ -108,8 +107,19 @@ export default function AdminOrderDetailPage() {
         window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
     };
 
+    const formatDateStr = (dateStr?: string) => {
+        if (!dateStr) return '—';
+        try {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return '—';
+            return d.toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        } catch {
+            return '—';
+        }
+    };
+
     if (loading) {
-        return <div style={{ padding: '48px', color: 'var(--text-muted)' }}>Cargando detalle completo del pedido...</div>;
+        return <div style={{ padding: '48px 16px', color: 'var(--text-muted)', textAlign: 'center' }}>Cargando detalle completo del pedido...</div>;
     }
 
     if (!order) {
@@ -122,29 +132,65 @@ export default function AdminOrderDetailPage() {
     }
 
     return (
-        <div>
+        <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
             {/* Header */}
             <AdminPageHeader
                 title={`Pedido #${order.order_number}`}
-                description={`Realizado el ${new Date(order.created_at).toLocaleString('es-PE')} • Canal: ${order.source || 'Tienda online'}`}
+                description={`Realizado el ${formatDateStr(order.created_at)} • Canal: ${order.source || 'Tienda online'}`}
                 action={
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                         <button
                             onClick={handleContactWhatsApp}
-                            style={{ padding: '8px 14px', background: 'rgba(34, 197, 94, 0.15)', border: '1.5px solid #22c55e', color: '#16a34a', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{
+                                padding: '9px 16px',
+                                background: 'rgba(34, 197, 94, 0.15)',
+                                border: '1.5px solid #22c55e',
+                                color: '#4ade80',
+                                borderRadius: '10px',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
                         >
                             💬 Contactar WhatsApp
                         </button>
                         <Link
                             href={`/admin/pedidos/${order.id}/imprimir`}
                             target="_blank"
-                            style={{ padding: '8px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+                            style={{
+                                padding: '9px 16px',
+                                background: 'var(--input-bg)',
+                                border: '1.5px solid var(--glass-border)',
+                                color: 'var(--foreground)',
+                                borderRadius: '10px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
                         >
                             🖨️ Imprimir
                         </Link>
                         <Link
                             href="/admin/pedidos"
-                            style={{ padding: '8px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.85rem', fontWeight: 600, textDecoration: 'none' }}
+                            style={{
+                                padding: '9px 16px',
+                                background: 'var(--input-bg)',
+                                border: '1.5px solid var(--glass-border)',
+                                color: 'var(--foreground)',
+                                borderRadius: '10px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                textDecoration: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                            }}
                         >
                             ← Volver a Lista
                         </Link>
@@ -154,61 +200,95 @@ export default function AdminOrderDetailPage() {
 
             {/* Notification Toast */}
             {toastMessage && (
-                <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, background: 'var(--card-bg)', color: 'var(--foreground)', padding: '12px 20px', borderRadius: '10px', border: '1.5px solid var(--robotina-orange)', fontWeight: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, background: 'var(--card-bg)', color: 'var(--foreground)', padding: '12px 20px', borderRadius: '10px', border: '1.5px solid var(--robotina-orange)', fontWeight: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', maxWidth: 'calc(100vw - 48px)' }}>
                     💬 {toastMessage}
                 </div>
             )}
 
             {/* STATUS SUMMARY BAR */}
-            <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '14px', padding: '16px 20px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
-                    <div>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Estado del Pedido</span>
+            <div style={{
+                background: 'var(--card-bg)',
+                border: '1.5px solid var(--glass-border)',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                marginBottom: '24px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px' }}>
+                    <div style={{ background: 'var(--input-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado Pedido</span>
                         <AdminStatusBadge status={order.order_status || 'new'} />
                     </div>
-                    <div>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Estado de Pago</span>
+                    <div style={{ background: 'var(--input-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado Pago</span>
                         <AdminStatusBadge status={order.payment_status || 'pending'} />
                     </div>
-                    <div>
-                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Estado de Entrega</span>
+                    <div style={{ background: 'var(--input-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado Entrega</span>
                         <AdminStatusBadge status={order.fulfillment_status || 'unfulfilled'} />
                     </div>
                 </div>
 
                 {/* Quick Status Action Buttons */}
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                    {order.payment_status !== 'paid' && (
-                        <button
-                            onClick={() => handleUpdateStatus({ paymentStatus: 'paid' })}
-                            disabled={isPending}
-                            style={{ padding: '7px 12px', background: 'rgba(34, 197, 94, 0.15)', border: '1.5px solid #22c55e', color: '#16a34a', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
-                        >
-                            ✓ Registrar Pago
-                        </button>
-                    )}
-                    {order.fulfillment_status !== 'delivered' && (
-                        <button
-                            onClick={() => handleUpdateStatus({ fulfillmentStatus: 'delivered', orderStatus: 'completed' })}
-                            disabled={isPending}
-                            style={{ padding: '7px 12px', background: 'rgba(59, 130, 246, 0.15)', border: '1.5px solid #2563eb', color: '#2563eb', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
-                        >
-                            🚚 Marcar Entregado
-                        </button>
-                    )}
-                </div>
+                {(order.payment_status !== 'paid' || order.fulfillment_status !== 'delivered') && (
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
+                        {order.payment_status !== 'paid' && (
+                            <button
+                                onClick={() => handleUpdateStatus({ paymentStatus: 'paid' })}
+                                disabled={isPending}
+                                style={{
+                                    padding: '10px 18px',
+                                    background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    flex: '1 1 140px',
+                                    boxShadow: '0 4px 12px rgba(34, 197, 94, 0.25)',
+                                }}
+                            >
+                                ✓ Registrar Pago
+                            </button>
+                        )}
+                        {order.fulfillment_status !== 'delivered' && (
+                            <button
+                                onClick={() => handleUpdateStatus({ fulfillmentStatus: 'delivered', orderStatus: 'completed' })}
+                                disabled={isPending}
+                                style={{
+                                    padding: '10px 18px',
+                                    background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '10px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    flex: '1 1 140px',
+                                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
+                                }}
+                            >
+                                🚚 Marcar Entregado
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* MAIN TWO COLUMN LAYOUT */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: '24px', alignItems: 'start' }}>
+            {/* MAIN TWO COLUMN RESPONSIVE LAYOUT */}
+            <div className="order-details-grid">
                 {/* LEFT CONTENT */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
                     {/* ITEMS TABLE CARD */}
                     <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                         <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Productos del Pedido</h3>
-                        <div style={{ overflowX: 'auto' }}>
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
+                        <div style={{ overflowX: 'auto', margin: '0 -8px' }}>
+                            <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1.5px solid var(--glass-border)', color: 'var(--text-muted)' }}>
                                         <th style={{ padding: '10px' }}>Producto</th>
@@ -221,36 +301,36 @@ export default function AdminOrderDetailPage() {
                                 <tbody>
                                     {items.map((item) => (
                                         <tr key={item.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                             <td style={{ padding: '12px 10px' }}>
-                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                     <div style={{
-                                                         width: '46px',
-                                                         height: '46px',
-                                                         borderRadius: '10px',
-                                                         overflow: 'hidden',
-                                                         background: 'var(--input-bg)',
-                                                         border: '1.5px solid var(--glass-border)',
-                                                         flexShrink: 0,
-                                                         display: 'flex',
-                                                         alignItems: 'center',
-                                                         justifyContent: 'center',
-                                                     }}>
-                                                         {item.image_url || item.image ? (
-                                                             <img
-                                                                 src={item.image_url || item.image}
-                                                                 alt={item.product_name}
-                                                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                             />
-                                                         ) : (
-                                                             <span style={{ fontSize: '1.2rem' }}>📦</span>
-                                                         )}
-                                                     </div>
-                                                     <div>
-                                                         <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{item.product_name}</div>
-                                                         {item.variant_name && <div style={{ fontSize: '0.78rem', color: '#2563eb' }}>{item.variant_name}</div>}
-                                                     </div>
-                                                 </div>
-                                             </td>
+                                            <td style={{ padding: '12px 10px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                    <div style={{
+                                                        width: '44px',
+                                                        height: '44px',
+                                                        borderRadius: '10px',
+                                                        overflow: 'hidden',
+                                                        background: 'var(--input-bg)',
+                                                        border: '1.5px solid var(--glass-border)',
+                                                        flexShrink: 0,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                    }}>
+                                                        {item.image_url || item.image ? (
+                                                            <img
+                                                                src={item.image_url || item.image}
+                                                                alt={item.product_name}
+                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                            />
+                                                        ) : (
+                                                            <span style={{ fontSize: '1.2rem' }}>📦</span>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 700, color: 'var(--foreground)', wordBreak: 'break-word' }}>{item.product_name}</div>
+                                                        {item.variant_name && <div style={{ fontSize: '0.78rem', color: '#2563eb' }}>{item.variant_name}</div>}
+                                                    </div>
+                                                </div>
+                                            </td>
                                             <td style={{ padding: '12px 10px', color: 'var(--text-description)', fontSize: '0.8rem' }}>{item.sku || '—'}</td>
                                             <td style={{ padding: '12px 10px', textAlign: 'right', color: 'var(--foreground)' }}>{formatMoney(item.unit_price_amount)}</td>
                                             <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: 'var(--foreground)' }}>{item.quantity}</td>
@@ -263,7 +343,7 @@ export default function AdminOrderDetailPage() {
 
                         {/* FINANCIAL BREAKDOWN */}
                         <div style={{ borderTop: '1.5px solid var(--glass-border)', paddingTop: '16px', marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                            <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem' }}>
+                            <div style={{ width: '100%', maxWidth: '300px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                                     <span>Subtotal</span>
                                     <span>{formatMoney(order.subtotal_amount)}</span>
@@ -288,7 +368,7 @@ export default function AdminOrderDetailPage() {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d97706', fontSize: '0.85rem' }}>
                                     <span>Saldo Pendiente</span>
-                                    <span>{formatMoney(order.balance_amount || (order.total_amount - (order.paid_amount || 0)))}</span>
+                                    <span>{formatMoney(order.balance_amount !== undefined ? order.balance_amount : (order.total_amount - (order.paid_amount || 0)))}</span>
                                 </div>
                             </div>
                         </div>
@@ -306,7 +386,7 @@ export default function AdminOrderDetailPage() {
                                         <div style={{ position: 'absolute', left: '-22px', top: '2px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--robotina-orange)' }} />
                                         <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)' }}>{evt.description}</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-description)' }}>
-                                            {new Date(evt.created_at).toLocaleString('es-PE')} • Registrado por: {evt.created_by || 'Sistema'}
+                                            {formatDateStr(evt.created_at)} • Registrado por: {evt.created_by || 'Sistema'}
                                         </div>
                                     </div>
                                 ))}
@@ -325,18 +405,18 @@ export default function AdminOrderDetailPage() {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
                             <input
                                 type="text"
                                 value={newNoteContent}
                                 onChange={e => setNewNoteContent(e.target.value)}
                                 placeholder="Agregar una nota interna para el equipo..."
-                                style={{ flex: 1, padding: '10px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.88rem' }}
+                                style={{ flex: '1 1 200px', padding: '10px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.88rem' }}
                             />
                             <button
                                 onClick={handleAddInternalNote}
                                 disabled={isPending}
-                                style={{ padding: '10px 16px', background: 'var(--gradient-main)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer' }}
+                                style={{ padding: '10px 16px', background: 'var(--gradient-main)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer', flex: '0 0 auto' }}
                             >
                                 + Agregar Nota
                             </button>
@@ -348,7 +428,7 @@ export default function AdminOrderDetailPage() {
                                     <div key={note.id} style={{ background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', padding: '10px 14px' }}>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--foreground)' }}>{note.content}</div>
                                         <div style={{ fontSize: '0.72rem', color: 'var(--text-description)', marginTop: '4px' }}>
-                                            {new Date(note.created_at).toLocaleString('es-PE')} • {note.user_name || 'Admin'}
+                                            {formatDateStr(note.created_at)} • {note.user_name || 'Admin'}
                                         </div>
                                     </div>
                                 ))}
@@ -358,7 +438,7 @@ export default function AdminOrderDetailPage() {
                 </div>
 
                 {/* RIGHT SIDEBAR — CLIENTE Y ENTREGA */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
 
                     {/* CUSTOMER CARD */}
                     <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
@@ -367,11 +447,11 @@ export default function AdminOrderDetailPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.88rem' }}>
                             <div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Nombre</span>
-                                <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>{order.customer_name}</span>
+                                <span style={{ fontWeight: 700, color: 'var(--foreground)', wordBreak: 'break-word' }}>{order.customer_name}</span>
                             </div>
                             <div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Correo</span>
-                                <span style={{ color: 'var(--text-muted)' }}>{order.customer_email}</span>
+                                <span style={{ color: 'var(--text-muted)', wordBreak: 'break-all' }}>{order.customer_email}</span>
                             </div>
                             <div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Teléfono</span>
@@ -409,11 +489,11 @@ export default function AdminOrderDetailPage() {
                             </div>
                             <div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Destinatario</span>
-                                <span style={{ color: 'var(--text-muted)' }}>{order.recipient_name || order.customer_name}</span>
+                                <span style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{order.recipient_name || order.customer_name}</span>
                             </div>
                             <div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Dirección</span>
-                                <span style={{ color: 'var(--text-muted)' }}>{order.shipping_address_line || 'Sin dirección especificada'}</span>
+                                <span style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{order.shipping_address_line || 'Sin dirección especificada'}</span>
                             </div>
                             <div>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Ubicación</span>
@@ -422,7 +502,7 @@ export default function AdminOrderDetailPage() {
                             {order.shipping_reference && (
                                 <div>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Referencia</span>
-                                    <span style={{ color: 'var(--text-muted)' }}>&quot;{order.shipping_reference}&quot;</span>
+                                    <span style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>&quot;{order.shipping_reference}&quot;</span>
                                 </div>
                             )}
 
@@ -437,6 +517,21 @@ export default function AdminOrderDetailPage() {
 
                 </div>
             </div>
+
+            <style jsx>{`
+                .order-details-grid {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) 340px;
+                    gap: 24px;
+                    align-items: start;
+                }
+                @media (max-width: 960px) {
+                    .order-details-grid {
+                        grid-template-columns: 1fr;
+                        gap: 20px;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

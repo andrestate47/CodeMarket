@@ -37,6 +37,9 @@
   font-weight: 700;
   color: var(--foreground);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .searchContainer {
@@ -219,10 +222,35 @@
 }
 
 @media (max-width: 640px) {
+  .topbar {
+    padding: 0 12px;
+    height: 56px;
+  }
+  .leftSection {
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+  .title {
+    font-size: 0.95rem;
+    max-width: 150px;
+  }
+  .rightSection {
+    gap: 6px;
+  }
+  .themeToggleBtn, .mobileMenuBtn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
   .userInfo {
     display: none;
   }
-  .storeLink span {
+  .storeLink span:last-child {
     display: none;
+  }
+  .storeLink {
+    padding: 6px 10px;
   }
 }

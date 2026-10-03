@@ -659,7 +659,7 @@ export default function AdminOrdersPage() {
             ) : (
                 <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
                     <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
+                        <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255, 255, 255, 0.02)', color: 'var(--text-muted)' }}>
                                     <th style={{ padding: '14px', width: '40px' }}>

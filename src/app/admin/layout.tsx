@@ -161,10 +161,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     onLogout={handleLogout}
                 />
 
-                <main style={{ flex: 1, padding: '24px 32px 48px 32px' }}>
+                <main className="admin-main-wrapper">
                     {children}
                 </main>
             </div>
+            <style jsx>{`
+                .admin-main-wrapper {
+                    flex: 1;
+                    padding: 24px 32px 48px 32px;
+                    width: 100%;
+                    max-width: 100vw;
+                    box-sizing: border-box;
+                }
+                @media (max-width: 768px) {
+                    .admin-main-wrapper {
+                        padding: 16px 14px 32px 14px !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 }

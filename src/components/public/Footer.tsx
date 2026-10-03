@@ -9,7 +9,7 @@ interface FooterProps {
     storeName?: string;
 }
 
-export default function Footer({ storeName = 'TiendaVir' }: FooterProps) {
+export default function Footer({ storeName = 'VapeCommerce' }: FooterProps) {
     return (
         <footer className={styles.footer}>
             <div className={styles.container}>
@@ -84,7 +84,7 @@ export default function Footer({ storeName = 'TiendaVir' }: FooterProps) {
                                 <span className={styles.contactIcon}>📧</span>
                                 <div className={styles.contactText}>
                                     <strong>Correo Oficial</strong>
-                                    contacto@tiendavir.com
+                                    contacto@vapecommerce.com
                                 </div>
                             </div>
                         </div>
@@ -98,7 +98,7 @@ export default function Footer({ storeName = 'TiendaVir' }: FooterProps) {
                     </p>
 
                     {/* PERUVIAN LEGAL REQUIREMENT: LIBRO DE RECLAMACIONES */}
-                    <a href="mailto:contacto@tiendavir.com?subject=Libro%20de%20Reclamaciones" className={styles.libroReclamaciones}>
+                    <a href="mailto:contacto@vapecommerce.com?subject=Libro%20de%20Reclamaciones" className={styles.libroReclamaciones}>
                         📑 Libro de Reclamaciones
                     </a>
 

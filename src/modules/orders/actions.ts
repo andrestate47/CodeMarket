@@ -370,7 +370,15 @@ export async function getOrdersListAction(params: OrderFilterParams): Promise<Or
                     .order('created_at', { ascending: false });
 
                 if (fetchedDbOrders && fetchedDbOrders.length > 0) {
-                    dbOrdersList = fetchedDbOrders as OrderRecord[];
+                    dbOrdersList = (fetchedDbOrders as OrderRecord[]).map(o => ({
+                        ...o,
+                        subtotal_amount: (o.subtotal_amount && Number.isInteger(o.subtotal_amount) && o.subtotal_amount >= 500) ? o.subtotal_amount / 100 : o.subtotal_amount,
+                        discount_amount: (o.discount_amount && Number.isInteger(o.discount_amount) && o.discount_amount >= 500) ? o.discount_amount / 100 : o.discount_amount,
+                        shipping_amount: (o.shipping_amount && Number.isInteger(o.shipping_amount) && o.shipping_amount >= 500) ? o.shipping_amount / 100 : o.shipping_amount,
+                        total_amount: (o.total_amount && Number.isInteger(o.total_amount) && o.total_amount >= 500) ? o.total_amount / 100 : o.total_amount,
+                        paid_amount: (o.paid_amount && Number.isInteger(o.paid_amount) && o.paid_amount >= 500) ? o.paid_amount / 100 : o.paid_amount,
+                        balance_amount: (o.balance_amount && Number.isInteger(o.balance_amount) && o.balance_amount >= 500) ? o.balance_amount / 100 : o.balance_amount,
+                    }));
                 }
             }
         } catch (dbErr) {
@@ -1192,8 +1200,22 @@ export async function getSingleOrderAction(orderId: string) {
                     .single();
 
                 if (dbOrder) {
-                    targetOrder = dbOrder as OrderRecord;
-                    items = (dbOrder.order_items || []) as OrderItemRecord[];
+                    targetOrder = {
+                        ...dbOrder,
+                        subtotal_amount: (dbOrder.subtotal_amount && Number.isInteger(dbOrder.subtotal_amount) && dbOrder.subtotal_amount >= 500) ? dbOrder.subtotal_amount / 100 : dbOrder.subtotal_amount,
+                        discount_amount: (dbOrder.discount_amount && Number.isInteger(dbOrder.discount_amount) && dbOrder.discount_amount >= 500) ? dbOrder.discount_amount / 100 : dbOrder.discount_amount,
+                        shipping_amount: (dbOrder.shipping_amount && Number.isInteger(dbOrder.shipping_amount) && dbOrder.shipping_amount >= 500) ? dbOrder.shipping_amount / 100 : dbOrder.shipping_amount,
+                        total_amount: (dbOrder.total_amount && Number.isInteger(dbOrder.total_amount) && dbOrder.total_amount >= 500) ? dbOrder.total_amount / 100 : dbOrder.total_amount,
+                        paid_amount: (dbOrder.paid_amount && Number.isInteger(dbOrder.paid_amount) && dbOrder.paid_amount >= 500) ? dbOrder.paid_amount / 100 : dbOrder.paid_amount,
+                        balance_amount: (dbOrder.balance_amount && Number.isInteger(dbOrder.balance_amount) && dbOrder.balance_amount >= 500) ? dbOrder.balance_amount / 100 : dbOrder.balance_amount,
+                    } as OrderRecord;
+                    items = ((dbOrder.order_items || []) as OrderItemRecord[]).map(i => ({
+                        ...i,
+                        unit_price_amount: (i.unit_price_amount && Number.isInteger(i.unit_price_amount) && i.unit_price_amount >= 500) ? i.unit_price_amount / 100 : i.unit_price_amount,
+                        original_unit_price: (i.original_unit_price && Number.isInteger(i.original_unit_price) && i.original_unit_price >= 500) ? i.original_unit_price / 100 : i.original_unit_price,
+                        final_unit_price: (i.final_unit_price && Number.isInteger(i.final_unit_price) && i.final_unit_price >= 500) ? i.final_unit_price / 100 : i.final_unit_price,
+                        total_amount: (i.total_amount && Number.isInteger(i.total_amount) && i.total_amount >= 500) ? i.total_amount / 100 : i.total_amount,
+                    }));
                     events = (dbOrder.order_events || []) as OrderEventRecord[];
                     notes = (dbOrder.order_notes || []) as OrderNoteRecord[];
                 }

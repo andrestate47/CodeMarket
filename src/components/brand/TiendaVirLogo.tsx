@@ -9,6 +9,9 @@ interface TiendaVirLogoProps {
     showTagline?: boolean;
     href?: string;
     className?: string;
+    variant?: 'image' | 'svg';
+    storeName?: string;
+    logoImage?: string;
 }
 
 export default function TiendaVirLogo({
@@ -16,66 +19,78 @@ export default function TiendaVirLogo({
     showTagline = false,
     href = '/',
     className = '',
+    variant = 'image',
+    storeName = 'VapeCommerce',
+    logoImage,
 }: TiendaVirLogoProps) {
     const sizeClass = size === 'small' ? styles.sizeSmall : size === 'large' ? styles.sizeLarge : styles.sizeMedium;
 
+    const isTiendaVir = storeName.toLowerCase().includes('tienda');
+    const word1 = isTiendaVir ? 'Tienda' : 'Vape';
+    const word2 = isTiendaVir ? 'Vir' : 'Commerce';
+    const imgSrc = logoImage || (isTiendaVir ? '/logo-TiendaVir.png' : '/LogoTienda.png');
+
     const content = (
         <div className={`${styles.logoWrapper} ${sizeClass} ${className}`}>
-            {/* VECTOR SHOPPING CART ICON (EXACT 1:1 CHUBBY BOLD FOLDED SHELL) */}
+            {/* EXACT OFFICIAL LOGO ICON */}
             <div className={styles.iconContainer}>
-                <svg
-                    className={styles.cartSvg}
-                    viewBox="0 0 96 90"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <defs>
-                        <linearGradient id="tiendaVirCartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#FF4A00" />
-                            <stop offset="40%" stopColor="#FF6E00" />
-                            <stop offset="80%" stopColor="#FF8A00" />
-                            <stop offset="100%" stopColor="#FF2200" />
-                        </linearGradient>
-                    </defs>
+                {variant === 'image' ? (
+                    <img
+                        src={imgSrc}
+                        alt={`${storeName} Logo`}
+                        className={styles.cartImage}
+                    />
+                ) : (
+                    <svg
+                        className={styles.cartSvg}
+                        viewBox="0 0 120 100"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        <defs>
+                            <linearGradient id="tiendaVirCartGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#FF2800" />
+                                <stop offset="40%" stopColor="#FF6000" />
+                                <stop offset="75%" stopColor="#FF8800" />
+                                <stop offset="100%" stopColor="#FFA600" />
+                            </linearGradient>
+                        </defs>
 
-                    {/* Tilted cart group (-14 deg speed angle) */}
-                    <g transform="rotate(-14 48 45)">
-                        {/* 1. Outer Folded Shell (Top Bar + Right Back Spine + Bottom Bar) */}
-                        <path
-                            d="M 12 16 H 64 C 80 16 86 24 81 38 L 73 52 C 68 60 58 61 44 61 H 32"
-                            stroke="url(#tiendaVirCartGrad)"
-                            strokeWidth="17.5"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                        />
-
-                        {/* 2. Middle Shelf Bar (Inner Wing) */}
-                        <path
-                            d="M 21 38.5 H 61"
-                            stroke="url(#tiendaVirCartGrad)"
-                            strokeWidth="15.5"
-                            strokeLinecap="round"
-                        />
-
-                        {/* 3. Left Wheel Dot */}
-                        <circle cx="39" cy="80" r="8" fill="url(#tiendaVirCartGrad)" />
-
-                        {/* 4. Right Wheel Dot */}
-                        <circle cx="64" cy="74" r="8" fill="url(#tiendaVirCartGrad)" />
-                    </g>
-                </svg>
+                        <g transform="rotate(-12 60 50)">
+                            {/* Top Wing / Spine / Bottom Frame */}
+                            <path
+                                d="M 22 20 H 74 C 92 20 98 28 92 44 C 86 60 74 66 54 70 H 32"
+                                stroke="url(#tiendaVirCartGrad)"
+                                strokeWidth="16"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            />
+                            {/* Middle Wing Bar */}
+                            <path
+                                d="M 30 45 H 78"
+                                stroke="url(#tiendaVirCartGrad)"
+                                strokeWidth="15"
+                                strokeLinecap="round"
+                            />
+                            {/* Front Wheel Dot */}
+                            <circle cx="42" cy="86" r="8.5" fill="url(#tiendaVirCartGrad)" />
+                            {/* Rear Wheel Dot */}
+                            <circle cx="70" cy="80" r="8.5" fill="url(#tiendaVirCartGrad)" />
+                        </g>
+                    </svg>
+                )}
             </div>
 
             {/* TYPOGRAPHY BRAND NAME & TAGLINE */}
             <div className={styles.textGroup}>
                 <div className={styles.mainTitle}>
-                    <span className={styles.wordTienda}>Tienda</span>
-                    <span className={styles.wordVir}>Vir</span>
+                    <span className={styles.wordTienda}>{word1}</span>
+                    <span className={styles.wordVir}>{word2}</span>
                     <span className={styles.trademark}>™</span>
                 </div>
                 {showTagline && (
                     <div className={styles.tagline}>
-                        Todo lo que querés, en un solo lugar
+                        {isTiendaVir ? 'Todo lo que querés, en un solo lugar' : 'La tienda oficial de vapeo'}
                     </div>
                 )}
             </div>

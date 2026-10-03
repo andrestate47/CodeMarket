@@ -18,7 +18,7 @@ interface NavbarProps {
     logoUrl?: string | null;
 }
 
-export default function Navbar({ storeName = 'TiendaVir', logoUrl = '/logo-TiendaVir.png' }: NavbarProps) {
+export default function Navbar({ storeName = 'VapeCommerce', logoUrl = '/LogoTienda.png' }: NavbarProps) {
     const { toggleCart, items, itemCount } = useCart();
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();

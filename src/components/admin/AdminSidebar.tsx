@@ -105,7 +105,7 @@ export default function AdminSidebar({ onLogout, pendingOrdersCount, className, 
             {/* Header */}
             <div className={styles.header}>
                 <div onClick={onNavItemClick} style={{ display: 'flex', alignItems: 'center' }}>
-                    <TiendaVirLogo href="/admin" size="small" showTagline={false} />
+                    <TiendaVirLogo href="/admin" size="small" showTagline={false} storeName="TiendaVir" />
                 </div>
 
                 <button

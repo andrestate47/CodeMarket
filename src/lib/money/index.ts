@@ -4,10 +4,11 @@ export const minorUnitsToDecimal = (amount: number | undefined | null): number =
 };
 
 export const formatMoney = (val: number | string | undefined | null, currency: string = 'PEN', isCents: boolean = false): string => {
-    if (val === undefined || val === null) return 'S/ 0.00';
+    if (val === undefined || val === null) return currency === 'USD' ? '$ 0.00' : 'S/ 0.00';
     const symbol = currency === 'USD' ? '$' : 'S/';
 
     const formatNum = (num: number) => {
+        if (isNaN(num) || !isFinite(num)) return '0.00';
         return num.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
@@ -39,3 +40,4 @@ export const parseMoneyToCents = (priceString: string | number): number => {
     if (isNaN(num)) return 0;
     return Math.round(num * 100);
 };
+
