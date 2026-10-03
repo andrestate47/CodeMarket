@@ -103,7 +103,7 @@
 }
 
 .sizeMedium .mainTitle {
-    font-size: 1.35rem;
+    font-size: 1.15rem;
 }
 .sizeMedium .tagline {
     font-size: 0.62rem;
@@ -113,13 +113,17 @@
 }
 
 .sizeLarge .mainTitle {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
 }
 .sizeLarge .tagline {
     font-size: 0.75rem;
 }
 .sizeLarge .iconContainer {
     height: 60px;
+}
+
+.publicStoreIcon {
+    height: 70px !important;
 }
 
 @media (max-width: 600px) {
@@ -129,8 +133,11 @@
     .sizeMedium .iconContainer {
         height: 34px;
     }
+    .publicStoreIcon {
+        height: 50px !important;
+    }
     .sizeMedium .mainTitle {
-        font-size: 1.05rem;
+        font-size: 0.90rem;
         letter-spacing: -0.4px;
     }
     .trademark {

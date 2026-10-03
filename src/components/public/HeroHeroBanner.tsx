@@ -124,7 +124,7 @@ export default function HeroHeroBanner({
                                     priority={true}
                                     sizes="100vw"
                                     unoptimized
-                                    className={styles.heroImageDesktop}
+                                    className={banner.mobile_image_url ? styles.heroImageDesktop : styles.heroImageAlways}
                                     style={{ objectFit: 'cover' }}
                                 />
                                 {banner.mobile_image_url && (

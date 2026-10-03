@@ -43,6 +43,10 @@
     display: block;
 }
 
+.heroImageAlways {
+    display: block !important;
+}
+
 .heroImageMobile {
     display: none;
 }

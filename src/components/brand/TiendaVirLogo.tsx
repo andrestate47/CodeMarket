@@ -33,7 +33,7 @@ export default function TiendaVirLogo({
     const content = (
         <div className={`${styles.logoWrapper} ${sizeClass} ${className}`}>
             {/* EXACT OFFICIAL LOGO ICON */}
-            <div className={styles.iconContainer}>
+            <div className={`${styles.iconContainer} ${!isTiendaVir ? styles.publicStoreIcon : ''}`}>
                 {variant === 'image' ? (
                     <img
                         src={imgSrc}
