@@ -93,13 +93,14 @@ export default function HeroHeroBanner({
     return (
         <section
             className={styles.heroSection}
+            style={{ position: 'relative', width: '100%', height: '520px', overflow: 'hidden' }}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             aria-label="Carrusel de ofertas destacadas"
         >
             {/* HERO SLIDE CONTAINER WITH ALL BANNERS FOR SMOOTH CROSSFADE */}
-            <div className={styles.heroViewport}>
+            <div className={styles.heroViewport} style={{ position: 'relative', width: '100%', height: '100%' }}>
                 {banners.map((banner, idx) => {
                     const isActive = idx === currentIndex;
                     const bPrice = banner.price_amount !== null && banner.price_amount !== undefined
@@ -113,10 +114,11 @@ export default function HeroHeroBanner({
                         <div
                             key={banner.id || idx}
                             className={`${styles.heroSlide} ${isActive ? styles.heroSlideActive : ''}`}
+                            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
                             aria-hidden={!isActive}
                         >
                             {/* BACKGROUND IMAGE WITH NEXT/IMAGE */}
-                            <div className={styles.imageWrapper}>
+                            <div className={styles.imageWrapper} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
                                 <Image
                                     src={banner.image_url}
                                     alt={banner.title}

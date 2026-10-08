@@ -141,9 +141,14 @@ export default function Navbar({ storeName = 'VapeCommerce', logoUrl = '/LogoTie
         <header className={styles.header}>
             {/* MAIN HEADER CONTAINER */}
             <div className={styles.container}>
-                {/* 1. BRAND LOGO (PURE VECTOR CSS/SVG) */}
-                <TiendaVirLogo size="medium" showTagline={false} />
-
+                {/* 1. BRAND LOGO (STOREFRONT) */}
+                <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
+                    <Image src={logoUrl || '/LogoTienda.png'} alt="Logo" width={60} height={60} style={{ objectFit: 'contain' }} unoptimized priority />
+                    <span style={{ fontSize: '1.3rem', fontWeight: 800 }}>
+                        <span style={{ color: 'var(--foreground)' }}>Vape</span>
+                        <span style={{ color: '#f97316' }}>Commerce</span>
+                    </span>
+                </Link>
                 {/* 2. DESKTOP SEARCH BAR (CENTER) */}
                 <div className={styles.searchContainer} ref={searchContainerRef}>
                     <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
@@ -231,54 +236,7 @@ export default function Navbar({ storeName = 'VapeCommerce', logoUrl = '/LogoTie
                         {theme === 'dark' ? '☀️' : '🌙'}
                     </button>
 
-                    {/* User Account Button */}
-                    <div className={styles.userMenuWrapper} ref={userMenuRef}>
-                        {user ? (
-                            <>
-                                <button
-                                    onClick={() => setUserMenuOpen(!userMenuOpen)}
-                                    className={styles.userAccountBtn}
-                                >
-                                    <span className={styles.userIcon}>👤</span>
-                                    <span className={styles.userLabel}>Mi Cuenta</span>
-                                    <span className={styles.caret}>▾</span>
-                                </button>
 
-                                {userMenuOpen && (
-                                    <div className={styles.userDropdown}>
-                                        <div className={styles.userDropdownHeader}>
-                                            <div className={styles.userEmail}>{user.email}</div>
-                                        </div>
-                                        <Link
-                                            href="/admin/pedidos"
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className={styles.userDropdownLink}
-                                        >
-                                            📦 Mis Pedidos
-                                        </Link>
-                                        <Link
-                                            href="/admin/perfil"
-                                            onClick={() => setUserMenuOpen(false)}
-                                            className={styles.userDropdownLink}
-                                        >
-                                            👤 Mi Perfil & Direcciones
-                                        </Link>
-                                        <button
-                                            onClick={handleLogout}
-                                            className={styles.userDropdownLogout}
-                                        >
-                                            🚪 Cerrar Sesión
-                                        </button>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <Link href="/login" className={styles.loginBtn}>
-                                <span className={styles.userIcon}>👤</span>
-                                <span className={styles.userLabel}>Acceder</span>
-                            </Link>
-                        )}
-                    </div>
 
                     {/* Cart Trigger Button */}
                     <button
@@ -387,59 +345,45 @@ export default function Navbar({ storeName = 'VapeCommerce', logoUrl = '/LogoTie
                         Inicio
                     </Link>
 
-                    {rootCategories.map(cat => {
-                        const subs = getSubcategories(cat.id);
-                        const hasSubs = subs.length > 0;
+                    <div
+                        className={styles.catDropdownWrapper}
+                        onMouseEnter={() => setOpenCategoryDropdownId('categorias-main')}
+                        onMouseLeave={() => setOpenCategoryDropdownId(null)}
+                    >
+                        <span className={styles.catLink} style={{ cursor: 'pointer' }}>
+                            Categorías <span className={styles.catCaret}>▾</span>
+                        </span>
 
-                        if (hasSubs) {
-                            return (
-                                <div
-                                    key={cat.id}
-                                    className={styles.catDropdownWrapper}
-                                    onMouseEnter={() => setOpenCategoryDropdownId(cat.id)}
-                                    onMouseLeave={() => setOpenCategoryDropdownId(null)}
+                        {openCategoryDropdownId === 'categorias-main' && (
+                            <div className={styles.catDropdownMenu}>
+                                <Link
+                                    href="/#productos"
+                                    className={styles.catDropdownHeaderLink}
+                                    onClick={() => setOpenCategoryDropdownId(null)}
                                 >
-                                    <Link href={`/?categoria=${cat.slug || cat.id}#productos`} className={styles.catLink}>
-                                        {cat.name} <span className={styles.catCaret}>▾</span>
+                                    Ver todo el catálogo →
+                                </Link>
+                                <div className={styles.catDropdownDivider} />
+                                {rootCategories.map(cat => (
+                                    <Link
+                                        key={cat.id}
+                                        href={`/?categoria=${cat.slug || cat.id}#productos`}
+                                        className={styles.catDropdownItem}
+                                        onClick={() => setOpenCategoryDropdownId(null)}
+                                    >
+                                        {cat.name}
                                     </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                                    {openCategoryDropdownId === cat.id && (
-                                        <div className={styles.catDropdownMenu}>
-                                            <Link
-                                                href={`/?categoria=${cat.slug || cat.id}#productos`}
-                                                className={styles.catDropdownHeaderLink}
-                                            >
-                                                Ver todo en {cat.name} →
-                                            </Link>
-                                            <div className={styles.catDropdownDivider} />
-                                            {subs.map(sub => (
-                                                <Link
-                                                    key={sub.id}
-                                                    href={`/?categoria=${sub.slug || sub.id}#productos`}
-                                                    className={styles.catDropdownItem}
-                                                >
-                                                    ↳ {sub.name}
-                                                </Link>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        }
+                    <Link href="/informacion" className={styles.catLink}>
+                        Información
+                    </Link>
 
-                        return (
-                            <Link
-                                key={cat.id}
-                                href={`/?categoria=${cat.slug || cat.id}#productos`}
-                                className={styles.catLink}
-                            >
-                                {cat.name}
-                            </Link>
-                        );
-                    })}
-
-                    <Link href="/ofertas" className={styles.offersTagLink}>
-                        🔥 Ofertas
+                    <Link href="/resenas" className={styles.catLink}>
+                        Reseñas
                     </Link>
                 </div>
             </nav>
@@ -519,32 +463,24 @@ export default function Navbar({ storeName = 'VapeCommerce', logoUrl = '/LogoTie
                                     </div>
                                 );
                             })}
+
+                            <Link
+                                href="/informacion"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={styles.mobileCatItem}
+                            >
+                                ℹ️ Información
+                            </Link>
+
+                            <Link
+                                href="/resenas"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={styles.mobileCatItem}
+                            >
+                                ⭐ Reseñas
+                            </Link>
                         </div>
 
-                        <div className={styles.mobileDrawerFooter}>
-                            {user ? (
-                                <>
-                                    <Link
-                                        href="/admin/pedidos"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                        className={styles.mobileUserBtn}
-                                    >
-                                        📦 Mis Pedidos
-                                    </Link>
-                                    <button onClick={handleLogout} className={styles.mobileLogoutBtn}>
-                                        🚪 Cerrar Sesión
-                                    </button>
-                                </>
-                            ) : (
-                                <Link
-                                    href="/login"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className={styles.mobileLoginBtn}
-                                >
-                                    👤 Acceder a mi cuenta
-                                </Link>
-                            )}
-                        </div>
                     </div>
                 </div>
             )}

@@ -21,30 +21,41 @@ export default function ProductBadges({
     isFeatured,
 }: ProductBadgesProps) {
     return (
-        <div className={styles.badgeContainer}>
-            {isOutOfStock ? (
-                <span className={`${styles.badge} ${styles.badgeOutOfStock}`}>
-                    AGOTADO
-                </span>
-            ) : (
-                <>
-                    {(displayBadgeText || (discountPercentage && discountPercentage > 0)) && (
-                        <span className={`${styles.badge} ${styles.badgeDiscount}`}>
-                            {displayBadgeText || `-${discountPercentage}% OFF`}
-                        </span>
-                    )}
-                    {isLowStock && (
-                        <span className={`${styles.badge} ${styles.badgeLowStock}`}>
-                            ÚLTIMAS {stockQuantity ? stockQuantity : ''} UDS.
-                        </span>
-                    )}
-                    {isFeatured && !discountPercentage && !displayBadgeText && !isLowStock && (
-                        <span className={`${styles.badge} ${styles.badgeFeatured}`}>
-                            DESTACADO
-                        </span>
-                    )}
-                </>
+        <>
+            <div className={styles.badgeContainer}>
+                {isOutOfStock ? (
+                    <span className={`${styles.badge} ${styles.badgeOutOfStock}`}>
+                        AGOTADO
+                    </span>
+                ) : (
+                    <>
+                        {(displayBadgeText || (discountPercentage && discountPercentage > 0)) && (
+                            <span className={`${styles.badge} ${styles.badgeDiscount}`}>
+                                {displayBadgeText || `-${discountPercentage}% OFF`}
+                            </span>
+                        )}
+                        {isLowStock && (
+                            <span className={`${styles.badge} ${styles.badgeLowStock}`}>
+                                ÚLTIMAS {stockQuantity ? stockQuantity : ''} UDS.
+                            </span>
+                        )}
+                        {isFeatured && !discountPercentage && !displayBadgeText && !isLowStock && (
+                            <span className={`${styles.badge} ${styles.badgeFeatured}`}>
+                                DESTACADO
+                            </span>
+                        )}
+                    </>
+                )}
+            </div>
+            
+            {/* FIRE BADGE RIGHT SIDE */}
+            {!isOutOfStock && (displayBadgeText || (discountPercentage && discountPercentage > 0)) && (
+                <div className={styles.badgeContainerRight}>
+                    <span className={styles.badgeFire}>
+                        🔥
+                    </span>
+                </div>
             )}
-        </div>
+        </>
     );
 }

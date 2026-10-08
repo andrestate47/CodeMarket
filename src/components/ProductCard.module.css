@@ -53,6 +53,36 @@
     transform: scale(1.05);
 }
 
+.discountBadge {
+    position: absolute;
+    top: 44px;
+    left: 12px;
+    background: #FF2A2A;
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 8px;
+    border-radius: 6px;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(255, 42, 42, 0.4);
+}
+
+.fireBadge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-size: 1.2rem;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+    animation: slowBlink 2s infinite ease-in-out;
+}
+
+@keyframes slowBlink {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
 .priceTag {
     background: var(--foreground);
     color: var(--background);

@@ -42,6 +42,12 @@ export default function ProductCard({ product }: ProductCardProps) {
     return (
         <div className={styles.card}>
             <div className={styles.imageContainer}>
+                {product.comparePrice && (
+                    <>
+                        <div className={styles.discountBadge}>Oferta</div>
+                        <div className={styles.fireBadge}>🔥</div>
+                    </>
+                )}
                 <div className={styles.priceTag}>{product.price}</div>
                 <div
                     className={styles.productImage}

@@ -20,7 +20,7 @@ export default function TiendaVirLogo({
     href = '/',
     className = '',
     variant = 'image',
-    storeName = 'VapeCommerce',
+    storeName = 'TiendaVir',
     logoImage,
 }: TiendaVirLogoProps) {
     const sizeClass = size === 'small' ? styles.sizeSmall : size === 'large' ? styles.sizeLarge : styles.sizeMedium;

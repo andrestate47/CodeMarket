@@ -181,6 +181,36 @@
     color: #ffffff;
 }
 
+/* POWERED BY TIENDAVIR BANNER */
+.poweredByBanner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.poweredByLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted, #94a3b8);
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.poweredByLink strong {
+    color: var(--robotina-orange, #FF6B00);
+    font-weight: 800;
+}
+
+.poweredByLink:hover {
+    color: var(--foreground, #ffffff);
+    transform: translateY(-1px);
+}
+
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .mainGrid {

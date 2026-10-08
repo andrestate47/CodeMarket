@@ -17,7 +17,7 @@ export default function Footer({ storeName = 'VapeCommerce' }: FooterProps) {
                 <div className={styles.mainGrid}>
                     {/* COLUMN 1: BRAND & ABOUT */}
                     <div className={styles.brandCol}>
-                        <TiendaVirLogo size="small" showTagline={false} />
+                        <h3 className={styles.brandTitle} style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '16px' }}>{storeName}</h3>
                         <p className={styles.brandDesc}>
                             Tu e-commerce de confianza en Perú. Productos 100% garantizados, envíos rápidos a todo el país y atención personalizada.
                         </p>
@@ -84,7 +84,7 @@ export default function Footer({ storeName = 'VapeCommerce' }: FooterProps) {
                                 <span className={styles.contactIcon}>📧</span>
                                 <div className={styles.contactText}>
                                     <strong>Correo Oficial</strong>
-                                    contacto@vapecommerce.com
+                                    contacto@tiendavir.com
                                 </div>
                             </div>
                         </div>
@@ -98,7 +98,7 @@ export default function Footer({ storeName = 'VapeCommerce' }: FooterProps) {
                     </p>
 
                     {/* PERUVIAN LEGAL REQUIREMENT: LIBRO DE RECLAMACIONES */}
-                    <a href="mailto:contacto@vapecommerce.com?subject=Libro%20de%20Reclamaciones" className={styles.libroReclamaciones}>
+                    <a href="mailto:contacto@tiendavir.com?subject=Libro%20de%20Reclamaciones" className={styles.libroReclamaciones}>
                         📑 Libro de Reclamaciones
                     </a>
 
@@ -110,6 +110,13 @@ export default function Footer({ storeName = 'VapeCommerce' }: FooterProps) {
                         <span className={styles.badgePill}>MASTERCARD</span>
                         <span className={styles.badgePill}>BCP</span>
                     </div>
+                </div>
+
+                {/* ADS BANNER: TIENDAVIR */}
+                <div className={styles.poweredByBanner}>
+                    <a href="https://tiendavir.com" target="_blank" rel="noopener noreferrer" className={styles.poweredByLink}>
+                        🚀 Crea tu propia tienda virtual con <strong>TiendaVir</strong>
+                    </a>
                 </div>
             </div>
         </footer>

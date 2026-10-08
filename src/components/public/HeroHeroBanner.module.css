@@ -158,13 +158,14 @@
     border-radius: 6px;
 }
 
-/* CTA */
 .ctaRow {
     margin-top: 8px;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
+    width: 100%;
 }
 
 .primaryCtaBtn {

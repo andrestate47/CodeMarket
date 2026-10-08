@@ -12,7 +12,7 @@ import { getCategoriesListAction } from "@/modules/categories/actions";
 
 import Footer from "@/components/public/Footer";
 
-export const revalidate = 60; // Cache page for 60 seconds
+export const dynamic = 'force-dynamic'; // Asegurar que la tienda cargue siempre en tiempo real
 
 export default async function Home() {
     // Fetch store appearance, hero banners, and categories in parallel on the server

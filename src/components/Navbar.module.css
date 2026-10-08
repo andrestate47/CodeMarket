@@ -399,10 +399,8 @@
     padding: 0 24px;
     display: flex;
     align-items: center;
-    gap: 24px;
-    overflow-x: auto;
-    white-space: nowrap;
-    scrollbar-width: none;
+    justify-content: center;
+    gap: 32px;
 }
 
 .categoriesContainer::-webkit-scrollbar {
