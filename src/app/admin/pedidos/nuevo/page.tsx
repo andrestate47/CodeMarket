@@ -577,12 +577,13 @@ export default function NewManualOrderPage() {
                             <div style={{
                                 background: 'var(--card-bg)',
                                 border: '1px solid var(--structural-border, var(--glass-border))',
-                                borderRadius: '12px',
-                                padding: '14px 16px',
+                                borderRadius: '14px',
+                                padding: '16px 18px',
                                 marginBottom: '20px',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '12px',
+                                boxShadow: 'var(--shadow-sm)',
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                     <Link
@@ -696,7 +697,16 @@ export default function NewManualOrderPage() {
                                 return (
                                     <div className="admin-pos-products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
                                         {filteredPosProducts.map(p => (
-                                            <div key={p.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--structural-border, var(--glass-border))', borderRadius: '12px', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                            <div key={p.id} style={{
+                                                background: 'var(--card-bg)',
+                                                border: '1px solid var(--structural-border, var(--glass-border))',
+                                                borderRadius: '14px',
+                                                overflow: 'hidden',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                boxShadow: 'var(--shadow-sm)',
+                                                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                                            }}>
                                                 <div style={{ height: '150px', width: '100%', background: 'var(--input-bg)' }}>
                                                     <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                 </div>
@@ -719,7 +729,15 @@ export default function NewManualOrderPage() {
                         </div>
 
                         {/* Derecha: Resumen de Carrito */}
-                        <div id="pos-cart-summary" className="admin-sticky-card" style={{ background: 'var(--card-bg)', border: '1.5px solid var(--structural-border, var(--glass-border))', borderRadius: '14px', padding: '20px', position: 'sticky', top: '20px' }}>
+                        <div id="pos-cart-summary" className="admin-sticky-card" style={{
+                            background: 'var(--card-bg)',
+                            border: '1.5px solid var(--structural-border, var(--glass-border))',
+                            borderRadius: '16px',
+                            padding: '22px',
+                            position: 'sticky',
+                            top: '20px',
+                            boxShadow: 'var(--shadow-md)',
+                        }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--foreground)' }}>Resumen de Productos</h3>
                                 <span style={{ color: 'var(--text-muted)', fontSize: '0.84rem', fontWeight: 700 }}>

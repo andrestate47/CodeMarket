@@ -15,6 +15,7 @@
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
   z-index: 50;
   user-select: none;
+  box-shadow: 2px 0 12px rgba(15, 23, 42, 0.04);
 }
 
 .sidebarCollapsed {
