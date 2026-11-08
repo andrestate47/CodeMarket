@@ -148,11 +148,7 @@ export default function HeroHeroBanner({
                             {/* HERO CONTENT OVERLAY */}
                             <div className={styles.heroContentContainer}>
                                 <div className={styles.heroContentBox}>
-                                    {banner.badge_text && (
-                                        <span className={styles.badgeTag}>
-                                            {banner.badge_text}
-                                        </span>
-                                    )}
+
 
                                     <h1 className={styles.heroTitle}>{banner.title}</h1>
 

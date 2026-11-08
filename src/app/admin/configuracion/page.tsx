@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import {
@@ -11,10 +12,28 @@ import {
     ShippingMethodSetting,
 } from '@/modules/config/storeSettingsActions';
 
+// Componente principal envuelto para evitar problemas con useSearchParams en Next.js
 export default function AdminSettingsPage() {
+    return (
+        <React.Suspense fallback={<div>Cargando configuración...</div>}>
+            <SettingsContent />
+        </React.Suspense>
+    );
+}
+
+function SettingsContent() {
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab') as 'general' | 'payments' | 'shipping' | 'checkout' | 'taxes' | null;
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'shipping' | 'checkout'>('general');
+    const [activeTab, setActiveTab] = useState<'general' | 'payments' | 'shipping' | 'checkout' | 'taxes'>(tabParam || 'general');
+
+    useEffect(() => {
+        if (tabParam && ['general', 'payments', 'shipping', 'checkout', 'taxes'].includes(tabParam)) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
 
     const [settings, setSettings] = useState<CompleteStoreSettings>({
         storeName: 'TiendaVir',
@@ -109,226 +128,161 @@ export default function AdminSettingsPage() {
                 description="Gestión central de WhatsApp, compras sin cuenta, métodos de pago y tarifas de envío."
             />
 
-            {/* TAB NAVIGATION */}
-            <div style={{
-                display: 'flex',
-                gap: '8px',
-                borderBottom: '1px solid var(--glass-border)',
-                marginBottom: '24px',
-                overflowX: 'auto',
-                paddingBottom: '4px'
-            }}>
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('general')}
-                    style={{
-                        padding: '10px 18px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: activeTab === 'general' ? 'var(--robotina-orange)' : 'transparent',
-                        color: activeTab === 'general' ? '#ffffff' : 'var(--foreground)',
-                        fontWeight: 700,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}
-                >
-                    <span>💬</span> WhatsApp y Tienda
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('checkout')}
-                    style={{
-                        padding: '10px 18px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: activeTab === 'checkout' ? 'var(--robotina-orange)' : 'transparent',
-                        color: activeTab === 'checkout' ? '#ffffff' : 'var(--foreground)',
-                        fontWeight: 700,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}
-                >
-                    <span>🛒</span> Checkout sin Cuenta
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('payments')}
-                    style={{
-                        padding: '10px 18px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: activeTab === 'payments' ? 'var(--robotina-orange)' : 'transparent',
-                        color: activeTab === 'payments' ? '#ffffff' : 'var(--foreground)',
-                        fontWeight: 700,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}
-                >
-                    <span>💳</span> Métodos de Pago
-                </button>
-
-                <button
-                    type="button"
-                    onClick={() => setActiveTab('shipping')}
-                    style={{
-                        padding: '10px 18px',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: activeTab === 'shipping' ? 'var(--robotina-orange)' : 'transparent',
-                        color: activeTab === 'shipping' ? '#ffffff' : 'var(--foreground)',
-                        fontWeight: 700,
-                        fontSize: '0.9rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px'
-                    }}
-                >
-                    <span>🚚</span> Tarifas y Envíos
-                </button>
-            </div>
 
             <form onSubmit={handleSaveSettings}>
 
                 {/* TAB 1: GENERAL & WHATSAPP */}
                 {activeTab === 'general' && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div style={{
-                            background: 'var(--card-bg)',
-                            border: '1.5px solid var(--glass-border)',
-                            borderRadius: '16px',
-                            padding: '24px'
+                    <div style={{
+                        background: 'var(--card-bg)',
+                        border: '1.5px solid var(--glass-border)',
+                        borderRadius: '16px',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{ 
+                            padding: '16px 20px', 
+                            borderBottom: '1px solid var(--glass-border)',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'rgba(0,0,0,0.02)'
                         }}>
-                            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 800 }}>📱 Afiliación de WhatsApp TiendaVir</h3>
-                            <p style={{ margin: '0 0 20px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                Define el número de teléfono donde los clientes podrán enviar el resumen de su compra y los comprobantes de pago Yape/Plin directamente con 1 tap.
-                            </p>
-
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>
-                                        Número de WhatsApp Afiliado a la Tienda
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={settings.whatsappPhone}
-                                        onChange={(e) => setSettings(prev => ({ ...prev, whatsappPhone: e.target.value }))}
-                                        placeholder="+51 987 654 321"
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--glass-border)',
-                                            background: 'var(--background)',
-                                            color: 'var(--foreground)',
-                                            fontWeight: 700
-                                        }}
-                                        required
-                                    />
+                            <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--foreground)' }}>Información</h3>
+                            <span style={{ fontSize: '0.9rem', color: 'var(--foreground)' }}>▲</span>
+                        </div>
+                    
+                        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                            
+                            {/* Direcciones */}
+                            <div>
+                                <h4 style={{ margin: '0 0 16px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Direcciones de la tienda</h4>
+                                {(settings.storeAddresses || []).map((addr, idx) => (
+                                    <div key={idx} style={{ 
+                                        border: '1px solid var(--glass-border)', 
+                                        borderRadius: '8px', 
+                                        padding: '8px 16px',
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        marginBottom: '12px',
+                                        position: 'relative',
+                                        background: 'var(--background)'
+                                    }}>
+                                        <div style={{ width: '100%' }}>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Dirección</div>
+                                            <input 
+                                                type="text" 
+                                                value={addr} 
+                                                onChange={(e) => {
+                                                    const newAddrs = [...(settings.storeAddresses || [])];
+                                                    newAddrs[idx] = e.target.value;
+                                                    setSettings(prev => ({ ...prev, storeAddresses: newAddrs }));
+                                                }}
+                                                placeholder="Ej: Jr. San Lorenzo 1064"
+                                                style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }}
+                                            />
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '16px', marginLeft: '12px' }}>
+                                            <button type="button" style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#6366f1', padding: 0, fontSize: '1.1rem' }} title="Editar">✏️</button>
+                                            <button type="button" onClick={() => {
+                                                const newAddrs = settings.storeAddresses?.filter((_, i) => i !== idx);
+                                                setSettings(prev => ({ ...prev, storeAddresses: newAddrs }));
+                                            }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 0, fontSize: '1.1rem' }} title="Eliminar">🗑️</button>
+                                        </div>
+                                    </div>
+                                ))}
+                                <button type="button" onClick={() => {
+                                    setSettings(prev => ({ ...prev, storeAddresses: [...(prev.storeAddresses || []), ''] }));
+                                }} style={{ background: 'transparent', border: 'none', color: '#6366f1', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', padding: 0 }}>
+                                    Agregar Dirección +
+                                </button>
+                            </div>
+                    
+                            {/* Información de la tienda */}
+                            <div>
+                                <h4 style={{ margin: '0 0 16px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Información de la tienda</h4>
+                                
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Nombre del Propietario</div>
+                                        <input type="text" value={settings.ownerName || ''} onChange={(e) => setSettings(prev => ({ ...prev, ownerName: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }} placeholder="Tu nombre" />
+                                    </div>
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Nombre de tienda</div>
+                                        <input type="text" value={settings.storeName} onChange={(e) => setSettings(prev => ({ ...prev, storeName: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }} />
+                                    </div>
+                                    
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>E-mail</div>
+                                        <input type="email" value={settings.supportEmail} onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }} />
+                                    </div>
+                                    
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Teléfono</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                            <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                                                <span role="img" aria-label="Peru flag">🇵🇪</span> (51) <span style={{ fontSize: '0.6rem' }}>▼</span>
+                                            </span>
+                                            <div style={{ width: '1px', height: '14px', background: 'var(--glass-border)' }}></div>
+                                            <input type="text" value={settings.storePhone || ''} onChange={(e) => setSettings(prev => ({ ...prev, storePhone: e.target.value }))} placeholder="926738921" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)' }} />
+                                        </div>
+                                    </div>
+                    
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>WhatsApp</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                                            <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                                                <span role="img" aria-label="Peru flag">🇵🇪</span> (51) <span style={{ fontSize: '0.6rem' }}>▼</span>
+                                            </span>
+                                            <div style={{ width: '1px', height: '14px', background: 'var(--glass-border)' }}></div>
+                                            <input type="text" value={settings.whatsappPhone?.replace(/^\+?51\s*/, '')} onChange={(e) => setSettings(prev => ({ ...prev, whatsappPhone: '+51 ' + e.target.value }))} placeholder="926738921" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)' }} />
+                                        </div>
+                                    </div>
+                    
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)', position: 'relative' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Rubro de la tienda</div>
+                                        <select value={settings.storeCategory || 'Hogar y Cocina'} onChange={(e) => setSettings(prev => ({ ...prev, storeCategory: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer' }}>
+                                            <option value="Hogar y Cocina">Hogar y Cocina</option>
+                                            <option value="Ropa y Accesorios">Ropa y Accesorios</option>
+                                            <option value="Tecnología">Tecnología</option>
+                                            <option value="Salud y Belleza">Salud y Belleza</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.6rem', pointerEvents: 'none', color: 'var(--foreground)' }}>▼</span>
+                                    </div>
+                    
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)', position: 'relative' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>País de origen</div>
+                                        <select value={settings.storeCountry || 'Peru'} onChange={(e) => setSettings(prev => ({ ...prev, storeCountry: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer' }}>
+                                            <option value="Peru">Perú</option>
+                                            <option value="Argentina">Argentina</option>
+                                            <option value="Chile">Chile</option>
+                                            <option value="Colombia">Colombia</option>
+                                        </select>
+                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.6rem', pointerEvents: 'none', color: 'var(--foreground)' }}>▼</span>
+                                    </div>
+                    
+                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)', position: 'relative' }}>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Moneda</div>
+                                        <select value={settings.currency || 'PEN'} onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer' }}>
+                                            <option value="PEN">PEN - Sol Peruano</option>
+                                            <option value="USD">USD - Dólar Estadounidense</option>
+                                            <option value="ARS">ARS - Peso Argentino</option>
+                                        </select>
+                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.6rem', pointerEvents: 'none', color: 'var(--foreground)' }}>▼</span>
+                                    </div>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', marginTop: '22px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.9rem' }}>
+                                <div style={{ marginTop: '24px' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
                                         <input
                                             type="checkbox"
                                             checked={settings.enableAutoWhatsappRedirect}
                                             onChange={(e) => setSettings(prev => ({ ...prev, enableAutoWhatsappRedirect: e.target.checked }))}
-                                            style={{ width: '18px', height: '18px', accentColor: 'var(--robotina-orange)' }}
+                                            style={{ width: '16px', height: '16px', accentColor: '#6366f1' }}
                                         />
                                         <span>Ofrecer redirección rápida a WhatsApp al finalizar la compra</span>
                                     </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{
-                            background: 'var(--card-bg)',
-                            border: '1.5px solid var(--glass-border)',
-                            borderRadius: '16px',
-                            padding: '24px'
-                        }}>
-                            <h3 style={{ margin: '0 0 16px 0', fontSize: '1.1rem', fontWeight: 800 }}>⚙️ Identidad de la Tienda</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Nombre Comercial</label>
-                                    <input
-                                        type="text"
-                                        value={settings.storeName}
-                                        onChange={(e) => setSettings(prev => ({ ...prev, storeName: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--glass-border)',
-                                            background: 'var(--background)',
-                                            color: 'var(--foreground)'
-                                        }}
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Eslogan de la Tienda</label>
-                                    <input
-                                        type="text"
-                                        value={settings.storeTagline || ''}
-                                        onChange={(e) => setSettings(prev => ({ ...prev, storeTagline: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--glass-border)',
-                                            background: 'var(--background)',
-                                            color: 'var(--foreground)'
-                                        }}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Correo Electrónico de Soporte / Alertas</label>
-                                    <input
-                                        type="email"
-                                        value={settings.supportEmail}
-                                        onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--glass-border)',
-                                            background: 'var(--background)',
-                                            color: 'var(--foreground)'
-                                        }}
-                                        required
-                                    />
-                                </div>
-
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Moneda Principal</label>
-                                    <input
-                                        type="text"
-                                        value={settings.currency}
-                                        disabled
-                                        style={{
-                                            width: '100%',
-                                            padding: '10px 14px',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--glass-border)',
-                                            background: 'var(--glass-border)',
-                                            color: 'var(--text-muted)',
-                                            fontWeight: 700
-                                        }}
-                                    />
                                 </div>
                             </div>
                         </div>
@@ -438,11 +392,58 @@ export default function AdminSettingsPage() {
                                     </div>
                                 )}
 
-                                {method.id === 'bank_transfer' && (
-                                    <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
-                                        Cuentas bancarias habilitadas: BCP (193-0000000-0-00), BBVA (0011-0000-00000000-00).
+                                {method.id === 'bank_transfer' && method.banks && (
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                                        {method.banks.map((b, idx) => (
+                                            <div key={idx} style={{ background: 'var(--background)', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                                                <div style={{ fontWeight: 800, marginBottom: '8px', fontSize: '0.85rem' }}>{b.bank}</div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                    <input
+                                                        type="text"
+                                                        value={b.account || ''}
+                                                        onChange={(e) => {
+                                                            const newBanks = [...method.banks!];
+                                                            newBanks[idx] = { ...newBanks[idx], account: e.target.value };
+                                                            handlePaymentMethodChange(method.id, 'banks', newBanks);
+                                                        }}
+                                                        placeholder="Nro de Cuenta"
+                                                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--glass-border)', fontSize: '0.8rem', background: 'var(--card-bg)', color: 'var(--foreground)' }}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={b.cci || ''}
+                                                        onChange={(e) => {
+                                                            const newBanks = [...method.banks!];
+                                                            newBanks[idx] = { ...newBanks[idx], cci: e.target.value };
+                                                            handlePaymentMethodChange(method.id, 'banks', newBanks);
+                                                        }}
+                                                        placeholder="CCI"
+                                                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--glass-border)', fontSize: '0.8rem', background: 'var(--card-bg)', color: 'var(--foreground)' }}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={b.holder || ''}
+                                                        onChange={(e) => {
+                                                            const newBanks = [...method.banks!];
+                                                            newBanks[idx] = { ...newBanks[idx], holder: e.target.value };
+                                                            handlePaymentMethodChange(method.id, 'banks', newBanks);
+                                                        }}
+                                                        placeholder="Titular"
+                                                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--glass-border)', fontSize: '0.8rem', background: 'var(--card-bg)', color: 'var(--foreground)' }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
+                                <div style={{ marginTop: '14px' }}>
+                                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px' }}>Instrucciones de Pago (se mostrarán al cliente)</label>
+                                    <textarea
+                                        value={method.instructions || ''}
+                                        onChange={(e) => handlePaymentMethodChange(method.id, 'instructions', e.target.value)}
+                                        style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--glass-border)', background: 'var(--background)', color: 'var(--foreground)', minHeight: '60px', resize: 'vertical' }}
+                                    />
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -496,8 +497,45 @@ export default function AdminSettingsPage() {
                                         />
                                     </div>
                                 </div>
+                                {method.requires_address === false && (
+                                    <div style={{ marginTop: '14px' }}>
+                                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px' }}>Dirección de Recojo en Tienda / Almacén</label>
+                                        <input
+                                            type="text"
+                                            value={method.address_details || ''}
+                                            onChange={(e) => handleShippingMethodChange(method.id, 'address_details', e.target.value)}
+                                            placeholder="Ej. Av. Principal 123..."
+                                            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--glass-border)', background: 'var(--background)', color: 'var(--foreground)' }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {/* TAB 5: TAXES (Impuestos) */}
+                {activeTab === 'taxes' && (
+                    <div style={{
+                        background: 'var(--card-bg)',
+                        border: '1.5px solid var(--glass-border)',
+                        borderRadius: '16px',
+                        padding: '24px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                            <div style={{ fontSize: '2rem' }}>🧾</div>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Configuración de Impuestos</h3>
+                                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                    Actualmente los precios ya incluyen el IGV/IVA por defecto (18%). 
+                                </p>
+                            </div>
+                        </div>
+                        <div style={{ padding: '20px', background: 'var(--background)', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                            <p style={{ fontSize: '0.9rem', margin: 0, color: 'var(--text-muted)' }}>
+                                🚧 Módulo de impuestos avanzados y facturación electrónica (FE) en desarrollo para próximas versiones.
+                            </p>
+                        </div>
                     </div>
                 )}
 

@@ -21,6 +21,8 @@ export interface CheckoutPayload {
     addressLine?: string;
     reference?: string;
     postalCode?: string;
+    acceptTerms?: boolean;
+    acceptMarketing?: boolean;
     isAgeConfirmed?: boolean;
     couponCode?: string;
     orderType?: 'order' | 'quote';
@@ -59,7 +61,9 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
             addressLine,
             reference,
             postalCode,
-            isAgeConfirmed,
+            acceptTerms = true,
+            acceptMarketing = true,
+            isAgeConfirmed = true,
             couponCode,
             orderType = 'order',
             items
@@ -84,7 +88,7 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
 
         const { settings } = settingsRes;
 
-        if (settings.require_email && (!customerEmail || !customerEmail.includes('@'))) {
+        if (customerEmail && customerEmail.trim() !== '' && !customerEmail.includes('@')) {
             fieldErrors.customerEmail = 'Ingresa un correo electrónico válido.';
         }
 
@@ -118,9 +122,10 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
         }
 
         if (Object.keys(fieldErrors).length > 0) {
+            const firstErrorMsg = Object.values(fieldErrors)[0];
             return {
                 success: false,
-                error: 'Por favor corrige los campos indicados.',
+                error: firstErrorMsg || 'Por favor corrige los campos indicados.',
                 fieldErrors
             };
         }
@@ -244,10 +249,29 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
         // 5. Generate Order Number (CM-100000 + random)
         const orderNumber = `CM-${Math.floor(100000 + Math.random() * 900000)}`;
 
-        // 6. Insert Order
+        // 6. Insert Order (compatible with public.orders columns + extended metadata in internal_notes & order_events)
         const isQuote = orderType === 'quote';
-        const initialPaymentStatus = isQuote ? 'pending' : 'pending';
-        const initialOrderStatus = isQuote ? 'quote' : 'confirmed';
+        const initialPaymentStatus = 'pending';
+        const initialOrderStatus = isQuote ? 'quote' : 'new';
+
+        const checkoutMetadata = {
+            source: 'online_store',
+            order_status: initialOrderStatus,
+            delivery_type: selectedShipping?.id === 'store_pickup' ? 'pickup' : 'local_delivery',
+            shipping_method_id: shippingMethodId,
+            shipping_method_name: selectedShipping?.name || null,
+            recipient_name: recipientName || customerName,
+            recipient_phone: recipientPhone || customerPhone,
+            shipping_department: department || null,
+            shipping_province: province || null,
+            shipping_district: district || null,
+            shipping_address_line: addressLine || null,
+            shipping_reference: reference || null,
+            shipping_postal_code: postalCode || null,
+            accept_terms: Boolean(acceptTerms),
+            accept_marketing: Boolean(acceptMarketing),
+            is_age_confirmed: Boolean(isAgeConfirmed),
+        };
 
         const { data: createdOrder, error: orderErr } = await adminClient
             .from('orders')
@@ -266,22 +290,10 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
                 payment_method: isQuote ? 'quote_request' : paymentMethod,
                 payment_status: initialPaymentStatus,
                 fulfillment_status: 'unfulfilled',
-                order_status: initialOrderStatus,
-                delivery_type: selectedShipping?.id === 'store_pickup' ? 'pickup' : 'delivery',
-                shipping_method_id: shippingMethodId,
-                shipping_method_name: selectedShipping?.name,
-                recipient_name: recipientName || customerName,
-                recipient_phone: recipientPhone || customerPhone,
-                shipping_department: department || null,
-                shipping_province: province || null,
-                shipping_district: district || null,
-                shipping_address_line: addressLine || null,
-                shipping_reference: reference || null,
-                shipping_postal_code: postalCode || null,
-                is_age_confirmed: Boolean(isAgeConfirmed),
                 customer_notes: notes || null,
+                internal_notes: JSON.stringify(checkoutMetadata),
             })
-            .select('id, order_number, access_token, total_amount, currency')
+            .select('id, order_number, total_amount, currency')
             .single();
 
         if (orderErr || !createdOrder) {
@@ -297,12 +309,13 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
 
         await adminClient.from('order_items').insert(itemsWithOrderId);
 
-        // 8. Record Order Created Timeline Event
+        // 8. Record Order Created Timeline Event with full metadata
         await adminClient.from('order_events').insert({
             store_id: storeId,
             order_id: createdOrder.id,
             event_type: 'order_created',
             description: `Pedido ${createdOrder.order_number} registrado por ${customerName}.`,
+            metadata: checkoutMetadata,
             created_by: 'Cliente (Checkout)'
         });
 
@@ -315,20 +328,10 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
                     .from('products')
                     .update({ stock_quantity: newStock })
                     .eq('id', product.id);
-
-                await adminClient.from('inventory_movements').insert({
-                    store_id: storeId,
-                    product_id: product.id,
-                    movement_type: 'sale',
-                    quantity: -item.quantity,
-                    reference_type: 'order',
-                    reference_id: createdOrder.id,
-                    notes: `Venta en pedido ${createdOrder.order_number}`,
-                });
             }
         }
 
-        const accessToken = createdOrder.access_token || createdOrder.id;
+        const accessToken = createdOrder.id;
 
         // 10. Send Transactional Emails (Customer & Admin)
         try {

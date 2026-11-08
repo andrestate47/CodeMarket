@@ -5,6 +5,7 @@ import styles from './ProductCard.module.css';
 import { Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import { fireAddToCartConfetti } from '@/lib/confetti';
 
 interface ProductCardProps {
     product: Product;
@@ -27,6 +28,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             // For digital products, we add to cart if not present
             // If present, user can click cart icon in header to view.
             addItem(product);
+            fireAddToCartConfetti(e);
         }
     };
 
@@ -36,6 +38,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             removeItemByProductId(product.id);
         } else {
             addItem(product);
+            fireAddToCartConfetti(e);
         }
     };
 

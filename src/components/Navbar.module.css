@@ -387,10 +387,12 @@
 /* CATEGORIES BAR (DESKTOP) */
 .categoriesBar {
     width: 100%;
-    background: var(--subnav-bg, rgba(10, 10, 10, 0.95));
-    border-top: 1px solid var(--subnav-border, var(--glass-border, rgba(255, 255, 255, 0.05)));
-    border-bottom: 1px solid var(--subnav-border, var(--glass-border, rgba(255, 255, 255, 0.05)));
-    transition: background 0.3s ease, border-color 0.3s ease;
+    background: var(--robotina-orange, #FF6B00);
+    background-image: linear-gradient(90deg, #FF6B00 0%, #FF7F1A 50%, #FF6B00 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 16px rgba(255, 107, 0, 0.28);
+    transition: background 0.3s ease;
 }
 
 .categoriesContainer {
@@ -400,7 +402,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 32px;
+    gap: 36px;
 }
 
 .categoriesContainer::-webkit-scrollbar {
@@ -410,23 +412,30 @@
 .catLink, .catLinkActive {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 10px 0;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-muted, #a1a1aa);
+    gap: 5px;
+    padding: 10px 4px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.92);
     text-decoration: none;
-    border-bottom: 2px solid transparent;
+    border-bottom: 2.5px solid transparent;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
 }
 
-.catLink:hover, .catLinkActive {
-    color: var(--foreground, #ffffff);
-    border-bottom-color: var(--robotina-orange, #FF6B00);
+.catLink:hover {
+    color: #ffffff;
+    border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
+.catLinkActive {
+    color: #ffffff;
+    border-bottom-color: #ffffff;
 }
 
 .catCaret {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .catDropdownWrapper {
@@ -487,6 +496,16 @@
 }
 
 /* MOBILE DRAWER OVERLAY */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
 .mobileDrawerOverlay {
     position: fixed;
     inset: 0;
@@ -495,6 +514,7 @@
     z-index: 200;
     display: flex;
     justify-content: flex-end;
+    animation: fadeIn 0.3s ease-out;
 }
 
 .mobileDrawerContent {
@@ -505,6 +525,7 @@
     display: flex;
     flex-direction: column;
     padding: 20px;
+    animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .mobileDrawerHeader {

@@ -5,68 +5,116 @@ interface AdminStatusBadgeProps {
     label?: string;
 }
 
-const statusConfig: Record<string, { bg: string; color: string; border: string; label: string }> = {
+type Tone = 'warning' | 'success' | 'info' | 'danger' | 'neutral';
+
+const TONE_STYLES: Record<Tone, { bg: string; text: string; border: string; dot: string }> = {
+    warning: {
+        bg: 'rgba(245, 158, 11, 0.1)',
+        text: '#d97706',
+        border: 'rgba(245, 158, 11, 0.3)',
+        dot: '#f59e0b',
+    },
+    success: {
+        bg: 'rgba(22, 163, 74, 0.1)',
+        text: '#16a34a',
+        border: 'rgba(22, 163, 74, 0.3)',
+        dot: '#16a34a',
+    },
+    info: {
+        bg: 'rgba(37, 99, 235, 0.1)',
+        text: '#2563eb',
+        border: 'rgba(37, 99, 235, 0.3)',
+        dot: '#2563eb',
+    },
+    danger: {
+        bg: 'rgba(220, 38, 38, 0.1)',
+        text: '#dc2626',
+        border: 'rgba(220, 38, 38, 0.3)',
+        dot: '#dc2626',
+    },
+    neutral: {
+        bg: 'transparent',
+        text: 'var(--foreground)',
+        border: 'var(--glass-border)',
+        dot: '',
+    },
+};
+
+const statusConfig: Record<string, { tone: Tone; label: string }> = {
     // ESTADOS DE PEDIDO
-    new: { bg: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: 'rgba(96, 165, 250, 0.3)', label: 'Nuevo' },
-    confirmed: { bg: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: 'rgba(52, 211, 153, 0.3)', label: 'Confirmado' },
-    processing: { bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: 'rgba(251, 191, 36, 0.3)', label: 'Preparando' },
-    ready: { bg: 'rgba(6, 182, 212, 0.15)', color: '#22d3ee', border: 'rgba(34, 211, 238, 0.3)', label: 'Listo' },
-    completed: { bg: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: 'rgba(74, 222, 128, 0.3)', label: 'Completado' },
-    cancelled: { bg: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'rgba(248, 113, 113, 0.3)', label: 'Cancelado' },
+    new: { tone: 'warning', label: 'Pendiente' },
+    confirmed: { tone: 'success', label: 'Aceptado (En proceso)' },
+    processing: { tone: 'info', label: 'En ruta' },
+    in_route: { tone: 'info', label: 'En ruta' },
+    ready: { tone: 'info', label: 'Listo' },
+    completed: { tone: 'success', label: 'Entregado' },
+    cancelled: { tone: 'danger', label: 'Cancelado' },
 
     // ESTADOS DE PAGO
-    pending: { bg: 'rgba(234, 179, 8, 0.15)', color: '#facc15', border: 'rgba(250, 204, 21, 0.3)', label: 'Pendiente' },
-    partial: { bg: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: 'rgba(251, 146, 60, 0.3)', label: 'Pago Parcial' },
-    under_review: { bg: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: 'rgba(192, 132, 252, 0.3)', label: 'En Revisión' },
-    paid: { bg: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: 'rgba(74, 222, 128, 0.3)', label: 'Pagado' },
-    failed: { bg: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'rgba(248, 113, 113, 0.3)', label: 'Fallido' },
-    refunded: { bg: 'rgba(148, 163, 184, 0.15)', color: '#cbd5e1', border: 'rgba(203, 213, 225, 0.3)', label: 'Reembolsado' },
-    partially_refunded: { bg: 'rgba(148, 163, 184, 0.15)', color: '#cbd5e1', border: 'rgba(203, 213, 225, 0.3)', label: 'Reembolso Parcial' },
+    pending: { tone: 'warning', label: 'Pendiente' },
+    partial: { tone: 'warning', label: 'Pago Parcial' },
+    under_review: { tone: 'warning', label: 'En Revisión' },
+    paid: { tone: 'success', label: 'Pagado' },
+    failed: { tone: 'danger', label: 'Fallido' },
+    refunded: { tone: 'danger', label: 'Reembolsado' },
+    partially_refunded: { tone: 'warning', label: 'Reembolso Parcial' },
 
     // ESTADOS DE ENVÍO
-    unfulfilled: { bg: 'rgba(249, 115, 22, 0.15)', color: '#fb923c', border: 'rgba(251, 146, 60, 0.3)', label: 'Sin Enviar' },
-    preparing: { bg: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24', border: 'rgba(251, 191, 36, 0.3)', label: 'Preparando' },
-    shipped: { bg: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: 'rgba(96, 165, 250, 0.3)', label: 'En Tránsito' },
-    delivered: { bg: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: 'rgba(74, 222, 128, 0.3)', label: 'Entregado' },
-    fulfilled: { bg: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', border: 'rgba(74, 222, 128, 0.3)', label: 'Entregado' },
-    exception: { bg: 'rgba(239, 68, 68, 0.15)', color: '#f87171', border: 'rgba(248, 113, 113, 0.3)', label: 'Incidencia' },
-    returned: { bg: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', border: 'rgba(192, 132, 252, 0.3)', label: 'Devuelto' },
+    unfulfilled: { tone: 'warning', label: 'Pendiente' },
+    preparing: { tone: 'success', label: 'En proceso' },
+    shipped: { tone: 'info', label: 'En ruta' },
+    delivered: { tone: 'success', label: 'Entregado' },
+    fulfilled: { tone: 'success', label: 'Entregado' },
+    exception: { tone: 'danger', label: 'Incidencia' },
+    returned: { tone: 'danger', label: 'Devuelto' },
 
-    // CANALES
-    online_store: { bg: 'rgba(59, 130, 246, 0.12)', color: '#93c5fd', border: 'rgba(147, 197, 253, 0.25)', label: 'Tienda Online' },
-    manual: { bg: 'rgba(107, 114, 128, 0.15)', color: '#d1d5db', border: 'rgba(209, 213, 219, 0.25)', label: 'Manual' },
-    whatsapp: { bg: 'rgba(34, 197, 94, 0.15)', color: '#86efac', border: 'rgba(134, 239, 172, 0.3)', label: 'WhatsApp' },
-    instagram: { bg: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: 'rgba(244, 114, 182, 0.3)', label: 'Instagram' },
-    facebook: { bg: 'rgba(37, 99, 235, 0.15)', color: '#93c5fd', border: 'rgba(147, 197, 253, 0.3)', label: 'Facebook' },
-    phone: { bg: 'rgba(245, 158, 11, 0.15)', color: '#fcd34d', border: 'rgba(252, 211, 77, 0.3)', label: 'Teléfono' },
-    pos: { bg: 'rgba(16, 185, 129, 0.15)', color: '#6ee7b7', border: 'rgba(110, 231, 183, 0.3)', label: 'Presencial' },
-    other: { bg: 'rgba(107, 114, 128, 0.15)', color: '#d1d5db', border: 'rgba(209, 213, 219, 0.25)', label: 'Otro' },
+    // ESTADOS DE PRODUCTO
+    active: { tone: 'success', label: 'Activo' },
+    draft: { tone: 'neutral', label: 'Apagado' },
+
+    // CANALES (Neutro empresarial en blanco y negro para no saturar de color la tabla)
+    online_store: { tone: 'neutral', label: 'Tienda Online' },
+    manual: { tone: 'neutral', label: 'Manual' },
+    whatsapp: { tone: 'neutral', label: 'WhatsApp' },
+    instagram: { tone: 'neutral', label: 'Instagram' },
+    facebook: { tone: 'neutral', label: 'Facebook' },
+    phone: { tone: 'neutral', label: 'Teléfono' },
+    pos: { tone: 'neutral', label: 'Presencial' },
+    other: { tone: 'neutral', label: 'Otro' },
 };
 
 export default function AdminStatusBadge({ status, label }: AdminStatusBadgeProps) {
     const key = (status || '').toLowerCase().trim();
     const config = statusConfig[key] || {
-        bg: 'rgba(255, 255, 255, 0.08)',
-        color: '#e4e4e7',
-        border: 'rgba(255, 255, 255, 0.15)',
+        tone: 'neutral' as Tone,
         label: status || 'General',
     };
+    const style = TONE_STYLES[config.tone];
 
     return (
         <span style={{
             display: 'inline-flex',
             alignItems: 'center',
+            gap: '6px',
             padding: '4px 10px',
-            borderRadius: '999px',
-            fontSize: '0.75rem',
+            borderRadius: '6px',
+            fontSize: '0.74rem',
             fontWeight: 700,
-            background: config.bg,
-            color: config.color,
-            border: `1px solid ${config.border}`,
+            background: style.bg,
+            color: style.text,
+            border: `1px solid ${style.border}`,
             whiteSpace: 'nowrap',
         }}>
+            {style.dot && (
+                <span style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: style.dot,
+                    flexShrink: 0,
+                }} />
+            )}
             {label || config.label}
         </span>
     );
 }
-

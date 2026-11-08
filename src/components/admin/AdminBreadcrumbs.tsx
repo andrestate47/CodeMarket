@@ -54,11 +54,27 @@ export default function AdminBreadcrumbs({ inline = false, marginBottom = '16px'
 
                 return (
                     <React.Fragment key={href}>
-                        {idx > 0 && <span style={{ color: 'var(--text-description)' }}>/</span>}
+                        {idx > 0 && (
+                            <span style={{ color: 'var(--text-description)', display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
+                                /
+                            </span>
+                        )}
                         {isLast ? (
-                            <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{label}</span>
+                            <span style={{ color: 'var(--foreground)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
+                                {label}
+                            </span>
                         ) : (
-                            <Link href={href} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
+                            <Link
+                                href={href}
+                                style={{
+                                    color: 'var(--text-muted)',
+                                    textDecoration: 'none',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    minHeight: 'auto',
+                                    lineHeight: 1,
+                                }}
+                            >
                                 {label}
                             </Link>
                         )}

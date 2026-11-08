@@ -491,83 +491,59 @@ export async function getPublicCatalogProductsAction(params: GetCatalogProductsP
 
         const adminClient = createAdminClient();
 
-        let query = adminClient
+        const { data, error } = await adminClient
             .from('products')
-            .select(`
-                id, title, category, category_id, description, short_description, price_cents, compare_at_price_cents,
-                images, image_url, stock_quantity, track_inventory, low_stock_threshold, status, metadata, featured, created_at,
-                categories ( id, name, slug )
-            `, { count: 'exact' })
-            .eq('status', 'active');
+            .select('id, name, slug, category_id, description, short_description, price_amount, compare_at_amount, currency, product_type, stock_quantity, track_inventory, status, metadata, featured, created_at, categories ( id, name, slug )')
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
 
-        // Apply sorting query
-        if (sortBy === 'price_asc') {
-            query = query.order('price_cents', { ascending: true });
-        } else if (sortBy === 'price_desc') {
-            query = query.order('price_cents', { ascending: false });
-        } else if (sortBy === 'name_asc') {
-            query = query.order('title', { ascending: true });
-        } else if (sortBy === 'name_desc') {
-            query = query.order('title', { ascending: false });
-        } else {
-            query = query.order('created_at', { ascending: false });
-        }
-
-        const { data, error } = await query;
-
-        if (error || !data || data.length === 0) {
-            return processLocalDemoProducts(categorySlug, sortBy, page, pageSize);
+        if (error || !data) {
+            console.error('[publicCatalog] Error cargando productos:', error?.message);
+            return { success: false, products: [], totalCount: 0, error: error?.message };
         }
 
         let mapped: PublicProductItem[] = (data as unknown as Record<string, unknown>[]).map(p => {
-            const priceCents = Number(p.price_cents || 0);
-            const priceAmount = priceCents / 100;
-            const compareCents = p.compare_at_price_cents ? Number(p.compare_at_price_cents) : null;
-            const compareAmount = compareCents ? compareCents / 100 : undefined;
+            // price_amount / compare_at_amount en BD están en céntimos; aquí se exponen en soles.
+            const priceAmount = Number(p.price_amount || 0) / 100;
+            const compareAmount = p.compare_at_amount ? Number(p.compare_at_amount) / 100 : undefined;
 
             let discountPct: number | undefined = undefined;
             if (compareAmount && compareAmount > priceAmount) {
                 discountPct = Math.round(((compareAmount - priceAmount) / compareAmount) * 100);
             }
 
+            const meta = (p.metadata as Record<string, unknown>) || {};
             const stockQty = Number(p.stock_quantity ?? 0);
             const trackInv = Boolean(p.track_inventory);
-            const lowStockThreshold = Number(p.low_stock_threshold ?? 5);
+            const lowStockThreshold = Number(meta.low_stock_threshold ?? 5);
 
-            const isOutOfStock = trackInv && stockQty <= 0;
-            const isLowStock = trackInv && stockQty > 0 && stockQty <= lowStockThreshold;
-
-            const imagesArr = Array.isArray(p.images) ? p.images : [];
-            const primaryImg = p.image_url ? String(p.image_url) : (imagesArr[0] ? String(imagesArr[0]) : '/web-basica-hero.png');
-
-            const categoryObj = p.categories as { id?: string; name?: string; slug?: string } | undefined;
-            const catName = categoryObj?.name || (p.category ? String(p.category) : 'General');
+            const categoryObj = p.categories as { id?: string; name?: string; slug?: string } | null | undefined;
+            const catName = categoryObj?.name || 'General';
             const catSlug = categoryObj?.slug || catName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-            const meta = (p.metadata as Record<string, unknown>) || {};
             const variantsArr = Array.isArray(meta.variants) ? meta.variants : [];
+            const productType = (p.product_type || 'physical') as 'digital' | 'service' | 'physical';
 
             return {
                 id: String(p.id),
-                title: String(p.title),
-                slug: String(p.id),
+                title: String(p.name || ''),
+                slug: String(p.slug || p.id),
                 category_id: p.category_id ? String(p.category_id) : undefined,
                 category_name: catName,
                 category_slug: catSlug,
-                description: String(p.description || p.short_description || ''),
+                description: String(p.short_description || p.description || ''),
                 short_description: p.short_description ? String(p.short_description) : undefined,
                 price: formatMoney(priceAmount),
                 compare_price: compareAmount ? formatMoney(compareAmount) : undefined,
                 price_amount: priceAmount,
                 compare_at_amount: compareAmount,
                 discount_percentage: discountPct,
-                image_url: primaryImg,
-                type: (meta.type || 'physical') as 'digital' | 'service' | 'physical',
-                cta: 'Agregar al Carrito',
+                image_url: meta.image ? String(meta.image) : '/web-basica-hero.png',
+                type: productType,
+                cta: productType === 'service' ? 'Cotizar Proyecto' : 'Agregar al Carrito',
                 stock_quantity: stockQty,
                 track_inventory: trackInv,
-                is_out_of_stock: isOutOfStock,
-                is_low_stock: isLowStock,
+                is_out_of_stock: trackInv && stockQty <= 0,
+                is_low_stock: trackInv && stockQty > 0 && stockQty <= lowStockThreshold,
                 low_stock_threshold: lowStockThreshold,
                 has_variants: variantsArr.length > 0,
                 variant_count: variantsArr.length,
@@ -577,43 +553,16 @@ export async function getPublicCatalogProductsAction(params: GetCatalogProductsP
             };
         });
 
+        // Sorting
+        if (sortBy === 'price_asc') mapped.sort((a, b) => a.price_amount - b.price_amount);
+        else if (sortBy === 'price_desc') mapped.sort((a, b) => b.price_amount - a.price_amount);
+        else if (sortBy === 'name_asc') mapped.sort((a, b) => a.title.localeCompare(b.title));
+        else if (sortBy === 'name_desc') mapped.sort((a, b) => b.title.localeCompare(a.title));
+
         // Filter by category slug or special offer filter
         const isOfferFilter = categorySlug === 'ofertas' || categorySlug === 'ofertas-especiales' || categorySlug === 'descuentos';
         if (isOfferFilter) {
-            mapped = mapped.filter(p => (p.discount_percentage && p.discount_percentage > 0) || (p.compare_at_amount && p.compare_at_amount > p.price_amount) || p.is_featured);
-            if (mapped.length === 0) {
-                mapped = (data as unknown as Record<string, unknown>[]).map(p => {
-                    const priceAmount = Number(p.price_cents || p.price_amount || 0);
-                    const compareAmount = Number(p.compare_at_price_cents || p.compare_at_amount || 0);
-                    return {
-                        id: String(p.id),
-                        title: String(p.name || p.title || 'Producto'),
-                        slug: String(p.slug || ''),
-                        category_id: p.category_id ? String(p.category_id) : undefined,
-                        category_name: p.categories && typeof p.categories === 'object' && 'name' in p.categories ? String((p.categories as { name: unknown }).name) : undefined,
-                        category_slug: p.categories && typeof p.categories === 'object' && 'slug' in p.categories ? String((p.categories as { slug: unknown }).slug) : undefined,
-                        description: String(p.short_description || p.description || ''),
-                        price: `S/ ${(priceAmount / 100).toFixed(2)}`,
-                        compare_price: compareAmount > 0 ? `S/ ${(compareAmount / 100).toFixed(2)}` : undefined,
-                        price_amount: priceAmount,
-                        compare_at_amount: compareAmount > 0 ? compareAmount : undefined,
-                        currency: 'PEN',
-                        discount_percentage: compareAmount > priceAmount ? Math.round(((compareAmount - priceAmount) / compareAmount) * 100) : 0,
-                        type: (p.product_type as 'digital' | 'service' | 'physical') || 'digital',
-                        cta: p.product_type === 'service' ? 'Cotizar Proyecto' : 'Comprar',
-                        image_url: p.image_url ? String(p.image_url) : '',
-                        track_inventory: Boolean(p.track_inventory),
-                        low_stock_threshold: Number(p.low_stock_threshold || 5),
-                        stock_quantity: Number(p.stock_quantity || 0),
-                        is_out_of_stock: Boolean(p.track_inventory && Number(p.stock_quantity || 0) <= 0),
-                        is_low_stock: Boolean(p.track_inventory && Number(p.stock_quantity || 0) > 0 && Number(p.stock_quantity || 0) <= 5),
-                        is_featured: Boolean(p.featured || p.is_featured),
-                        has_variants: false,
-                        variant_count: 0,
-                        created_at: p.created_at ? String(p.created_at) : undefined,
-                    };
-                }).filter(p => p.is_featured || (p.compare_at_amount && p.compare_at_amount > p.price_amount));
-            }
+            mapped = mapped.filter(p => (p.discount_percentage && p.discount_percentage > 0) || p.is_featured);
         } else if (categorySlug && categorySlug !== 'all' && categorySlug !== 'todos') {
             mapped = mapped.filter(p => p.category_slug === categorySlug || p.category_name?.toLowerCase() === categorySlug.toLowerCase() || p.category_id === categorySlug);
         }
@@ -679,7 +628,7 @@ function processLocalDemoProducts(
         };
     });
 
-    const combined = [...DEMO_PUBLIC_PRODUCTS, ...mappedLocal];
+    const combined: PublicProductItem[] = [];
     // Deduplicate by ID
     let unique = combined.filter((p, index, self) => index === self.findIndex(t => t.id === p.id));
 

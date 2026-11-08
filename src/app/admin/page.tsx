@@ -10,6 +10,7 @@ import SalesPerformance from '@/components/admin/analytics/SalesPerformance';
 import { getDashboardMetrics, DashboardMetrics } from '@/lib/services/dashboardService';
 import { PresetPeriod, MetricType, getLimaDateKey } from '@/components/admin/analytics/salesAnalyticsUtils';
 import { createQuickTestOrderAction } from '@/modules/orders/actions';
+import { getFullStoreSettingsAction } from '@/modules/config/storeSettingsActions';
 
 export default function AdminDashboard() {
     // Filter Controls State (Global Single Source of Truth Control)
@@ -24,13 +25,13 @@ export default function AdminDashboard() {
     const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [ownerName, setOwnerName] = useState<string>('Administrador');
 
     // Single Fetch Function calling dashboardService
-    const loadDashboardData = useCallback(async () => {
-        setLoading(true);
+    const loadDashboardData = useCallback(async (forceRefresh = false) => {
         setError(null);
         try {
-            const data = await getDashboardMetrics(preset, customStart, customEnd);
+            const data = await getDashboardMetrics(preset, customStart, customEnd, forceRefresh);
             setMetrics(data);
         } catch {
             setError('No pudimos cargar los datos de ventas del servidor.');
@@ -40,7 +41,24 @@ export default function AdminDashboard() {
     }, [preset, customStart, customEnd]);
 
     useEffect(() => {
-        loadDashboardData();
+        loadDashboardData(false);
+    }, [loadDashboardData]);
+
+    useEffect(() => {
+        // Fetch owner name once on mount
+        getFullStoreSettingsAction().then(res => {
+            if (res.success && res.settings?.ownerName) {
+                setOwnerName(res.settings.ownerName);
+            }
+        });
+    }, []);
+
+    useEffect(() => {
+        const handleNewOrder = () => {
+            loadDashboardData(true);
+        };
+        window.addEventListener('admin:new-order', handleNewOrder);
+        return () => window.removeEventListener('admin:new-order', handleNewOrder);
     }, [loadDashboardData]);
 
     const handleQuickTestOrder = async () => {
@@ -57,43 +75,10 @@ export default function AdminDashboard() {
         <div style={{ paddingBottom: '60px' }}>
             {/* Page Header */}
             <AdminPageHeader
-                title="Resumen"
-                description="Métricas reales y rendimiento operativo de Tienda-Vir."
+                title={`¡Hola ${ownerName}!`}
                 action={
                     <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                        {metrics?.isDemoData && (
-                            <span style={{
-                                fontSize: '0.75rem',
-                                background: 'rgba(255, 107, 0, 0.15)',
-                                color: 'var(--robotina-orange)',
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                border: '1px solid rgba(255, 107, 0, 0.3)',
-                                fontWeight: 700,
-                            }}>
-                                🛠️ Modo Demo (Desarrollo)
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={handleQuickTestOrder}
-                            disabled={loading}
-                            style={{
-                                padding: '9px 16px',
-                                background: 'rgba(255, 107, 0, 0.15)',
-                                border: '1.5px solid rgba(255, 107, 0, 0.35)',
-                                color: 'var(--robotina-orange)',
-                                borderRadius: '10px',
-                                fontWeight: 700,
-                                fontSize: '0.86rem',
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            ⚡ Simular Pedido de Prueba
-                        </button>
+
                         <Link
                             href="/admin/pedidos/nuevo"
                             style={{
@@ -153,12 +138,19 @@ export default function AdminDashboard() {
             />
 
             {/* Row 1: Top Consolidated KPI Cards */}
-            <div style={{
+            <div className="admin-kpi-grid" style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
                 gap: '16px',
                 marginBottom: '28px',
             }}>
+                <AdminStatCard
+                    title="Visitas a tu web"
+                    value="1,240"
+                    icon="👁️"
+                    subtitle="Visitas únicas (simulado)"
+                    accentColor="#0ea5e9"
+                />
                 <AdminStatCard
                     title="Ventas"
                     value={metrics ? formatMoney(metrics.paidSales) : 'S/ 0.00'}
@@ -174,10 +166,24 @@ export default function AdminDashboard() {
                     accentColor="#3b82f6"
                 />
                 <AdminStatCard
+                    title="Productos"
+                    value={metrics ? metrics.totalProducts.toString() : '0'}
+                    icon="📦"
+                    subtitle="Productos activos"
+                    accentColor="#8b5cf6"
+                />
+                <AdminStatCard
+                    title="Categorías"
+                    value={metrics ? metrics.totalCategories.toString() : '0'}
+                    icon="🏷️"
+                    subtitle="Categorías de tienda"
+                    accentColor="#ec4899"
+                />
+                <AdminStatCard
                     title="Ticket Promedio"
                     value={metrics ? formatMoney(metrics.averageTicket) : 'S/ 0.00'}
                     icon="📊"
-                    subtitle="Valor promedio por pedido pagado"
+                    subtitle={metrics ? `vs anterior (${metrics.avgTicketTrend.trendLabel})` : 'Cargando...'}
                     accentColor="#ff6b00"
                 />
                 <AdminStatCard
@@ -213,9 +219,9 @@ export default function AdminDashboard() {
             />
 
             {/* Row 3: Real Breakdown Panels (Métodos de Pago & Canales de Venta) */}
-            <div style={{
+            <div className="admin-panel-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '20px',
                 marginBottom: '32px',
             }}>
@@ -307,9 +313,9 @@ export default function AdminDashboard() {
             </div>
 
             {/* Row 4: Operational Lists (Pedidos Recientes & Productos con Bajo Stock) */}
-            <div style={{
+            <div className="admin-panel-grid" style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
                 gap: '20px',
             }}>
                 {/* Pedidos Recientes con Dual Badges */}

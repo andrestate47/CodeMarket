@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { createProductAction } from '@/modules/products/actions';
+import { getAccessToken, uploadProductImage } from '@/lib/auth/session';
 import { parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
@@ -17,11 +18,11 @@ export default function AdminNewProduct() {
     const [imageUrl, setImageUrl] = useState('');
     const [price, setPrice] = useState('49.00');
     const [comparePrice, setComparePrice] = useState('79.00');
-    const [productType, setProductType] = useState<'digital' | 'service' | 'physical'>('digital');
+    const [productType, setProductType] = useState<'digital' | 'service' | 'physical'>('physical');
     const [dbCategories, setDbCategories] = useState<CategoryRecord[]>([]);
     const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
     const [stockQuantity, setStockQuantity] = useState('10');
-    const [trackInventory, setTrackInventory] = useState(false);
+    const [trackInventory, setTrackInventory] = useState(true);
     const [featured, setFeatured] = useState(false);
     const [variants, setVariants] = useState<{ id: string; name: string; price: string; stock: number }[]>([]);
     const [wholesaleRules, setWholesaleRules] = useState<{ minQuantity: number; price: string }[]>([]);
@@ -44,17 +45,16 @@ export default function AdminNewProduct() {
 
     const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = '';
         if (!file) return;
 
         setUploadingImage(true);
+        setError(null);
         try {
-            const { StorageService } = await import('@/lib/services/storageService');
-            const res = await StorageService.uploadProductImage(file);
-            if (res.success && res.url) {
-                setImageUrl(res.url);
-            }
-        } catch {
-            // Fallback
+            const url = await uploadProductImage(file);
+            setImageUrl(url);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'No se pudo subir la imagen.');
         } finally {
             setUploadingImage(false);
         }
@@ -62,103 +62,29 @@ export default function AdminNewProduct() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (uploadingImage) return;
         setSaving(true);
         setError(null);
 
         try {
-            const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-            const priceAmount = parseMoneyToCents(price);
-            const compareAtAmount = comparePrice ? parseMoneyToCents(comparePrice) : null;
-            const finalImage = imageUrl || '/web-basica-hero.png';
-
-            // Safe store lookup with fallback ID for demo/unseeded DB environments
-            let storeId = '00000000-0000-0000-0000-000000000001';
-            try {
-                const { data: store } = await supabase.from('stores').select('id').eq('slug', 'codemarket').maybeSingle();
-                if (store?.id) {
-                    storeId = store.id;
-                }
-            } catch {
-                // Keep default fallback ID
-            }
-
-            const catObj = dbCategories.find(c => c.id === selectedCategoryId);
-            const catName = catObj ? catObj.name : 'General';
-
-            const productPayload = {
-                store_id: storeId,
-                category_id: selectedCategoryId || null,
+            const token = await getAccessToken();
+            const res = await createProductAction(token, {
                 name,
-                slug: slug || `prod-${Date.now()}`,
                 short_description: shortDescription,
                 description,
+                image: imageUrl || undefined,
+                price_amount: parseMoneyToCents(price),
+                compare_at_amount: comparePrice ? parseMoneyToCents(comparePrice) : null,
                 product_type: productType,
+                category_id: selectedCategoryId || null,
                 status: 'active',
-                price_amount: priceAmount,
-                compare_at_amount: compareAtAmount,
-                currency: 'PEN',
                 track_inventory: trackInventory,
-                stock_quantity: trackInventory ? parseInt(stockQuantity, 10) : 100,
+                stock_quantity: trackInventory ? (parseInt(stockQuantity, 10) || 0) : 100,
                 featured,
-                image_url: finalImage,
-                metadata: {
-                    features: [shortDescription],
-                    cta: productType === 'service' ? 'Cotizar Proyecto' : 'Comprar',
-                    color: 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
-                    image: finalImage,
-                    variants,
-                    wholesale_rules: wholesaleRules,
-                }
-            };
-
-            const newProductObj = {
-                id: `prod-local-${Date.now()}`,
-                title: name,
-                category: catName,
-                category_id: selectedCategoryId || undefined,
-                description: shortDescription,
-                price: `S/ ${parseFloat(price).toFixed(2)}`,
-                comparePrice: comparePrice ? `S/ ${parseFloat(comparePrice).toFixed(2)}` : undefined,
-                price_amount: priceAmount,
-                features: [shortDescription],
-                type: productType,
-                cta: 'Comprar',
-                highlight: featured,
-                color: 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
-                image: finalImage,
-                stock_quantity: trackInventory ? (parseInt(stockQuantity, 10) || 10) : 100,
-                track_inventory: trackInventory,
-                status: 'active',
                 variants,
                 wholesale_rules: wholesaleRules,
-            };
-
-            // Always save to local cache for instant zero-latency admin UI response
-            try {
-                const localSaved = JSON.parse(localStorage.getItem('admin_products') || '[]');
-                localSaved.unshift(newProductObj);
-                const trimmed = localSaved.slice(0, 30);
-                localStorage.setItem('admin_products', JSON.stringify(trimmed));
-            } catch {
-                try {
-                    const fallbackObj = { ...newProductObj, image: '/web-basica-hero.png' };
-                    localStorage.setItem('admin_products', JSON.stringify([fallbackObj]));
-                } catch {
-                    // Safe fallback
-                }
-            }
-
-            // Dispatch global event so products list updates immediately
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new Event('products_updated'));
-            }
-
-            // Also attempt remote DB insert in background
-            try {
-                await supabase.from('products').insert(productPayload);
-            } catch {
-                // Remote sync fails gracefully
-            }
+            });
+            if (!res.success) throw new Error(res.error);
 
             router.push('/admin/productos');
             router.refresh();
@@ -328,7 +254,7 @@ export default function AdminNewProduct() {
                     ></textarea>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Precio Actual (S/) *</label>
                         <input
@@ -360,7 +286,7 @@ export default function AdminNewProduct() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Categoría Comercial *</label>
                         <select
@@ -404,7 +330,7 @@ export default function AdminNewProduct() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Control de Inventario</label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '45px' }}>

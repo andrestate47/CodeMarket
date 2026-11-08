@@ -49,20 +49,39 @@ export interface CustomerAddress {
     postal_code?: string;
 }
 
+async function loadStoredMetadata(adminClient: ReturnType<typeof createAdminClient>, storeRow: Record<string, unknown> | null): Promise<Record<string, any>> {
+    if (storeRow?.metadata && typeof storeRow.metadata === 'object') {
+        return storeRow.metadata as Record<string, any>;
+    }
+    try {
+        const { data, error } = await adminClient.storage
+            .from('payment-receipts')
+            .download('store-config/metadata.json');
+        if (!error && data) {
+            const text = await data.text();
+            return JSON.parse(text);
+        }
+    } catch {
+        // Ignore fallback
+    }
+    return {};
+}
+
 export async function getCheckoutSettingsAction(): Promise<{ success: boolean; settings?: CheckoutSettings; error?: string }> {
     try {
         const adminClient = createAdminClient();
         const { data: store, error } = await adminClient
             .from('stores')
-            .select('name, currency, metadata')
-            .eq('slug', 'codemarket')
-            .single();
+            .select('*')
+            .in('slug', ['codemarket', 'tiendavir'])
+            .limit(1)
+            .maybeSingle();
 
         if (error || !store) {
             return { success: false, error: 'No se pudo obtener la configuración de la tienda.' };
         }
 
-        const meta = store.metadata || {};
+        const meta = await loadStoredMetadata(adminClient, store as Record<string, unknown>);
         const currency = store.currency || 'PEN';
 
         const defaultPaymentMethods: PaymentMethodConfig[] = [
@@ -165,14 +184,27 @@ export async function getOrderByTokenAction(token: string) {
         if (!token) return { success: false, error: 'Token no válido.' };
 
         const adminClient = createAdminClient();
-        const { data: order, error } = await adminClient
+        let { data: order, error } = await adminClient
             .from('orders')
             .select(`
                 *,
                 order_items (*)
             `)
-            .eq('access_token', token)
-            .single();
+            .eq('id', token)
+            .maybeSingle();
+
+        if (!order) {
+            const byNum = await adminClient
+                .from('orders')
+                .select(`
+                    *,
+                    order_items (*)
+                `)
+                .eq('order_number', token)
+                .maybeSingle();
+            order = byNum.data;
+            error = byNum.error;
+        }
 
         if (error || !order) {
             return { success: false, error: 'Pedido no encontrado.' };
@@ -180,18 +212,67 @@ export async function getOrderByTokenAction(token: string) {
 
         const { data: store } = await adminClient
             .from('stores')
-            .select('name, metadata, whatsapp_phone')
+            .select('*')
             .eq('id', order.store_id)
-            .single();
+            .maybeSingle();
 
-        const meta = store?.metadata || {};
-        const paymentMethods: PaymentMethodConfig[] = meta.payment_methods || [];
+        const meta = await loadStoredMetadata(adminClient, (store as Record<string, unknown>) || null);
+        const defaultPaymentMethods: PaymentMethodConfig[] = [
+            {
+                id: 'yape',
+                name: 'Yape',
+                is_active: true,
+                type: 'manual',
+                number: '999 999 999',
+                holder: 'TiendaVir Perú',
+                instructions: 'Abre Yape en tu teléfono, yapea al número o escanea el QR. En la nota o concepto indica únicamente tu número de pedido.'
+            },
+            {
+                id: 'plin',
+                name: 'Plin',
+                is_active: true,
+                type: 'manual',
+                number: '999 999 999',
+                holder: 'TiendaVir Perú',
+                instructions: 'Transfiere por Plin al número indicado usando tu código de pedido como concepto.'
+            },
+            {
+                id: 'bank_transfer',
+                name: 'Transferencia Bancaria',
+                is_active: true,
+                type: 'manual',
+                banks: [
+                    { bank: 'BCP', account: '193-0000000-0-00', cci: '002-193-000000000000-00', holder: 'TiendaVir S.A.C.' },
+                    { bank: 'BBVA', account: '0011-0000-00000000-00', cci: '011-000-000000000000-00', holder: 'TiendaVir S.A.C.' }
+                ],
+                instructions: 'Transfiere el monto exacto a cualquiera de nuestras cuentas bancarias oficiales e incluye el número de pedido en la glosa.'
+            },
+            {
+                id: 'cash_on_delivery',
+                name: 'Pago Contra Entrega (Efectivo / POS)',
+                is_active: true,
+                type: 'manual',
+                instructions: 'Disponible para Delivery Local en Lima Metropolitana. Puedes pagar en efectivo o con tarjeta al recibir tu pedido.'
+            }
+        ];
+        const paymentMethods: PaymentMethodConfig[] = meta.payment_methods || defaultPaymentMethods;
         const selectedMethodConfig = paymentMethods.find(p => p.id === order.payment_method);
+
+        let parsedInternal: Record<string, unknown> = {};
+        if (typeof order.internal_notes === 'string' && order.internal_notes.trim().startsWith('{')) {
+            try {
+                parsedInternal = JSON.parse(order.internal_notes);
+            } catch {
+                // ignore
+            }
+        }
 
         return {
             success: true,
             order: {
+                ...parsedInternal,
                 ...order,
+                payment_receipt_url: order.payment_receipt_url || order.receipt_url || null,
                 subtotal_formatted: formatMoney(order.subtotal_amount / 100, order.currency),
                 shipping_formatted: formatMoney(order.shipping_amount / 100, order.currency),
                 discount_formatted: formatMoney(order.discount_amount / 100, order.currency),
@@ -219,12 +300,22 @@ export async function uploadPaymentReceiptAction(orderToken: string, formData: F
 
         const adminClient = createAdminClient();
         
-        // Find order
-        const { data: order, error: findErr } = await adminClient
+        // Find order by id or order_number
+        let { data: order, error: findErr } = await adminClient
             .from('orders')
             .select('id, order_number, store_id')
-            .eq('access_token', orderToken)
-            .single();
+            .eq('id', orderToken)
+            .maybeSingle();
+
+        if (!order) {
+            const byNum = await adminClient
+                .from('orders')
+                .select('id, order_number, store_id')
+                .eq('order_number', orderToken)
+                .maybeSingle();
+            order = byNum.data;
+            findErr = byNum.error;
+        }
 
         if (findErr || !order) {
             return { success: false, error: 'No se encontró la orden especificada.' };
@@ -254,13 +345,13 @@ export async function uploadPaymentReceiptAction(orderToken: string, formData: F
 
         const receiptUrl = publicUrlData?.publicUrl || filePath;
 
-        // Update order status
+        // Update order status using guaranteed columns (receipt_url, payment_status, updated_at)
         await adminClient
             .from('orders')
             .update({
-                payment_receipt_url: receiptUrl,
-                receipt_uploaded_at: new Date().toISOString(),
-                payment_status: 'under_review'
+                receipt_url: receiptUrl,
+                payment_status: 'under_review',
+                updated_at: new Date().toISOString()
             })
             .eq('id', order.id);
 
@@ -270,6 +361,7 @@ export async function uploadPaymentReceiptAction(orderToken: string, formData: F
             order_id: order.id,
             event_type: 'receipt_uploaded',
             description: `El cliente adjuntó el comprobante de pago (${file.name}). En revisión administrativa.`,
+            metadata: { receipt_url: receiptUrl, uploaded_at: new Date().toISOString() },
             created_by: 'Cliente (Público)'
         });
 

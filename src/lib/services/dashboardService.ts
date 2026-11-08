@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { getOrdersListAction } from '@/modules/orders/actions';
 import { minorUnitsToDecimal } from '@/lib/money';
 import {
     PresetPeriod,
@@ -86,57 +87,121 @@ export interface DashboardMetrics {
     lowStockProducts: LowStockProductItem[];
     lowStockCount: number;
     recentOrders: DBOrderRecord[];
+    
+    totalProducts: number;
+    totalCategories: number;
 }
+
+interface DashboardRawCache {
+    timestamp: number;
+    allOrders: DBOrderRecord[];
+    isDemoData: boolean;
+    lowStockProducts: LowStockProductItem[];
+    totalProducts: number;
+    totalCategories: number;
+}
+
+let rawDashboardCache: DashboardRawCache | null = null;
+const DASHBOARD_CACHE_TTL_MS = 30000;
 
 export async function getDashboardMetrics(
     preset: PresetPeriod = 'today',
     customStart?: string,
-    customEnd?: string
+    customEnd?: string,
+    forceRefresh = false
 ): Promise<DashboardMetrics> {
     const { startDate, endDate } = getPeriodRange(preset, customStart, customEnd);
     const { prevStartDate, prevEndDate } = getPreviousPeriodRange(startDate, endDate);
 
     let allOrders: DBOrderRecord[] = [];
     let isDemoData = false;
+    let lowStockProducts: LowStockProductItem[] = [
+        { id: 'p-1', name: 'Laptop Pro 15', sku: 'SKU-LAP-001', stock: 2, threshold: 5 },
+        { id: 'p-2', name: 'Mouse Inalámbrico RGB', sku: 'SKU-MOU-002', stock: 4, threshold: 5 },
+    ];
+    let totalProducts = 0;
+    let totalCategories = 0;
 
-    try {
-        const { data: localOrdersStr } = { data: null };
-        const localOrders: DBOrderRecord[] = [];
+    const now = Date.now();
+    if (!forceRefresh && rawDashboardCache && now - rawDashboardCache.timestamp < DASHBOARD_CACHE_TTL_MS) {
+        allOrders = rawDashboardCache.allOrders;
+        isDemoData = rawDashboardCache.isDemoData;
+        lowStockProducts = rawDashboardCache.lowStockProducts;
+        totalProducts = rawDashboardCache.totalProducts;
+        totalCategories = rawDashboardCache.totalCategories;
+    } else {
+        try {
+            const [ordersRes, lowStockRes, prodCountRes, catCountRes] = await Promise.all([
+                getOrdersListAction({ limit: 400 }),
+                supabase.from('products').select('id, name, sku, stock_quantity').lte('stock_quantity', 5).limit(10),
+                supabase.from('products').select('*', { count: 'exact', head: true }),
+                supabase.from('categories').select('*', { count: 'exact', head: true }),
+            ]);
 
-        const { data: dbOrders, error } = await supabase
-            .from('orders')
-            .select('id, order_number, customer_name, customer_email, total_amount, paid_amount, payment_status, fulfillment_status, payment_method, source, created_at, currency')
-            .order('created_at', { ascending: false })
-            .limit(400);
+            const dbOrders = ordersRes.orders || [];
+            const toSoles = (val: number | undefined | null) => {
+                if (!val) return 0;
+                return Number.isInteger(val) && Math.abs(val) >= 500 ? val / 100 : val;
+            };
 
-        const toSoles = (val: number | undefined | null) => {
-            if (!val) return 0;
-            return Number.isInteger(val) && Math.abs(val) >= 100 ? val / 100 : val;
-        };
+            allOrders = dbOrders.map((o) => ({
+                id: o.id,
+                order_number: o.order_number,
+                customer_name: o.customer_name,
+                customer_email: o.customer_email,
+                total_amount: toSoles(o.total_amount),
+                paid_amount: o.paid_amount ? toSoles(o.paid_amount) : toSoles(o.total_amount),
+                payment_status: o.payment_status || 'pending',
+                fulfillment_status: o.fulfillment_status || 'unfulfilled',
+                payment_method: o.payment_method || 'yape',
+                source: o.source || 'online_store',
+                created_at: o.created_at,
+                currency: o.currency || 'PEN',
+            }));
 
-        const dbList = (dbOrders || []).map((o) => ({
-            ...o,
-            total_amount: toSoles(o.total_amount),
-            paid_amount: o.paid_amount ? toSoles(o.paid_amount) : toSoles(o.total_amount),
-            payment_method: o.payment_method || 'yape',
-            source: o.source || 'online_store',
-            currency: o.currency || 'PEN',
-        }));
+            if (allOrders.length === 0) {
+                const demos = generateDemoSalesOrders();
+                if (demos.length > 0) {
+                    isDemoData = true;
+                    allOrders = demos.map((o) => ({
+                        id: o.id,
+                        order_number: o.order_number,
+                        customer_name: 'Cliente Demo',
+                        customer_email: 'demo@codemarket.pe',
+                        total_amount: o.total_amount,
+                        paid_amount: o.paid_amount,
+                        payment_status: o.payment_status,
+                        fulfillment_status: o.payment_status === 'paid' ? 'delivered' : 'unfulfilled',
+                        payment_method: Math.random() > 0.4 ? 'yape' : Math.random() > 0.5 ? 'transfer' : 'card',
+                        source: Math.random() > 0.3 ? 'online_store' : Math.random() > 0.5 ? 'whatsapp' : 'instagram',
+                        created_at: o.created_at,
+                        currency: 'PEN',
+                    }));
+                }
+            }
 
-        const localList = localOrders.map((o) => ({
-            ...o,
-            total_amount: toSoles(o.total_amount),
-            paid_amount: o.paid_amount ? toSoles(o.paid_amount) : toSoles(o.total_amount),
-            payment_method: o.payment_method || 'yape',
-            source: o.source || 'online_store',
-            currency: o.currency || 'PEN',
-        }));
+            if (lowStockRes.data && lowStockRes.data.length > 0) {
+                lowStockProducts = lowStockRes.data.map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    sku: p.sku || 'SKU-NE',
+                    stock: p.stock_quantity ?? 0,
+                    threshold: 5,
+                }));
+            }
 
-        allOrders = [...localList, ...dbList].filter(
-            (ord, idx, self) => idx === self.findIndex((o) => o.id === ord.id || o.order_number === ord.order_number)
-        );
+            if (prodCountRes.count !== null) totalProducts = prodCountRes.count;
+            if (catCountRes.count !== null) totalCategories = catCountRes.count;
 
-        if (allOrders.length === 0) {
+            rawDashboardCache = {
+                timestamp: now,
+                allOrders,
+                isDemoData,
+                lowStockProducts,
+                totalProducts,
+                totalCategories,
+            };
+        } catch {
             const demos = generateDemoSalesOrders();
             if (demos.length > 0) {
                 isDemoData = true;
@@ -149,31 +214,12 @@ export async function getDashboardMetrics(
                     paid_amount: o.paid_amount,
                     payment_status: o.payment_status,
                     fulfillment_status: o.payment_status === 'paid' ? 'delivered' : 'unfulfilled',
-                    payment_method: Math.random() > 0.4 ? 'yape' : Math.random() > 0.5 ? 'transfer' : 'card',
-                    source: Math.random() > 0.3 ? 'online_store' : Math.random() > 0.5 ? 'whatsapp' : 'instagram',
+                    payment_method: 'yape',
+                    source: 'online_store',
                     created_at: o.created_at,
                     currency: 'PEN',
                 }));
             }
-        }
-    } catch {
-        const demos = generateDemoSalesOrders();
-        if (demos.length > 0) {
-            isDemoData = true;
-            allOrders = demos.map((o) => ({
-                id: o.id,
-                order_number: o.order_number,
-                customer_name: 'Cliente Demo',
-                customer_email: 'demo@codemarket.pe',
-                total_amount: o.total_amount,
-                paid_amount: o.paid_amount,
-                payment_status: o.payment_status,
-                fulfillment_status: o.payment_status === 'paid' ? 'delivered' : 'unfulfilled',
-                payment_method: 'yape',
-                source: 'online_store',
-                created_at: o.created_at,
-                currency: 'PEN',
-            }));
         }
     }
 
@@ -452,32 +498,6 @@ export async function getDashboardMetrics(
         percentage: createdOrdersCount > 0 ? Math.round((val.count / createdOrdersCount) * 1000) / 10 : 0,
     })).sort((a, b) => b.count - a.count);
 
-    // 8. Low Stock Products & Recent Orders
-    let lowStockProducts: LowStockProductItem[] = [
-        { id: 'p-1', name: 'Laptop Pro 15', sku: 'SKU-LAP-001', stock: 2, threshold: 5 },
-        { id: 'p-2', name: 'Mouse Inalámbrico RGB', sku: 'SKU-MOU-002', stock: 4, threshold: 5 },
-    ];
-
-    try {
-        const { data: dbProds } = await supabase
-            .from('products')
-            .select('id, name, sku, stock_quantity')
-            .lte('stock_quantity', 5)
-            .limit(10);
-
-        if (dbProds && dbProds.length > 0) {
-            lowStockProducts = dbProds.map((p) => ({
-                id: p.id,
-                name: p.name,
-                sku: p.sku || 'SKU-NE',
-                stock: p.stock_quantity ?? 0,
-                threshold: 5,
-            }));
-        }
-    } catch {
-        // Fallback demo low stock list
-    }
-
     const diffCreatedOrders = createdOrdersCount - prevCreatedOrdersCount;
     const diffPaidSales = paidSales - prevPaidSales;
     const recentOrders = allOrders.slice(0, 5);
@@ -506,5 +526,7 @@ export async function getDashboardMetrics(
         lowStockProducts,
         lowStockCount: lowStockProducts.length,
         recentOrders,
+        totalProducts,
+        totalCategories,
     };
 }

@@ -4,8 +4,6 @@ import React, { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { formatMoney } from '@/lib/money';
-import AdminPageHeader from '@/components/admin/AdminPageHeader';
-import AdminStatusBadge from '@/components/admin/AdminStatusBadge';
 import {
     updateOrderStatusAction,
     createOrderNoteAction,
@@ -16,6 +14,56 @@ import {
     OrderNoteRecord
 } from '@/modules/orders/actions';
 
+type OrderFlowStage = 'pending' | 'accepted' | 'in_route' | 'delivered';
+
+function getOrderFlowStage(order: OrderRecord | null): OrderFlowStage {
+    if (!order) return 'pending';
+    const f = (order.fulfillment_status || '').toLowerCase();
+    const s = (order.order_status || '').toLowerCase();
+
+    if (f === 'delivered' || f === 'fulfilled' || s === 'completed') {
+        return 'delivered';
+    }
+    if (f === 'shipped' || f === 'in_route' || s === 'processing' || s === 'in_route') {
+        return 'in_route';
+    }
+    if (s === 'confirmed' || s === 'accepted' || f === 'preparing') {
+        return 'accepted';
+    }
+    return 'pending';
+}
+
+const STAGE_META: Record<OrderFlowStage, { label: string; color: string; bg: string; border: string; stepIndex: number }> = {
+    pending: {
+        label: 'Pendiente',
+        color: '#d97706',
+        bg: 'rgba(245, 158, 11, 0.1)',
+        border: 'rgba(245, 158, 11, 0.35)',
+        stepIndex: 0,
+    },
+    accepted: {
+        label: 'Aceptado (En proceso)',
+        color: '#16a34a',
+        bg: 'rgba(22, 163, 74, 0.1)',
+        border: 'rgba(22, 163, 74, 0.35)',
+        stepIndex: 1,
+    },
+    in_route: {
+        label: 'En ruta',
+        color: '#2563eb',
+        bg: 'rgba(37, 99, 235, 0.1)',
+        border: 'rgba(37, 99, 235, 0.35)',
+        stepIndex: 2,
+    },
+    delivered: {
+        label: 'Entregado',
+        color: '#16a34a',
+        bg: 'rgba(22, 163, 74, 0.12)',
+        border: 'rgba(22, 163, 74, 0.4)',
+        stepIndex: 3,
+    },
+};
+
 export default function AdminOrderDetailPage() {
     const params = useParams();
     const orderId = params?.id as string;
@@ -24,15 +72,22 @@ export default function AdminOrderDetailPage() {
     const [items, setItems] = useState<OrderItemRecord[]>([]);
     const [events, setEvents] = useState<OrderEventRecord[]>([]);
     const [notes, setNotes] = useState<OrderNoteRecord[]>([]);
-    const [customerHistory, setCustomerHistory] = useState<{ totalOrders: number; totalSpent: number }>({ totalOrders: 0, totalSpent: 0 });
 
     const [loading, setLoading] = useState(true);
     const [isPending, startTransition] = useTransition();
 
-    // New Note Form
-    const [newNoteContent, setNewNoteContent] = useState('');
+    // Copied feedback key
+    const [copiedKey, setCopiedKey] = useState<string | null>(null);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+    // Slide-over drawer (right-to-left) for pre-written message when accepting order
+    const [isMessageDrawerOpen, setIsMessageDrawerOpen] = useState(false);
+    const [prewrittenMessage, setPrewrittenMessage] = useState('');
+
+    // Internal notes
+    const [newNoteContent, setNewNoteContent] = useState('');
+    const [showTimelineNotes, setShowTimelineNotes] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -47,9 +102,6 @@ export default function AdminOrderDetailPage() {
                 setItems(res.items || []);
                 setEvents(res.events || []);
                 setNotes(res.notes || []);
-                if (res.customerHistory) {
-                    setCustomerHistory(res.customerHistory);
-                }
             }
             if (isMounted) {
                 setLoading(false);
@@ -61,19 +113,146 @@ export default function AdminOrderDetailPage() {
 
     const showToast = (msg: string) => {
         setToastMessage(msg);
-        setTimeout(() => setToastMessage(null), 3500);
+        setTimeout(() => setToastMessage(null), 2500);
     };
 
-    const handleUpdateStatus = (updates: { orderStatus?: string; paymentStatus?: string; fulfillmentStatus?: string }) => {
+    const copyValue = (key: string, text: string, label: string) => {
+        if (!text) {
+            showToast(`No hay ${label.toLowerCase()} para copiar.`);
+            return;
+        }
+        navigator.clipboard.writeText(text);
+        setCopiedKey(key);
+        showToast(`Copiado: ${label}`);
+        setTimeout(() => {
+            setCopiedKey(prev => (prev === key ? null : prev));
+        }, 1800);
+    };
+
+    const buildAcceptedMessage = (ord: OrderRecord, ordItems: OrderItemRecord[]) => {
+        const isPickup = ord.delivery_type === 'pickup';
+        const itemsLines = ordItems
+            .map(i => `• ${i.quantity}x ${i.product_name}${i.variant_name ? ` (${i.variant_name})` : ''} — ${formatMoney(i.total_amount)}`)
+            .join('\n');
+
+        const deliveryLine = isPickup
+            ? `📍 Modalidad: Recoger en tienda`
+            : `🛵 Dirección de entrega: ${ord.shipping_address_line || 'Por confirmar'}, ${ord.shipping_district || 'Lima'} (${ord.shipping_department || 'Lima'} / ${ord.shipping_province || 'Lima'})${ord.shipping_reference ? `\n📌 Referencia: ${ord.shipping_reference}` : ''}`;
+
+        return `¡Hola ${ord.customer_name}! 👋\n\nTe escribimos para confirmarte que tu pedido *#${ord.order_number}* ha sido *ACEPTADO* y ya se encuentra *en proceso* de preparación. 📦✨\n\n*Resumen de tu compra:*\n${itemsLines}\n\nSubtotal: ${formatMoney(ord.subtotal_amount)}\n${isPickup ? 'Recojo en tienda: Gratis' : `Delivery: ${formatMoney(ord.shipping_amount)}`}\n*TOTAL: ${formatMoney(ord.total_amount)}*\n\n${deliveryLine}\n\nTe avisaremos por aquí apenas tu pedido salga *en ruta*. ¡Muchas gracias por tu preferencia! 🙌`;
+    };
+
+    // Update prewritten message whenever order/items load
+    useEffect(() => {
+        if (order) {
+            setPrewrittenMessage(buildAcceptedMessage(order, items));
+        }
+    }, [order, items]);
+
+    // 1. Accept Order -> State becomes 'accepted' AND slide-over drawer opens from right to left
+    const handleAcceptOrder = () => {
+        if (!order) return;
+        const msg = buildAcceptedMessage(order, items);
+        setPrewrittenMessage(msg);
+        // Optimistically update local order state so behind the drawer it's already Accepted
+        setOrder(prev => prev ? { ...prev, order_status: 'confirmed', fulfillment_status: 'preparing' } : prev);
+        setIsMessageDrawerOpen(true);
+
         startTransition(async () => {
-            const res = await updateOrderStatusAction(orderId, updates);
+            const res = await updateOrderStatusAction(orderId, {
+                orderStatus: 'confirmed',
+                fulfillmentStatus: 'preparing',
+            });
             if (res.success) {
-                showToast('Estado actualizado.');
+                showToast('✅ Pedido aceptado y en proceso.');
                 setRefreshTrigger(prev => prev + 1);
             } else {
                 showToast(`Error: ${res.error}`);
             }
         });
+    };
+
+    // 2. Move to 'En ruta'
+    const handleMoveToInRoute = () => {
+        if (!order) return;
+        setOrder(prev => prev ? { ...prev, order_status: 'processing', fulfillment_status: 'shipped' } : prev);
+
+        startTransition(async () => {
+            const res = await updateOrderStatusAction(orderId, {
+                orderStatus: 'processing',
+                fulfillmentStatus: 'shipped',
+            });
+            if (res.success) {
+                showToast('🛵 Pedido actualizado a: En ruta.');
+                setRefreshTrigger(prev => prev + 1);
+            } else {
+                showToast(`Error: ${res.error}`);
+            }
+        });
+    };
+
+    // 3. Move to 'Entregado' (Final state)
+    const handleMoveToDelivered = () => {
+        if (!order) return;
+        setOrder(prev => prev ? { ...prev, order_status: 'completed', fulfillment_status: 'delivered' } : prev);
+
+        startTransition(async () => {
+            const res = await updateOrderStatusAction(orderId, {
+                orderStatus: 'completed',
+                fulfillmentStatus: 'delivered',
+            });
+            if (res.success) {
+                showToast('🎉 Pedido finalizado: Entregado.');
+                setRefreshTrigger(prev => prev + 1);
+            } else {
+                showToast(`Error: ${res.error}`);
+            }
+        });
+    };
+
+    // Direct jump if admin clicks a step in the stepper
+    const handleSelectStageManual = (targetStage: OrderFlowStage) => {
+        if (!order || isPending) return;
+        if (targetStage === 'pending') {
+            setOrder(prev => prev ? { ...prev, order_status: 'new', fulfillment_status: 'unfulfilled' } : prev);
+            startTransition(async () => {
+                await updateOrderStatusAction(orderId, { orderStatus: 'new', fulfillmentStatus: 'unfulfilled' });
+                showToast('⏳ Estado cambiado a: Pendiente.');
+                setRefreshTrigger(prev => prev + 1);
+            });
+        } else if (targetStage === 'accepted') {
+            handleAcceptOrder();
+        } else if (targetStage === 'in_route') {
+            handleMoveToInRoute();
+        } else if (targetStage === 'delivered') {
+            handleMoveToDelivered();
+        }
+    };
+
+    const handleTogglePaymentPaid = () => {
+        if (!order) return;
+        const nextStatus = order.payment_status === 'paid' ? 'pending' : 'paid';
+        setOrder(prev => prev ? { ...prev, payment_status: nextStatus } : prev);
+        startTransition(async () => {
+            const res = await updateOrderStatusAction(orderId, { paymentStatus: nextStatus });
+            if (res.success) {
+                showToast(nextStatus === 'paid' ? '💳 Pago marcado como Pagado.' : '⏳ Pago marcado como Pendiente.');
+                setRefreshTrigger(prev => prev + 1);
+            }
+        });
+    };
+
+    const handleSendWhatsAppMessage = (customText?: string) => {
+        if (!order) return;
+        const rawPhone = (order.customer_phone || '').replace(/[^0-9]/g, '');
+        const normalizedPhone = rawPhone.length === 9 ? `51${rawPhone}` : rawPhone;
+        const textToSend = customText || prewrittenMessage;
+        if (!normalizedPhone) {
+            navigator.clipboard.writeText(textToSend);
+            showToast('El cliente no tiene teléfono; se copió el mensaje al portapapeles.');
+            return;
+        }
+        window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(textToSend)}`, '_blank');
     };
 
     const handleAddInternalNote = () => {
@@ -90,23 +269,6 @@ export default function AdminOrderDetailPage() {
         });
     };
 
-    const handleCopyAddress = () => {
-        if (!order) return;
-        const fullAddr = `${order.shipping_address_line || ''}, ${order.shipping_district || ''}, ${order.shipping_province || ''}, ${order.shipping_department || ''}. Ref: ${order.shipping_reference || 'S/R'}`;
-        navigator.clipboard.writeText(fullAddr);
-        showToast('Dirección de entrega copiada.');
-    };
-
-    const handleContactWhatsApp = () => {
-        if (!order || !order.customer_phone) {
-            showToast('El cliente no tiene teléfono registrado.');
-            return;
-        }
-        const phone = order.customer_phone.replace(/[^0-9]/g, '');
-        const message = encodeURIComponent(`Hola ${order.customer_name}, te contactamos por tu pedido ${order.order_number} en CodeMarket.`);
-        window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
-    };
-
     const formatDateStr = (dateStr?: string) => {
         if (!dateStr) return '—';
         try {
@@ -118,417 +280,1122 @@ export default function AdminOrderDetailPage() {
         }
     };
 
-    if (loading) {
-        return <div style={{ padding: '48px 16px', color: 'var(--text-muted)', textAlign: 'center' }}>Cargando detalle completo del pedido...</div>;
+    if (loading && !order) {
+        return <div style={{ padding: '48px 16px', color: 'var(--text-muted)', textAlign: 'center', fontWeight: 600 }}>Cargando pedido...</div>;
     }
 
     if (!order) {
         return (
-            <div>
-                <AdminPageHeader title="Pedido no encontrado" description="El pedido solicitado no existe." />
+            <div style={{ padding: '32px' }}>
+                <h2 style={{ color: 'var(--foreground)', marginBottom: '12px' }}>Pedido no encontrado</h2>
                 <Link href="/admin/pedidos" style={{ color: 'var(--robotina-orange)', textDecoration: 'none', fontWeight: 700 }}>← Volver a Pedidos</Link>
             </div>
         );
     }
 
+    const currentStage = getOrderFlowStage(order);
+    const stageInfo = STAGE_META[currentStage];
+    const isPickup = order.delivery_type === 'pickup';
+
+    // Split customer name into Nombres / Apellidos for visual parity with Step 2
+    const nameParts = (order.customer_name || '').trim().split(/\s+/);
+    const firstNameDisplay = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : (order.customer_name || '—');
+    const lastNameDisplay = nameParts.length > 1 ? nameParts.slice(-1).join(' ') : '—';
+
+    const fullCustomerCopyText = [
+        `Cliente: ${order.customer_name}`,
+        order.customer_phone ? `Teléfono: ${order.customer_phone}` : null,
+        order.document_number ? `${order.document_type || 'DNI'}: ${order.document_number}` : null,
+        order.customer_email ? `Correo: ${order.customer_email}` : null,
+    ].filter(Boolean).join('\n');
+
+    const fullDeliveryCopyText = isPickup
+        ? `Método: Recoger en tienda\nCliente: ${order.customer_name}\nTeléfono: ${order.customer_phone || '—'}`
+        : [
+            `Destinatario: ${order.recipient_name || order.customer_name}`,
+            `Teléfono: ${order.recipient_phone || order.customer_phone || '—'}`,
+            `Dirección: ${order.shipping_address_line || '—'}`,
+            `Ubicación: ${order.shipping_department || 'Lima'} / ${order.shipping_province || 'Lima'} / ${order.shipping_district || '—'}`,
+            `Referencia: ${order.shipping_reference || 'Sin referencia'}`,
+            `Delivery: ${formatMoney(order.shipping_amount)}`,
+        ].join('\n');
+
+    const fullSummaryCopyText = [
+        `PEDIDO #${order.order_number} (${stageInfo.label.toUpperCase()})`,
+        `Cliente: ${order.customer_name} (${order.customer_phone || 'Sin tlf'})`,
+        `--- PRODUCTOS ---`,
+        ...items.map(i => `• ${i.quantity}x ${i.product_name}${i.variant_name ? ` (${i.variant_name})` : ''} = ${formatMoney(i.total_amount)}`),
+        `-----------------`,
+        `Subtotal: ${formatMoney(order.subtotal_amount)}`,
+        `${isPickup ? 'Recojo en tienda' : 'Delivery'}: ${formatMoney(order.shipping_amount)}`,
+        `TOTAL: ${formatMoney(order.total_amount)}`,
+        isPickup ? `Entrega: Recoger en tienda` : `Dirección: ${order.shipping_address_line || ''}, ${order.shipping_district || ''} (Ref: ${order.shipping_reference || '—'})`,
+    ].join('\n');
+
+    // Reusable Copy Icon Button (Appears on hover over its parent .copy-field-row)
+    const renderCopyBtn = (key: string, textToCopy: string, label: string, _compact = false) => {
+        const isCopied = copiedKey === key;
+        return (
+            <button
+                type="button"
+                className={`hover-copy-btn ${isCopied ? 'is-copied' : ''}`}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    copyValue(key, textToCopy, label);
+                }}
+                title={isCopied ? `¡${label} copiado!` : `Copiar ${label}`}
+                style={{
+                    width: '30px',
+                    height: '30px',
+                    minHeight: '30px',
+                    padding: 0,
+                    borderRadius: '7px',
+                    border: isCopied ? '1.5px solid #16a34a' : '1px solid var(--structural-border, var(--glass-border))',
+                    background: isCopied ? 'rgba(22, 163, 74, 0.12)' : 'var(--background)',
+                    color: isCopied ? '#16a34a' : 'var(--text-muted)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                }}
+            >
+                {isCopied ? (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                ) : (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                    </svg>
+                )}
+            </button>
+        );
+    };
+
     return (
-        <div style={{ maxWidth: '100%', overflowX: 'hidden' }}>
-            {/* Header */}
-            <AdminPageHeader
-                title={`Pedido #${order.order_number}`}
-                description={`Realizado el ${formatDateStr(order.created_at)} • Canal: ${order.source || 'Tienda online'}`}
-                action={
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                        <button
-                            onClick={handleContactWhatsApp}
+        <div style={{ position: 'relative', paddingBottom: '48px' }}>
+            <style>{`
+                .copy-field-row .hover-copy-btn {
+                    opacity: 0;
+                    pointer-events: none;
+                    transform: scale(0.92);
+                    transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+                }
+                .copy-field-row:hover .hover-copy-btn,
+                .copy-field-row .hover-copy-btn.is-copied,
+                .copy-field-row .hover-copy-btn:focus-visible {
+                    opacity: 1;
+                    pointer-events: auto;
+                    transform: scale(1);
+                }
+                .copy-field-row .hover-copy-btn:hover {
+                    color: var(--robotina-orange, #ff6b00) !important;
+                    border-color: var(--robotina-orange, #ff6b00) !important;
+                    background: rgba(255, 107, 0, 0.08) !important;
+                }
+            `}</style>
+            {/* Toast Notification */}
+            {toastMessage && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    zIndex: 10000,
+                    background: 'var(--foreground)',
+                    color: 'var(--card-bg)',
+                    padding: '11px 18px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--glass-border)',
+                    fontWeight: 700,
+                    fontSize: '0.86rem',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
+                }}>
+                    {toastMessage}
+                </div>
+            )}
+
+            {/* ─── HEADER BAR (CORPORATE MONOCHROME) ─── */}
+            <div style={{ marginBottom: '20px' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <Link href="/admin" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Inicio</Link>
+                    <span>/</span>
+                    <Link href="/admin/pedidos" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Pedidos</Link>
+                    <span>/</span>
+                    <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>#{order.order_number}</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        {/* Botón pequeña flechita para ir un paso más atrás y modificar cualquier dato */}
+                        <Link
+                            href={`/admin/pedidos/nuevo?edit=${order.id}`}
+                            title="Ir un paso atrás para modificar algún dato del pedido"
                             style={{
-                                padding: '9px 16px',
-                                background: 'rgba(34, 197, 94, 0.15)',
-                                border: '1.5px solid #22c55e',
-                                color: '#4ade80',
-                                borderRadius: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '8px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                color: 'var(--foreground)',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px',
+                                justifyContent: 'center',
+                                fontSize: '1.15rem',
+                                fontWeight: 700,
+                                textDecoration: 'none',
+                                flexShrink: 0,
                             }}
                         >
-                            💬 Contactar WhatsApp
+                            ←
+                        </Link>
+                        <div>
+                            <div className="copy-field-row" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                <h1 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--foreground)', margin: 0, letterSpacing: '-0.02em' }}>
+                                    Pedido #{order.order_number}
+                                </h1>
+                                {renderCopyBtn('order_number', order.order_number, 'Número de pedido')}
+                                <span style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    padding: '5px 12px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 800,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.03em',
+                                    background: stageInfo.bg,
+                                    color: stageInfo.color,
+                                    border: `1px solid ${stageInfo.border}`,
+                                }}>
+                                    <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: stageInfo.color }} />
+                                    <span>Estado: {stageInfo.label}</span>
+                                </span>
+                            </div>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.84rem', margin: '4px 0 0 0' }}>
+                                Creado el {formatDateStr(order.created_at)} • Usa la flecha <strong>←</strong> si deseas regresar un paso y modificar algún dato.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <button
+                            type="button"
+                            onClick={() => setIsMessageDrawerOpen(true)}
+                            style={{
+                                padding: '8px 14px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
+                                color: 'var(--foreground)',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Ver mensaje pre-escrito
                         </button>
                         <Link
                             href={`/admin/pedidos/${order.id}/imprimir`}
                             target="_blank"
                             style={{
-                                padding: '9px 16px',
-                                background: 'var(--input-bg)',
-                                border: '1.5px solid var(--glass-border)',
+                                padding: '8px 14px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
                                 color: 'var(--foreground)',
-                                borderRadius: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
                                 textDecoration: 'none',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
                             }}
                         >
-                            🖨️ Imprimir
+                            Imprimir
+                        </Link>
+                        <Link
+                            href="/admin/pedidos/nuevo"
+                            style={{
+                                padding: '8px 14px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
+                                color: 'var(--foreground)',
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            + Nuevo Pedido
                         </Link>
                         <Link
                             href="/admin/pedidos"
                             style={{
-                                padding: '9px 16px',
-                                background: 'var(--input-bg)',
-                                border: '1.5px solid var(--glass-border)',
+                                padding: '8px 14px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
                                 color: 'var(--foreground)',
-                                borderRadius: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
+                                fontWeight: 700,
+                                fontSize: '0.82rem',
                                 textDecoration: 'none',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
                             }}
                         >
-                            ← Volver a Lista
+                            ← Volver a Pedidos
                         </Link>
                     </div>
-                }
-            />
-
-            {/* Notification Toast */}
-            {toastMessage && (
-                <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, background: 'var(--card-bg)', color: 'var(--foreground)', padding: '12px 20px', borderRadius: '10px', border: '1.5px solid var(--robotina-orange)', fontWeight: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.3)', maxWidth: 'calc(100vw - 48px)' }}>
-                    💬 {toastMessage}
                 </div>
-            )}
+            </div>
 
-            {/* STATUS SUMMARY BAR */}
+            {/* ─── BARRA PROGRESIVA DE ESTADOS (EMPRESARIAL CON ESTADOS SEMÁNTICOS) ─── */}
             <div style={{
                 background: 'var(--card-bg)',
-                border: '1.5px solid var(--glass-border)',
-                borderRadius: '16px',
-                padding: '16px 20px',
-                marginBottom: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                marginBottom: '22px',
             }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '12px' }}>
-                    <div style={{ background: 'var(--input-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado Pedido</span>
-                        <AdminStatusBadge status={order.order_status || 'new'} />
-                    </div>
-                    <div style={{ background: 'var(--input-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado Pago</span>
-                        <AdminStatusBadge status={order.payment_status || 'pending'} />
-                    </div>
-                    <div style={{ background: 'var(--input-bg)', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Estado Entrega</span>
-                        <AdminStatusBadge status={order.fulfillment_status || 'unfulfilled'} />
-                    </div>
+                <div className="admin-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+                    {(['pending', 'accepted', 'in_route', 'delivered'] as OrderFlowStage[]).map((stKey, idx) => {
+                        const meta = STAGE_META[stKey];
+                        const isActive = currentStage === stKey;
+                        const isCompleted = stageInfo.stepIndex > idx;
+                        return (
+                            <button
+                                key={stKey}
+                                type="button"
+                                onClick={() => handleSelectStageManual(stKey)}
+                                disabled={isPending}
+                                style={{
+                                    padding: '12px 14px',
+                                    borderRadius: '8px',
+                                    border: isActive
+                                        ? `2px solid ${meta.color}`
+                                        : isCompleted
+                                            ? `1.5px solid ${meta.border}`
+                                            : '1px solid var(--glass-border)',
+                                    background: isActive
+                                        ? meta.bg
+                                        : isCompleted
+                                            ? 'rgba(22, 163, 74, 0.05)'
+                                            : 'var(--card-bg)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    textAlign: 'left',
+                                    transition: 'all 0.15s ease',
+                                }}
+                            >
+                                <div style={{
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    background: isActive ? meta.color : isCompleted ? '#16a34a' : 'var(--card-bg)',
+                                    color: isActive || isCompleted ? '#ffffff' : 'var(--text-muted)',
+                                    border: isActive || isCompleted ? 'none' : '1px solid var(--glass-border)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontWeight: 800,
+                                    fontSize: '0.78rem',
+                                    flexShrink: 0,
+                                }}>
+                                    {isCompleted ? '✓' : idx + 1}
+                                </div>
+                                <div style={{ overflow: 'hidden' }}>
+                                    <div style={{ fontSize: '0.68rem', color: isActive ? meta.color : isCompleted ? '#16a34a' : 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                        Paso {idx + 1}
+                                    </div>
+                                    <div style={{
+                                        fontSize: '0.86rem',
+                                        fontWeight: 800,
+                                        color: isActive ? meta.color : isCompleted ? '#16a34a' : 'var(--foreground)',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}>
+                                        {meta.label}
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
-
-                {/* Quick Status Action Buttons */}
-                {(order.payment_status !== 'paid' || order.fulfillment_status !== 'delivered') && (
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid var(--glass-border)' }}>
-                        {order.payment_status !== 'paid' && (
-                            <button
-                                onClick={() => handleUpdateStatus({ paymentStatus: 'paid' })}
-                                disabled={isPending}
-                                style={{
-                                    padding: '10px 18px',
-                                    background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    flex: '1 1 140px',
-                                    boxShadow: '0 4px 12px rgba(34, 197, 94, 0.25)',
-                                }}
-                            >
-                                ✓ Registrar Pago
-                            </button>
-                        )}
-                        {order.fulfillment_status !== 'delivered' && (
-                            <button
-                                onClick={() => handleUpdateStatus({ fulfillmentStatus: 'delivered', orderStatus: 'completed' })}
-                                disabled={isPending}
-                                style={{
-                                    padding: '10px 18px',
-                                    background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '10px',
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
-                                    cursor: 'pointer',
-                                    flex: '1 1 140px',
-                                    boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)',
-                                }}
-                            >
-                                🚚 Marcar Entregado
-                            </button>
-                        )}
-                    </div>
-                )}
             </div>
 
-            {/* MAIN TWO COLUMN RESPONSIVE LAYOUT */}
-            <div className="order-details-grid">
-                {/* LEFT CONTENT */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+            {/* ─── MAIN 70 / 30 SPLIT LAYOUT (IDENTICAL TO STEP 2) ─── */}
+            <div className="admin-split-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 7fr) minmax(320px, 3fr)', gap: '24px', alignItems: 'start' }}>
 
-                    {/* ITEMS TABLE CARD */}
-                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Productos del Pedido</h3>
-                        <div style={{ overflowX: 'auto', margin: '0 -8px' }}>
-                            <table style={{ width: '100%', minWidth: '480px', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1.5px solid var(--glass-border)', color: 'var(--text-muted)' }}>
-                                        <th style={{ padding: '10px' }}>Producto</th>
-                                        <th style={{ padding: '10px' }}>SKU</th>
-                                        <th style={{ padding: '10px', textAlign: 'right' }}>Precio Unit.</th>
-                                        <th style={{ padding: '10px', textAlign: 'center' }}>Cant.</th>
-                                        <th style={{ padding: '10px', textAlign: 'right' }}>Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {items.map((item) => (
-                                        <tr key={item.id} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                            <td style={{ padding: '12px 10px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    <div style={{
-                                                        width: '44px',
-                                                        height: '44px',
-                                                        borderRadius: '10px',
-                                                        overflow: 'hidden',
-                                                        background: 'var(--input-bg)',
-                                                        border: '1.5px solid var(--glass-border)',
-                                                        flexShrink: 0,
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                    }}>
-                                                        {item.image_url || item.image ? (
-                                                            <img
-                                                                src={item.image_url || item.image}
-                                                                alt={item.product_name}
-                                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                                            />
-                                                        ) : (
-                                                            <span style={{ fontSize: '1.2rem' }}>📦</span>
-                                                        )}
-                                                    </div>
-                                                    <div style={{ minWidth: 0 }}>
-                                                        <div style={{ fontWeight: 700, color: 'var(--foreground)', wordBreak: 'break-word' }}>{item.product_name}</div>
-                                                        {item.variant_name && <div style={{ fontSize: '0.78rem', color: '#2563eb' }}>{item.variant_name}</div>}
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 10px', color: 'var(--text-description)', fontSize: '0.8rem' }}>{item.sku || '—'}</td>
-                                            <td style={{ padding: '12px 10px', textAlign: 'right', color: 'var(--foreground)' }}>{formatMoney(item.unit_price_amount)}</td>
-                                            <td style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 700, color: 'var(--foreground)' }}>{item.quantity}</td>
-                                            <td style={{ padding: '12px 10px', textAlign: 'right', fontWeight: 800, color: 'var(--foreground)' }}>{formatMoney(item.total_amount)}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                {/* 70% LEFT COLUMN */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+                    {/* SECTION 1: INFORMACIÓN DEL CLIENTE */}
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <div className="copy-field-row" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--foreground)', margin: 0 }}>
+                                Información del Cliente
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {renderCopyBtn('all_customer', fullCustomerCopyText, 'Datos del cliente')}
+                            </div>
                         </div>
 
-                        {/* FINANCIAL BREAKDOWN */}
-                        <div style={{ borderTop: '1.5px solid var(--glass-border)', paddingTop: '16px', marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-                            <div style={{ width: '100%', maxWidth: '300px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                                    <span>Subtotal</span>
-                                    <span>{formatMoney(order.subtotal_amount)}</span>
+                        <div style={{ padding: '0 20px 20px 20px' }}>
+                            <div style={{ border: '1px solid var(--glass-border)', borderRadius: '10px', overflow: 'hidden', background: 'var(--card-bg)' }}>
+
+                                {/* Teléfono */}
+                                <div className="copy-field-row" style={{ padding: '10px 16px', borderBottom: '1.5px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Número telefónico</label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                                <img src="https://flagcdn.com/w40/pe.png" alt="Perú" style={{ width: '18px', height: '13px', objectFit: 'cover', borderRadius: '2px' }} />
+                                                (+51)
+                                            </span>
+                                            <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                                                {order.customer_phone || 'No registrado'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {order.customer_phone && renderCopyBtn('cust_phone', order.customer_phone, 'Teléfono')}
                                 </div>
-                                {order.discount_amount > 0 && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444' }}>
-                                        <span>Descuento</span>
-                                        <span>-{formatMoney(order.discount_amount)}</span>
+
+                                {/* Nombres */}
+                                <div className="copy-field-row" style={{ padding: '10px 16px', borderBottom: '1.5px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Nombres</label>
+                                        <div style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '4px' }}>
+                                            {firstNameDisplay}
+                                        </div>
+                                    </div>
+                                    {renderCopyBtn('cust_firstname', firstNameDisplay, 'Nombres')}
+                                </div>
+
+                                {/* Apellidos */}
+                                <div className="copy-field-row" style={{ padding: '10px 16px', borderBottom: '1.5px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Apellidos / Nombre Completo</label>
+                                        <div style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '4px' }}>
+                                            {lastNameDisplay !== '—' ? `${lastNameDisplay} (${order.customer_name})` : order.customer_name}
+                                        </div>
+                                    </div>
+                                    {renderCopyBtn('cust_fullname', order.customer_name, 'Nombre completo')}
+                                </div>
+
+                                {/* Documento de identidad */}
+                                <div className="copy-field-row" style={{ padding: '10px 16px', borderBottom: '1.5px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>
+                                            Documento de identidad ({order.document_type || 'DNI'})
+                                        </label>
+                                        <div style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--foreground)', marginTop: '4px' }}>
+                                            {order.document_number || 'No especificado'}
+                                        </div>
+                                    </div>
+                                    {order.document_number && renderCopyBtn('cust_doc', order.document_number, 'Documento')}
+                                </div>
+
+                                {/* Correo electrónico */}
+                                <div className="copy-field-row" style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                    <div>
+                                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Correo electrónico</label>
+                                        <div style={{ fontSize: '0.95rem', color: 'var(--foreground)', marginTop: '4px' }}>
+                                            {order.customer_email || 'No registrado'}
+                                        </div>
+                                    </div>
+                                    {order.customer_email && renderCopyBtn('cust_email', order.customer_email, 'Correo electrónico')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION 2: CANAL DE VENTA, VENDEDOR Y PAGO */}
+                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '20px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--foreground)', margin: 0 }}>
+                                2. Canal de Venta, Vendedor y Pago
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={handleTogglePaymentPaid}
+                                disabled={isPending}
+                                style={{
+                                    padding: '6px 12px',
+                                    borderRadius: '6px',
+                                    border: order.payment_status === 'paid' ? '1px solid rgba(22, 163, 74, 0.35)' : '1px solid rgba(245, 158, 11, 0.35)',
+                                    background: order.payment_status === 'paid' ? 'rgba(22, 163, 74, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                    color: order.payment_status === 'paid' ? '#16a34a' : '#d97706',
+                                    fontSize: '0.76rem',
+                                    fontWeight: 800,
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                {order.payment_status === 'paid' ? '✓ Pagado (Clic para cambiar)' : '● Pago Pendiente (Marcar Pagado)'}
+                            </button>
+                        </div>
+
+                        <div className="admin-grid-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                            <div style={{ padding: '10px 14px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+                                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block' }}>Canal de Venta</label>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '2px', textTransform: 'capitalize' }}>
+                                    {order.source || 'WhatsApp'}
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '10px 14px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', overflow: 'hidden' }}>
+                                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block' }}>Vendedor / Referencia</label>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--foreground)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {(order.source_reference || 'Administrador').replace(/\s*•\s*$/, '')}
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '10px 14px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+                                <label style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block' }}>Método de Pago</label>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '2px', textTransform: 'uppercase' }}>
+                                    {order.payment_method || 'YAPE'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* SECTION 3: MÉTODO DE ENTREGA Y DIRECCIÓN */}
+                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', overflow: 'hidden' }}>
+                        <div className="copy-field-row" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--foreground)', margin: 0 }}>
+                                Método de entrega
+                            </h3>
+                            {renderCopyBtn('all_delivery', fullDeliveryCopyText, 'Toda la dirección de entrega')}
+                        </div>
+
+                        <div style={{ padding: '0 20px 20px 20px', display: 'flex', flexDirection: 'column', gap: '0' }}>
+                            {/* Radio visual Recoger en tienda */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderBottom: 'none', borderTopLeftRadius: '8px', borderTopRightRadius: '8px', opacity: isPickup ? 1 : 0.6 }}>
+                                <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: isPickup ? '5px solid var(--foreground)' : '1.5px solid var(--text-muted)', background: 'transparent' }} />
+                                <span style={{ fontSize: '0.95rem', color: 'var(--foreground)', fontWeight: isPickup ? 700 : 500 }}>Recoger en tienda</span>
+                            </div>
+
+                            {/* Radio visual Delivery */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderBottomLeftRadius: isPickup ? '8px' : '0', borderBottomRightRadius: isPickup ? '8px' : '0', opacity: !isPickup ? 1 : 0.6 }}>
+                                <div style={{ width: '18px', height: '18px', borderRadius: '50%', border: !isPickup ? '5px solid var(--foreground)' : '1.5px solid var(--text-muted)', background: 'transparent' }} />
+                                <span style={{ fontSize: '0.95rem', color: 'var(--foreground)', fontWeight: !isPickup ? 700 : 500 }}>Delivery</span>
+                            </div>
+
+                            {/* Datos de Dirección desplegados cuando es Delivery */}
+                            {!isPickup && (
+                                <div style={{ border: '1px solid var(--glass-border)', borderTop: 'none', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px', background: 'var(--card-bg)', overflow: 'hidden' }}>
+                                    {/* Dirección exacta */}
+                                    <div className="copy-field-row" style={{ padding: '10px 16px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Dirección de entrega</label>
+                                            <div style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '4px' }}>
+                                                {order.shipping_address_line || 'Sin dirección especificada'}
+                                            </div>
+                                        </div>
+                                        {renderCopyBtn('addr_line', order.shipping_address_line || '', 'Dirección')}
+                                    </div>
+
+                                    {/* Lima / Lima / Distrito */}
+                                    <div className="admin-ubigeo-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.3fr', borderBottom: '1px solid var(--glass-border)' }}>
+                                        <div style={{ padding: '10px 16px', borderRight: '1px solid var(--glass-border)' }}>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Departamento</label>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '4px' }}>
+                                                {order.shipping_department || 'Lima'}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ padding: '10px 16px', borderRight: '1px solid var(--glass-border)' }}>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Provincia</label>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '4px' }}>
+                                                {order.shipping_province || 'Lima'}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ padding: '10px 16px' }}>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Distrito</label>
+                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '4px' }}>
+                                                {order.shipping_district || 'Por definir'}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Referencia */}
+                                    <div className="copy-field-row" style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>Referencia</label>
+                                            <div style={{ fontSize: '0.95rem', color: 'var(--foreground)', marginTop: '4px' }}>
+                                                {order.shipping_reference || 'Sin referencia adicional'}
+                                            </div>
+                                        </div>
+                                        {order.shipping_reference && renderCopyBtn('addr_ref', order.shipping_reference, 'Referencia')}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* FORMULARIO PEQUEÑO DEL PRECIO DEL DELIVERY */}
+                    {!isPickup && (
+                        <div className="copy-field-row" style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                            <div>
+                                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                    Precio del Delivery
+                                </div>
+                                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                    Sumado en la cuenta como <strong>Delivery</strong>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{ background: 'var(--input-bg)', border: '1px solid var(--foreground)', borderRadius: '8px', padding: '6px 14px', fontWeight: 800, fontSize: '0.96rem', color: 'var(--foreground)' }}>
+                                    {formatMoney(order.shipping_amount)}
+                                </div>
+                                {renderCopyBtn('delivery_fee', formatMoney(order.shipping_amount), 'Precio del Delivery')}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* NOTAS E HISTORIAL (DESPLEGABLE COMPACTO) */}
+                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '14px 18px' }}>
+                        <div
+                            onClick={() => setShowTimelineNotes(prev => !prev)}
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+                        >
+                            <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                Historial del Pedido y Notas Internas ({events.length} eventos)
+                            </span>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                                {showTimelineNotes ? 'Ocultar ▲' : 'Ver detalle ▼'}
+                            </span>
+                        </div>
+
+                        {showTimelineNotes && (
+                            <div style={{ marginTop: '14px', borderTop: '1px solid var(--glass-border)', paddingTop: '14px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <input
+                                        type="text"
+                                        value={newNoteContent}
+                                        onChange={e => setNewNoteContent(e.target.value)}
+                                        placeholder="Agregar una nota interna sobre este pedido..."
+                                        style={{ flex: 1, padding: '9px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '6px', color: 'var(--foreground)', fontSize: '0.85rem' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddInternalNote}
+                                        disabled={isPending}
+                                        style={{ padding: '9px 14px', background: 'var(--foreground)', color: 'var(--card-bg)', border: 'none', borderRadius: '6px', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer' }}
+                                    >
+                                        + Guardar Nota
+                                    </button>
+                                </div>
+
+                                {notes.length > 0 && (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        {notes.map(n => (
+                                            <div key={n.id} style={{ padding: '8px 12px', background: 'var(--input-bg)', borderRadius: '6px', fontSize: '0.83rem', color: 'var(--foreground)' }}>
+                                                <strong>Nota:</strong> {n.content} <span style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>({formatDateStr(n.created_at)})</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
-                                    <span>Envío</span>
-                                    <span>{formatMoney(order.shipping_amount)}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--foreground)', fontWeight: 800, fontSize: '1.1rem', borderTop: '1.5px solid var(--glass-border)', paddingTop: '8px' }}>
-                                    <span>Total</span>
-                                    <span>{formatMoney(order.total_amount, order.currency)}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontSize: '0.85rem' }}>
-                                    <span>Monto Pagado</span>
-                                    <span>{formatMoney(order.paid_amount || 0)}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#d97706', fontSize: '0.85rem' }}>
-                                    <span>Saldo Pendiente</span>
-                                    <span>{formatMoney(order.balance_amount !== undefined ? order.balance_amount : (order.total_amount - (order.paid_amount || 0)))}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* TIMELINE / HISTORIAL DEL PEDIDO */}
-                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>📜 Historial del Pedido (Timeline)</h3>
-                        {events.length === 0 ? (
-                            <div style={{ color: 'var(--text-description)', fontSize: '0.85rem' }}>No hay eventos registrados en la línea de tiempo.</div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', borderLeft: '2px solid var(--glass-border)', paddingLeft: '16px', marginLeft: '6px' }}>
-                                {events.map((evt) => (
-                                    <div key={evt.id} style={{ position: 'relative' }}>
-                                        <div style={{ position: 'absolute', left: '-22px', top: '2px', width: '10px', height: '10px', borderRadius: '50%', background: 'var(--robotina-orange)' }} />
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)' }}>{evt.description}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-description)' }}>
-                                            {formatDateStr(evt.created_at)} • Registrado por: {evt.created_by || 'Sistema'}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '2px solid var(--glass-border)', paddingLeft: '12px', marginLeft: '4px' }}>
+                                    {events.map(evt => (
+                                        <div key={evt.id} style={{ fontSize: '0.8rem', color: 'var(--foreground)' }}>
+                                            <strong>{evt.description}</strong>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{formatDateStr(evt.created_at)}</div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* INTERNAL NOTES SECTION */}
-                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>📝 Notas Internas (Solo Administradores)</h3>
-
-                        {order.customer_notes && (
-                            <div style={{ background: 'rgba(234, 179, 8, 0.15)', border: '1.5px solid #d97706', borderRadius: '10px', padding: '12px', marginBottom: '16px' }}>
-                                <span style={{ fontSize: '0.75rem', color: '#b45309', fontWeight: 700, display: 'block' }}>NOTA DEL CLIENTE EN CHECKOUT:</span>
-                                <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', marginTop: '2px' }}>&quot;{order.customer_notes}&quot;</div>
-                            </div>
-                        )}
-
-                        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                            <input
-                                type="text"
-                                value={newNoteContent}
-                                onChange={e => setNewNoteContent(e.target.value)}
-                                placeholder="Agregar una nota interna para el equipo..."
-                                style={{ flex: '1 1 200px', padding: '10px 14px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.88rem' }}
-                            />
-                            <button
-                                onClick={handleAddInternalNote}
-                                disabled={isPending}
-                                style={{ padding: '10px 16px', background: 'var(--gradient-main)', border: 'none', borderRadius: '8px', color: 'white', fontWeight: 700, cursor: 'pointer', flex: '0 0 auto' }}
-                            >
-                                + Agregar Nota
-                            </button>
-                        </div>
-
-                        {notes.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {notes.map(note => (
-                                    <div key={note.id} style={{ background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', padding: '10px 14px' }}>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--foreground)' }}>{note.content}</div>
-                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-description)', marginTop: '4px' }}>
-                                            {formatDateStr(note.created_at)} • {note.user_name || 'Admin'}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* RIGHT SIDEBAR — CLIENTE Y ENTREGA */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+                {/* ─── 30% RIGHT COLUMN — STICKY RESUMEN DEL PEDIDO (CORPORATE MONOCHROME) ─── */}
+                <div className="admin-sticky-card" style={{ position: 'sticky', top: '24px' }}>
+                    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '22px' }}>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--foreground)', marginBottom: '12px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>RESUMEN DEL PEDIDO</span>
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                {items.reduce((a, b) => a + b.quantity, 0)} productos
+                            </span>
+                        </h3>
 
-                    {/* CUSTOMER CARD */}
-                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>👤 Datos del Cliente</h3>
+                        {/* Estado actual visible dentro del Resumen */}
+                        <div style={{
+                            marginBottom: '14px',
+                            padding: '10px 12px',
+                            borderRadius: '8px',
+                            background: stageInfo.bg,
+                            border: `1px solid ${stageInfo.border}`,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                        }}>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                Estado del pedido
+                            </span>
+                            <span style={{ fontSize: '0.84rem', fontWeight: 800, color: stageInfo.color }}>
+                                ● {stageInfo.label}
+                            </span>
+                        </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.88rem' }}>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Nombre</span>
-                                <span style={{ fontWeight: 700, color: 'var(--foreground)', wordBreak: 'break-word' }}>{order.customer_name}</span>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Correo</span>
-                                <span style={{ color: 'var(--text-muted)', wordBreak: 'break-all' }}>{order.customer_email}</span>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Teléfono</span>
-                                <span style={{ color: 'var(--text-muted)' }}>{order.customer_phone || 'No registrado'}</span>
-                            </div>
-
-                            <div style={{ borderTop: '1.5px solid var(--glass-border)', paddingTop: '10px', marginTop: '4px' }}>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Historial del Cliente</span>
-                                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                                    Total de pedidos: <strong style={{ color: 'var(--foreground)' }}>{customerHistory.totalOrders}</strong>
-                                    <br />
-                                    Monto total gastado: <strong style={{ color: '#16a34a' }}>{formatMoney(customerHistory.totalSpent)}</strong>
+                        {/* Itemized List Summary */}
+                        <div style={{ maxHeight: '320px', overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
+                            {items.map((item, idx) => (
+                                <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.84rem', color: 'var(--foreground)', gap: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', flex: 1 }}>
+                                        {(item.image || item.image_url) ? (
+                                            <img
+                                                src={item.image || item.image_url}
+                                                alt={item.product_name}
+                                                style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--glass-border)' }}
+                                            />
+                                        ) : (
+                                            <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                                                ITEM
+                                            </div>
+                                        )}
+                                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            <span style={{ fontWeight: 700 }}>{item.product_name}</span>
+                                            {item.variant_name && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> ({item.variant_name})</span>}
+                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> × {item.quantity}</span>
+                                        </div>
+                                    </div>
+                                    <span style={{ fontWeight: 800, flexShrink: 0 }}>{formatMoney(item.total_amount)}</span>
                                 </div>
+                            ))}
+                        </div>
+
+                        {/* Financial Totals */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.88rem', marginBottom: '18px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                <span>Subtotal</span>
+                                <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{formatMoney(order.subtotal_amount)}</span>
                             </div>
 
-                            {order.customer_id && (
+                            {order.discount_amount > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--foreground)', fontWeight: 600 }}>
+                                    <span>Descuento</span>
+                                    <span>-{formatMoney(order.discount_amount)}</span>
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--text-muted)' }}>
+                                <span>{isPickup ? 'Recojo en tienda' : 'Delivery'}</span>
+                                <span style={{ color: 'var(--foreground)', fontWeight: 600 }}>{formatMoney(order.shipping_amount)}</span>
+                            </div>
+
+                            <div style={{
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'var(--foreground)', fontWeight: 800, fontSize: '1.25rem',
+                                borderTop: '1px solid var(--glass-border)', paddingTop: '10px', marginTop: '4px'
+                            }}>
+                                <span>TOTAL</span>
+                                <span style={{ color: 'var(--foreground)' }}>{formatMoney(order.total_amount)}</span>
+                            </div>
+                        </div>
+
+                        {/* ─── BOTÓN PRINCIPAL AL FINAL QUE GUÍA AL USUARIO CON EL COLOR DE LA TIENDA ─── */}
+                        {currentStage === 'pending' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Link
-                                    href={`/admin/clientes/${order.customer_id}`}
-                                    style={{ padding: '8px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', textAlign: 'center', color: 'var(--foreground)', textDecoration: 'none', fontWeight: 600, fontSize: '0.8rem', marginTop: '6px' }}
+                                    href={`/admin/pedidos/nuevo?edit=${order.id}`}
+                                    title="Ir un paso atrás para modificar un dato"
+                                    style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '8px',
+                                        background: 'var(--card-bg)',
+                                        border: '1px solid var(--glass-border)',
+                                        color: 'var(--foreground)',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.15rem',
+                                        fontWeight: 700,
+                                        textDecoration: 'none',
+                                        flexShrink: 0,
+                                    }}
                                 >
-                                    Ver Perfil del Cliente →
+                                    ←
                                 </Link>
-                            )}
-                        </div>
-                    </div>
+                                <button
+                                    type="button"
+                                    onClick={handleAcceptOrder}
+                                    disabled={isPending}
+                                    style={{
+                                        flex: 1,
+                                        height: '48px',
+                                        background: 'var(--robotina-orange, #ff6b00)',
+                                        border: 'none',
+                                        borderRadius: '8px',
+                                        color: '#ffffff',
+                                        fontWeight: 800,
+                                        fontSize: '0.95rem',
+                                        cursor: 'pointer',
+                                        boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)',
+                                        transition: 'all 0.15s ease',
+                                    }}
+                                >
+                                    {isPending ? 'Aceptando pedido...' : '✓ Aceptar pedido'}
+                                </button>
+                            </div>
+                        )}
 
-                    {/* DELIVERY CARD */}
-                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '14px' }}>🚚 Información de Entrega</h3>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.88rem' }}>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Tipo de Entrega</span>
-                                <span style={{ fontWeight: 700, color: 'var(--foreground)', textTransform: 'capitalize' }}>{order.delivery_type || 'pickup'}</span>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Destinatario</span>
-                                <span style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{order.recipient_name || order.customer_name}</span>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Dirección</span>
-                                <span style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>{order.shipping_address_line || 'Sin dirección especificada'}</span>
-                            </div>
-                            <div>
-                                <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Ubicación</span>
-                                <span style={{ color: 'var(--text-muted)' }}>{order.shipping_district || ''} {order.shipping_province ? `• ${order.shipping_province}` : ''}</span>
-                            </div>
-                            {order.shipping_reference && (
-                                <div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-description)', display: 'block' }}>Referencia</span>
-                                    <span style={{ color: 'var(--text-muted)', wordBreak: 'break-word' }}>&quot;{order.shipping_reference}&quot;</span>
+                        {currentStage === 'accepted' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelectStageManual('pending')}
+                                        disabled={isPending}
+                                        title="Volver un paso atrás (a Pendiente)"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            borderRadius: '8px',
+                                            background: 'var(--card-bg)',
+                                            border: '1px solid var(--glass-border)',
+                                            color: 'var(--foreground)',
+                                            fontSize: '1.15rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        ←
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleMoveToInRoute}
+                                        disabled={isPending}
+                                        style={{
+                                            flex: 1,
+                                            height: '48px',
+                                            background: 'var(--robotina-orange, #ff6b00)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: '#ffffff',
+                                            fontWeight: 800,
+                                            fontSize: '0.95rem',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)',
+                                            transition: 'all 0.15s ease',
+                                        }}
+                                    >
+                                        {isPending ? 'Actualizando...' : 'Pasar a: En ruta →'}
+                                    </button>
                                 </div>
-                            )}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMessageDrawerOpen(true)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '10px',
+                                        background: 'var(--card-bg)',
+                                        border: '1px solid var(--glass-border)',
+                                        borderRadius: '8px',
+                                        color: 'var(--foreground)',
+                                        fontWeight: 700,
+                                        fontSize: '0.82rem',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Abrir mensaje de pedido aceptado
+                                </button>
+                            </div>
+                        )}
 
-                            <button
-                                onClick={handleCopyAddress}
-                                style={{ padding: '8px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '6px', color: 'var(--foreground)', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', marginTop: '6px' }}
-                            >
-                                📋 Copiar Dirección Completa
-                            </button>
-                        </div>
+                        {currentStage === 'in_route' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSelectStageManual('accepted')}
+                                        disabled={isPending}
+                                        title="Volver un paso atrás (a Aceptado)"
+                                        style={{
+                                            width: '48px',
+                                            height: '48px',
+                                            borderRadius: '8px',
+                                            background: 'var(--card-bg)',
+                                            border: '1px solid var(--glass-border)',
+                                            color: 'var(--foreground)',
+                                            fontSize: '1.15rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        ←
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleMoveToDelivered}
+                                        disabled={isPending}
+                                        style={{
+                                            flex: 1,
+                                            height: '48px',
+                                            background: 'var(--robotina-orange, #ff6b00)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: '#ffffff',
+                                            fontWeight: 800,
+                                            fontSize: '0.95rem',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)',
+                                            transition: 'all 0.15s ease',
+                                        }}
+                                    >
+                                        {isPending ? 'Actualizando...' : 'Pasar a: Entregado →'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentStage === 'delivered' && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSelectStageManual('in_route')}
+                                    disabled={isPending}
+                                    title="Volver un paso atrás (a En ruta)"
+                                    style={{
+                                        width: '48px',
+                                        height: '48px',
+                                        borderRadius: '8px',
+                                        background: 'var(--card-bg)',
+                                        border: '1px solid var(--glass-border)',
+                                        color: 'var(--foreground)',
+                                        fontSize: '1.15rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    ←
+                                </button>
+                                <div style={{
+                                    flex: 1,
+                                    padding: '13px',
+                                    background: 'rgba(22, 163, 74, 0.12)',
+                                    border: '1px solid rgba(22, 163, 74, 0.4)',
+                                    borderRadius: '8px',
+                                    color: '#16a34a',
+                                    fontWeight: 800,
+                                    fontSize: '0.92rem',
+                                    textAlign: 'center',
+                                }}>
+                                    ✓ Pedido Entregado
+                                </div>
+                            </div>
+                        )}
                     </div>
-
                 </div>
             </div>
 
+            {/* ─── VENTANA DESLIZABLE DE DERECHA A IZQUIERDA (SLIDE-OVER DRAWER) CON MENSAJE PRE-ESCRITO ─── */}
+            {isMessageDrawerOpen && (
+                <>
+                    {/* Backdrop */}
+                    <div
+                        onClick={() => setIsMessageDrawerOpen(false)}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            background: 'rgba(0, 0, 0, 0.45)',
+                            backdropFilter: 'blur(3px)',
+                            zIndex: 9998,
+                            animation: 'fadeInBackdrop 0.2s ease forwards',
+                        }}
+                    />
+
+                    {/* Right-to-Left Sliding Panel */}
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            right: 0,
+                            bottom: 0,
+                            width: '100%',
+                            maxWidth: '460px',
+                            background: 'var(--card-bg)',
+                            borderLeft: '1px solid var(--glass-border)',
+                            boxShadow: '-12px 0 40px rgba(0, 0, 0, 0.24)',
+                            zIndex: 9999,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            padding: '24px',
+                            animation: 'slideInRightToLeft 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        }}
+                    >
+                        <div style={{ overflowY: 'auto', paddingRight: '4px' }}>
+                            {/* Drawer Header */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', marginBottom: '16px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '14px' }}>
+                                <div>
+                                    <span style={{
+                                        display: 'inline-block',
+                                        padding: '4px 10px',
+                                        borderRadius: '4px',
+                                        background: 'var(--foreground)',
+                                        color: 'var(--card-bg)',
+                                        fontWeight: 800,
+                                        fontSize: '0.72rem',
+                                        letterSpacing: '0.04em',
+                                        marginBottom: '8px',
+                                    }}>
+                                        PEDIDO ACEPTADO Y EN PROCESO
+                                    </span>
+                                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                        Mensaje para el Cliente
+                                    </h3>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                        Copia este mensaje pre-escrito o envíalo directo al WhatsApp de <strong>{order.customer_name}</strong>.
+                                    </p>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setIsMessageDrawerOpen(false)}
+                                    title="Cerrar ventana"
+                                    style={{
+                                        width: '34px',
+                                        height: '34px',
+                                        borderRadius: '6px',
+                                        border: '1px solid var(--glass-border)',
+                                        background: 'var(--input-bg)',
+                                        color: 'var(--foreground)',
+                                        fontSize: '0.95rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {/* Quick Recipient Info */}
+                            <div className="copy-field-row" style={{
+                                padding: '10px 14px',
+                                borderRadius: '8px',
+                                background: 'var(--input-bg)',
+                                border: '1px solid var(--glass-border)',
+                                marginBottom: '14px',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}>
+                                <div>
+                                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>DESTINATARIO</div>
+                                    <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                        {order.customer_name} • {order.customer_phone || 'Sin teléfono'}
+                                    </div>
+                                </div>
+                                {order.customer_phone && renderCopyBtn('drawer_phone', order.customer_phone, 'Teléfono', true)}
+                            </div>
+
+                            {/* Editable Pre-written Message Box */}
+                            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '6px', letterSpacing: '0.03em' }}>
+                                MENSAJE PRE-ESCRITO (EDITABLE):
+                            </label>
+                            <textarea
+                                rows={12}
+                                value={prewrittenMessage}
+                                onChange={e => setPrewrittenMessage(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '14px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--glass-border)',
+                                    background: 'var(--input-bg)',
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.88rem',
+                                    lineHeight: 1.5,
+                                    fontFamily: 'inherit',
+                                    resize: 'vertical',
+                                    outline: 'none',
+                                }}
+                            />
+                        </div>
+
+                        {/* Drawer Footer Actions */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)', marginTop: '16px' }}>
+                            <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => copyValue('drawer_msg', prewrittenMessage, 'Mensaje de confirmación')}
+                                    style={{
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--foreground)',
+                                        background: copiedKey === 'drawer_msg' ? 'var(--foreground)' : 'var(--card-bg)',
+                                        color: copiedKey === 'drawer_msg' ? 'var(--card-bg)' : 'var(--foreground)',
+                                        fontWeight: 800,
+                                        fontSize: '0.88rem',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    {copiedKey === 'drawer_msg' ? '✓ Mensaje Copiado' : 'Copiar Mensaje'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => handleSendWhatsAppMessage(prewrittenMessage)}
+                                    style={{
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--glass-border)',
+                                        background: 'var(--input-bg)',
+                                        color: 'var(--foreground)',
+                                        fontWeight: 800,
+                                        fontSize: '0.88rem',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    Enviar por WhatsApp
+                                </button>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => setIsMessageDrawerOpen(false)}
+                                style={{
+                                    width: '100%',
+                                    padding: '13px',
+                                    borderRadius: '8px',
+                                    border: '1px solid var(--foreground)',
+                                    background: 'var(--foreground)',
+                                    color: 'var(--card-bg)',
+                                    fontWeight: 800,
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                Cerrar mensaje y continuar con el pedido →
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
+
             <style jsx>{`
-                .order-details-grid {
-                    display: grid;
-                    grid-template-columns: minmax(0, 1fr) 340px;
-                    gap: 24px;
-                    align-items: start;
+                @keyframes slideInRightToLeft {
+                    from {
+                        transform: translateX(100%);
+                    }
+                    to {
+                        transform: translateX(0);
+                    }
                 }
-                @media (max-width: 960px) {
-                    .order-details-grid {
-                        grid-template-columns: 1fr;
-                        gap: 20px;
+                @keyframes fadeInBackdrop {
+                    from {
+                        opacity: 0;
+                    }
+                    to {
+                        opacity: 1;
                     }
                 }
             `}</style>

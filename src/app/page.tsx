@@ -51,11 +51,8 @@ export default async function Home() {
                 textColor={appearance.promo_bar_text_color}
             />
 
-            {/* PUBLIC HEADER */}
-            <Navbar
-                storeName={appearance.store_name}
-                logoUrl={appearance.logo_url}
-            />
+            {/* PUBLIC HEADER (mismo branding que /dashboard: LogoTienda.png + VapeCommerce) */}
+            <Navbar />
 
             {/* 1. HERO PRINCIPAL */}
             <HeroHeroBanner

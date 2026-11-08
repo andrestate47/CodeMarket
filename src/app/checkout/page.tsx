@@ -9,18 +9,75 @@ import { formatMoney } from '@/lib/money';
 import { supabase } from '@/lib/supabase';
 import { processCheckoutAction, CheckoutPayload } from '@/modules/checkout/actions';
 import { getCheckoutSettingsAction, CheckoutSettings } from '@/modules/checkout/checkoutSettingsActions';
+import { getSavedCustomersForAutocompleteAction, SavedCustomerRecord } from '@/modules/orders/actions';
 import CheckoutOrderSummary from '@/components/checkout/CheckoutOrderSummary';
 import styles from './page.module.css';
+
+const FALLBACK_CHECKOUT_SETTINGS: CheckoutSettings = {
+    storeName: 'TiendaVir',
+    currency: 'PEN',
+    require_email: false,
+    require_age_confirmation: false,
+    shipping_methods: [
+        {
+            id: 'delivery_local',
+            name: 'Delivery Local (Lima Metropolitana)',
+            is_active: true,
+            price_amount: 1000,
+            price_formatted: 'S/ 10.00',
+            estimated_days: '1 - 2 días hábiles',
+            requires_address: true,
+        },
+        {
+            id: 'shipping_national',
+            name: 'Envío Nacional (Provincias por Shalom / Olva)',
+            is_active: true,
+            price_amount: 2000,
+            price_formatted: 'S/ 20.00',
+            estimated_days: '2 - 4 días hábiles',
+            requires_address: true,
+        },
+        {
+            id: 'store_pickup',
+            name: 'Recojo en Tienda / Almacén (Gratis)',
+            is_active: true,
+            price_amount: 0,
+            price_formatted: 'S/ 0.00',
+            estimated_days: 'Mismo día',
+            requires_address: false,
+            address_details: 'Av. Javier Prado Este 456, San Isidro, Lima',
+        },
+    ],
+    payment_methods: [
+        { id: 'yape', name: 'Yape', is_active: true, type: 'manual' },
+        { id: 'plin', name: 'Plin', is_active: true, type: 'manual' },
+        { id: 'bank_transfer', name: 'Transferencia Bancaria', is_active: true, type: 'manual' },
+        { id: 'cash_on_delivery', name: 'Pago Contra Entrega (Efectivo / POS)', is_active: true, type: 'manual', allowed_shipping_methods: ['delivery_local'] },
+    ],
+};
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCart();
     const router = useRouter();
 
-    const [settings, setSettings] = useState<CheckoutSettings | null>(null);
+    const [settings, setSettings] = useState<CheckoutSettings>(FALLBACK_CHECKOUT_SETTINGS);
     const [loadingSettings, setLoadingSettings] = useState(true);
 
     const [submitting, setSubmitting] = useState(false);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+    const [savedCustomers, setSavedCustomers] = useState<SavedCustomerRecord[]>([]);
+    const [activeSuggestField, setActiveSuggestField] = useState<'name' | 'phone' | 'email' | null>(null);
+    const step1CardRef = React.useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleOutside = (e: MouseEvent) => {
+            if (step1CardRef.current && !step1CardRef.current.contains(e.target as Node)) {
+                setActiveSuggestField(null);
+            }
+        };
+        document.addEventListener('mousedown', handleOutside);
+        return () => document.removeEventListener('mousedown', handleOutside);
+    }, []);
 
     // Customer Form State
     const [formData, setFormData] = useState({
@@ -44,10 +101,10 @@ export default function CheckoutPage() {
         // Payment State
         paymentMethod: 'yape',
 
-        // Terms & Approvals
-        acceptTerms: false,
-        acceptMarketing: false,
-        isAgeConfirmed: false,
+        // Terms & Approvals (ya marcadas por defecto)
+        acceptTerms: true,
+        acceptMarketing: true,
+        isAgeConfirmed: true,
     });
 
     // 1. Fetch Store Settings & Autocomplete User Profile
@@ -92,6 +149,21 @@ export default function CheckoutPage() {
             }
 
             if (isCurrent) setLoadingSettings(false);
+
+            // Load pre-saved customer profiles for instant autocomplete
+            try {
+                const custRes = await getSavedCustomersForAutocompleteAction();
+                if (isCurrent && custRes.success && custRes.customers) {
+                    const localRaw = localStorage.getItem('tiendavir_saved_customers');
+                    const localList: SavedCustomerRecord[] = localRaw ? JSON.parse(localRaw) : [];
+                    const merged = [...localList, ...custRes.customers].filter(
+                        (c, idx, self) => idx === self.findIndex(x => (x.phone && x.phone === c.phone) || (x.fullName.toLowerCase() === c.fullName.toLowerCase()))
+                    );
+                    setSavedCustomers(merged);
+                }
+            } catch {
+                // ignore
+            }
         })();
 
         return () => {
@@ -115,7 +187,7 @@ export default function CheckoutPage() {
         }
     };
 
-    const validateFrontend = (): boolean => {
+    const validateFrontend = (): { valid: boolean; firstError?: string } => {
         const errors: Record<string, string> = {};
 
         if (!formData.customerName.trim()) {
@@ -126,7 +198,7 @@ export default function CheckoutPage() {
             errors.customerPhone = 'Por favor ingresa tu teléfono de contacto o WhatsApp.';
         }
 
-        if (settings?.require_email && (!formData.customerEmail || !formData.customerEmail.includes('@'))) {
+        if (formData.customerEmail.trim() !== '' && !formData.customerEmail.includes('@')) {
             errors.customerEmail = 'Por favor ingresa un correo electrónico válido.';
         }
 
@@ -146,7 +218,8 @@ export default function CheckoutPage() {
         }
 
         setFieldErrors(errors);
-        return Object.keys(errors).length === 0;
+        const firstError = Object.values(errors)[0];
+        return { valid: Object.keys(errors).length === 0, firstError };
     };
 
     const buildPayload = (orderType: 'order' | 'quote' = 'order'): CheckoutPayload => {
@@ -166,6 +239,8 @@ export default function CheckoutPage() {
             addressLine: selectedShipping?.requires_address ? formData.addressLine.trim() : undefined,
             reference: selectedShipping?.requires_address ? formData.reference.trim() : undefined,
             postalCode: selectedShipping?.requires_address ? formData.postalCode.trim() : undefined,
+            acceptTerms: formData.acceptTerms,
+            acceptMarketing: formData.acceptMarketing,
             isAgeConfirmed: formData.isAgeConfirmed,
             orderType,
             items: items.map(i => ({
@@ -184,12 +259,38 @@ export default function CheckoutPage() {
             return;
         }
 
-        if (!validateFrontend()) {
-            toast.error('Por favor completa los campos requeridos marcados en rojo.');
+        const validation = validateFrontend();
+        if (!validation.valid) {
+            toast.error(validation.firstError || 'Por favor completa los campos requeridos marcados en rojo.');
             return;
         }
 
         setSubmitting(true);
+
+        // Save customer in localStorage for future 1-click autocomplete
+        try {
+            const newSaved: SavedCustomerRecord = {
+                id: `local-${Date.now()}`,
+                firstName: formData.customerName.trim().split(' ')[0] || formData.customerName.trim(),
+                lastName: formData.customerName.trim().split(' ').slice(1).join(' '),
+                fullName: formData.customerName.trim(),
+                phone: formData.customerPhone.trim(),
+                email: formData.customerEmail.trim(),
+                documentType: 'DNI',
+                documentNumber: '',
+                department: formData.department,
+                province: formData.province,
+                district: formData.district,
+                addressLine: formData.addressLine,
+                reference: formData.reference,
+            };
+            const localRaw = localStorage.getItem('tiendavir_saved_customers');
+            const localList: SavedCustomerRecord[] = localRaw ? JSON.parse(localRaw) : [];
+            const updatedLocal = [newSaved, ...localList.filter(x => x.phone !== newSaved.phone && x.fullName.toLowerCase() !== newSaved.fullName.toLowerCase())].slice(0, 30);
+            localStorage.setItem('tiendavir_saved_customers', JSON.stringify(updatedLocal));
+        } catch {
+            // ignore
+        }
 
         const payload = buildPayload('order');
         const res = await processCheckoutAction(payload);
@@ -258,10 +359,15 @@ export default function CheckoutPage() {
                         <div className={styles.formColumn}>
 
                             {/* STEP 1: DATOS DEL CLIENTE */}
-                            <div className={styles.stepCard}>
-                                <div className={styles.stepHeader}>
-                                    <div className={styles.stepNumber}>1</div>
-                                    <h2 className={styles.stepTitle}>Datos del Cliente</h2>
+                            <div className={styles.stepCard} ref={step1CardRef} style={{ position: 'relative' }}>
+                                <div className={styles.stepHeader} style={{ justifyContent: 'space-between' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div className={styles.stepNumber}>1</div>
+                                        <h2 className={styles.stepTitle}>Datos del Cliente</h2>
+                                    </div>
+                                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                                        💡 Haz clic para autocompletar datos guardados
+                                    </span>
                                 </div>
 
                                 <div className={styles.formGrid}>
@@ -273,7 +379,11 @@ export default function CheckoutPage() {
                                             type="text"
                                             name="customerName"
                                             value={formData.customerName}
-                                            onChange={handleInputChange}
+                                            onFocus={() => setActiveSuggestField('name')}
+                                            onChange={(e) => {
+                                                handleInputChange(e);
+                                                setActiveSuggestField('name');
+                                            }}
                                             placeholder="Ej: Juan Pérez Morales"
                                             className={`${styles.input} ${fieldErrors.customerName ? styles.inputError : ''}`}
                                             required
@@ -303,7 +413,11 @@ export default function CheckoutPage() {
                                                 type="tel"
                                                 name="customerPhone"
                                                 value={formData.customerPhone}
-                                                onChange={handleInputChange}
+                                                onFocus={() => setActiveSuggestField('phone')}
+                                                onChange={(e) => {
+                                                    handleInputChange(e);
+                                                    setActiveSuggestField('phone');
+                                                }}
                                                 placeholder="987 654 321"
                                                 className={`${styles.input} ${fieldErrors.customerPhone ? styles.inputError : ''}`}
                                                 required
@@ -320,12 +434,111 @@ export default function CheckoutPage() {
                                             type="email"
                                             name="customerEmail"
                                             value={formData.customerEmail}
-                                            onChange={handleInputChange}
+                                            onFocus={() => setActiveSuggestField('email')}
+                                            onChange={(e) => {
+                                                handleInputChange(e);
+                                                setActiveSuggestField('email');
+                                            }}
                                             placeholder="cliente@ejemplo.com"
                                             className={`${styles.input} ${fieldErrors.customerEmail ? styles.inputError : ''}`}
                                         />
                                         {fieldErrors.customerEmail && <span className={styles.errorText}>{fieldErrors.customerEmail}</span>}
                                     </div>
+
+                                    {/* DROPDOWN DE AUTOCOMPLETADO RÁPIDO */}
+                                    {activeSuggestField && (() => {
+                                        const q = (
+                                            activeSuggestField === 'name' ? formData.customerName :
+                                            activeSuggestField === 'phone' ? formData.customerPhone :
+                                            formData.customerEmail
+                                        ).trim().toLowerCase();
+
+                                        const matches = (!q ? savedCustomers : savedCustomers.filter(c =>
+                                            c.fullName.toLowerCase().includes(q) ||
+                                            c.phone.toLowerCase().includes(q) ||
+                                            c.email.toLowerCase().includes(q)
+                                        )).slice(0, 5);
+
+                                        if (matches.length === 0) return null;
+
+                                        return (
+                                            <div
+                                                className={styles.fullWidth}
+                                                style={{
+                                                    background: 'var(--card-bg, #141418)',
+                                                    border: '1.5px solid var(--robotina-orange, #ff6b00)',
+                                                    borderRadius: '12px',
+                                                    overflow: 'hidden',
+                                                    boxShadow: '0 10px 28px rgba(0, 0, 0, 0.35)',
+                                                    marginTop: '4px',
+                                                }}
+                                            >
+                                                <div style={{ padding: '8px 14px', background: 'rgba(255, 107, 0, 0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--robotina-orange, #ff6b00)', textTransform: 'uppercase' }}>
+                                                        ⚡ Datos pre-guardados (clic para autocompletar)
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setActiveSuggestField(null)}
+                                                        style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 700 }}
+                                                    >
+                                                        Cerrar ✕
+                                                    </button>
+                                                </div>
+                                                <div style={{ maxHeight: '210px', overflowY: 'auto' }}>
+                                                    {matches.map((c) => (
+                                                        <button
+                                                            key={c.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setFormData(prev => ({
+                                                                    ...prev,
+                                                                    customerName: c.fullName,
+                                                                    customerPhone: c.phone || prev.customerPhone,
+                                                                    customerEmail: c.email || prev.customerEmail,
+                                                                    recipientName: c.fullName,
+                                                                    recipientPhone: c.phone || prev.recipientPhone,
+                                                                    department: c.department || prev.department,
+                                                                    province: c.province || prev.province,
+                                                                    district: c.district || prev.district,
+                                                                    addressLine: c.addressLine || prev.addressLine,
+                                                                    reference: c.reference || prev.reference,
+                                                                }));
+                                                                setFieldErrors({});
+                                                                setActiveSuggestField(null);
+                                                            }}
+                                                            style={{
+                                                                width: '100%',
+                                                                textAlign: 'left',
+                                                                padding: '10px 14px',
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                borderBottom: '1px solid var(--glass-border)',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                gap: '10px',
+                                                                color: 'var(--foreground)',
+                                                            }}
+                                                        >
+                                                            <div>
+                                                                <div style={{ fontWeight: 800, fontSize: '0.88rem' }}>👤 {c.fullName}</div>
+                                                                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '2px' }}>
+                                                                    {c.phone && <span>📱 +51 {c.phone}</span>}
+                                                                    {c.email && <span>✉️ {c.email}</span>}
+                                                                    {c.addressLine && <span>📍 {c.addressLine} ({c.district})</span>}
+                                                                </div>
+                                                            </div>
+                                                            <span style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--robotina-orange, #ff6b00)', background: 'rgba(255, 107, 0, 0.12)', padding: '4px 10px', borderRadius: '20px', whiteSpace: 'nowrap' }}>
+                                                                Autocompletar →
+                                                            </span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
 
                                     <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                                         <label className={styles.label}>Notas o Indicaciones Especiales</label>
@@ -552,60 +765,61 @@ export default function CheckoutPage() {
                                     <h2 className={styles.stepTitle}>Confirmación</h2>
                                 </div>
 
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                                    <label className={styles.checkboxGroup}>
-                                        <input
-                                            type="checkbox"
-                                            name="acceptTerms"
-                                            checked={formData.acceptTerms}
-                                            onChange={handleInputChange}
-                                            className={styles.checkboxInput}
-                                        />
-                                        <span className={styles.checkboxLabel}>
-                                            Acepto los términos y condiciones del servicio y la política de privacidad.<span className={styles.requiredStar}>*</span>
-                                        </span>
-                                    </label>
-                                    {fieldErrors.acceptTerms && <span className={styles.errorText}>{fieldErrors.acceptTerms}</span>}
-
-                                    <label className={styles.checkboxGroup}>
-                                        <input
-                                            type="checkbox"
-                                            name="acceptMarketing"
-                                            checked={formData.acceptMarketing}
-                                            onChange={handleInputChange}
-                                            className={styles.checkboxInput}
-                                        />
-                                        <span className={styles.checkboxLabel}>
-                                            Deseo recibir ofertas exclusivas y novedades sobre nuevos lanzamientos por correo o WhatsApp.
-                                        </span>
-                                    </label>
-
-                                    {settings?.require_age_confirmation && (
-                                        <>
-                                            <label className={styles.checkboxGroup}>
-                                                <input
-                                                    type="checkbox"
-                                                    name="isAgeConfirmed"
-                                                    checked={formData.isAgeConfirmed}
-                                                    onChange={handleInputChange}
-                                                    className={styles.checkboxInput}
-                                                />
-                                                <span className={styles.checkboxLabel} style={{ fontWeight: 700, color: 'var(--robotina-orange)' }}>
-                                                    Confirmo que cumplo con la edad mínima legal requerida para adquirir estos productos.<span className={styles.requiredStar}>*</span>
-                                                </span>
-                                            </label>
-                                            {fieldErrors.isAgeConfirmed && <span className={styles.errorText}>{fieldErrors.isAgeConfirmed}</span>}
-                                        </>
-                                    )}
-
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <button
                                         type="submit"
                                         disabled={submitting}
                                         className={styles.submitBtn}
-                                        style={{ marginTop: '12px' }}
                                     >
                                         {submitting ? 'Procesando pedido...' : `REALIZAR PEDIDO · ${finalTotalFormatted}`}
                                     </button>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '4px', opacity: 0.88 }}>
+                                        <label className={styles.checkboxGroup}>
+                                            <input
+                                                type="checkbox"
+                                                name="acceptTerms"
+                                                checked={formData.acceptTerms}
+                                                onChange={handleInputChange}
+                                                className={styles.checkboxInput}
+                                            />
+                                            <span className={styles.checkboxLabel}>
+                                                Acepto los términos y condiciones del servicio y la política de privacidad.<span className={styles.requiredStar}>*</span>
+                                            </span>
+                                        </label>
+                                        {fieldErrors.acceptTerms && <span className={styles.errorText}>{fieldErrors.acceptTerms}</span>}
+
+                                        <label className={styles.checkboxGroup}>
+                                            <input
+                                                type="checkbox"
+                                                name="acceptMarketing"
+                                                checked={formData.acceptMarketing}
+                                                onChange={handleInputChange}
+                                                className={styles.checkboxInput}
+                                            />
+                                            <span className={styles.checkboxLabel}>
+                                                Deseo recibir ofertas exclusivas y novedades sobre nuevos lanzamientos por correo o WhatsApp.
+                                            </span>
+                                        </label>
+
+                                        {settings?.require_age_confirmation && (
+                                            <>
+                                                <label className={styles.checkboxGroup}>
+                                                    <input
+                                                        type="checkbox"
+                                                        name="isAgeConfirmed"
+                                                        checked={formData.isAgeConfirmed}
+                                                        onChange={handleInputChange}
+                                                        className={styles.checkboxInput}
+                                                    />
+                                                    <span className={styles.checkboxLabel} style={{ fontWeight: 700, color: 'var(--robotina-orange)' }}>
+                                                        Confirmo que cumplo con la edad mínima legal requerida para adquirir estos productos.<span className={styles.requiredStar}>*</span>
+                                                    </span>
+                                                </label>
+                                                {fieldErrors.isAgeConfirmed && <span className={styles.errorText}>{fieldErrors.isAgeConfirmed}</span>}
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 

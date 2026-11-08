@@ -1,6 +1,5 @@
 import { createBrowserClient } from '@/lib/supabase/client';
-import { formatMoney } from '@/lib/money';
-import { products as localProducts } from '@/data/products';
+import { mapDbProduct, PRODUCT_SELECT } from '@/modules/products/mapper';
 
 export interface CatalogCategory {
     id: string;
@@ -191,121 +190,143 @@ const VAPES_DEMO_PRODUCTS: CatalogProduct[] = [
             { id: 'mg-3', name: '3 mg Nicotina', price: 'S/ 65.00', stock: 4 },
             { id: 'mg-6', name: '6 mg Nicotina', price: 'S/ 65.00', stock: 4 }
         ]
+    },
+    {
+        id: 'vape-drag-x',
+        title: 'Voopoo Drag X Mod Pod Kit',
+        category: 'Dispositivos',
+        description: 'Potente kit de 80W compatible con baterías 18650 y resistencias PnP.',
+        price: 'S/ 180.00',
+        price_amount: 18000,
+        features: ['Hasta 80W de potencia', 'Compatible con batería 18650', 'Gran variedad de resistencias PnP'],
+        type: 'physical', cta: 'Agregar al Carrito', color: '#B91C1C', stock_quantity: 10, track_inventory: true, status: 'active',
+        image: '/images/vapes/pod_system_argus.png'
+    },
+    {
+        id: 'vape-caliburn-g2',
+        title: 'Uwell Caliburn G2 Pod',
+        category: 'Dispositivos',
+        description: 'Vapeador tipo lápiz ligero con excelente sabor y flujo de aire ajustable.',
+        price: 'S/ 120.00',
+        price_amount: 12000,
+        features: ['Batería de 750mAh', 'Flujo de aire ajustable', 'Vibración interactiva'],
+        type: 'physical', cta: 'Agregar al Carrito', color: '#1D4ED8', stock_quantity: 15, track_inventory: true, status: 'active',
+        image: '/images/vapes/pod_system_caliburn.png'
+    },
+    {
+        id: 'vape-smok-nord4',
+        title: 'SMOK Nord 4 Kit 80W',
+        category: 'Dispositivos',
+        description: 'Batería interna de 2000mAh y 80W de potencia para vapor abundante.',
+        price: 'S/ 160.00',
+        price_amount: 16000,
+        features: ['Batería interna 2000mAh', 'Anillos de control de aire', 'Capacidad 4.5ml'],
+        type: 'physical', cta: 'Agregar al Carrito', color: '#4338CA', stock_quantity: 20, track_inventory: true, status: 'active',
+        image: '/images/vapes/pod_system_argus.png'
+    },
+    {
+        id: 'vape-geekvape-aegis',
+        title: 'GeekVape Aegis Legend 2 (L200)',
+        category: 'Dispositivos',
+        description: 'Mod ultra resistente IP68 con tanque Z Sub-Ohm.',
+        price: 'S/ 280.00',
+        price_amount: 28000,
+        features: ['Certificación IP68', 'Doble batería 18650', 'Hasta 200W'],
+        type: 'physical', cta: 'Agregar al Carrito', color: '#D97706', stock_quantity: 5, track_inventory: true, status: 'active',
+        image: '/images/vapes/pod_system_argus.png'
+    },
+    {
+        id: 'vape-vaporesso-xros3',
+        title: 'Vaporesso XROS 3 Pod',
+        category: 'Dispositivos',
+        description: 'Diseño minimalista con batería de 1000mAh y tecnología COREX.',
+        price: 'S/ 130.00',
+        price_amount: 13000,
+        features: ['Batería 1000mAh', 'Sabor consistente COREX', 'Diseño anti-fugas'],
+        type: 'physical', cta: 'Agregar al Carrito', color: '#10B981', stock_quantity: 30, track_inventory: true, status: 'active',
+        image: '/images/vapes/pod_system_xros.png'
+    },
+    {
+        id: 'liquid-watermelon-ice',
+        title: 'E-Liquid Sandía Ice 60ml',
+        category: 'Líquidos',
+        description: 'Sabor a dulce sandía jugosa con un toque helado.',
+        price: 'S/ 50.00', price_amount: 5000,
+        features: ['VG/PG 70/30'], type: 'physical', cta: 'Agregar al Carrito', color: '#EF4444', stock_quantity: 40, track_inventory: true, status: 'active',
+        image: '/images/vapes/saltnic_mango_ice.png'
+    },
+    {
+        id: 'liquid-blue-razz',
+        title: 'E-Liquid Blue Razz 100ml',
+        category: 'Líquidos',
+        description: 'Explosión de frambuesa azul dulce y ácida.',
+        price: 'S/ 70.00', price_amount: 7000,
+        features: ['VG/PG 70/30'], type: 'physical', cta: 'Agregar al Carrito', color: '#3B82F6', stock_quantity: 25, track_inventory: true, status: 'active',
+        image: '/images/vapes/disposable_berry_blast.png'
+    },
+    {
+        id: 'liquid-tobacco-vanilla',
+        title: 'E-Liquid Tabaco Vainilla 60ml',
+        category: 'Líquidos',
+        description: 'Clásico tabaco rubio curado con notas suaves de vainilla bourbon.',
+        price: 'S/ 55.00', price_amount: 5500,
+        features: ['VG/PG 50/50'], type: 'physical', cta: 'Agregar al Carrito', color: '#8B5CF6', stock_quantity: 15, track_inventory: true, status: 'active',
+        image: '/images/vapes/saltnic_mango_ice.png'
+    },
+    {
+        id: 'liquid-strawberry-kiwi',
+        title: 'E-Liquid Fresa Kiwi 120ml',
+        category: 'Líquidos',
+        description: 'La combinación perfecta de fresa madura y kiwi cítrico.',
+        price: 'S/ 80.00', price_amount: 8000,
+        features: ['VG/PG 70/30'], type: 'physical', cta: 'Agregar al Carrito', color: '#14B8A6', stock_quantity: 10, track_inventory: true, status: 'active',
+        image: '/images/vapes/disposable_berry_blast.png'
+    },
+    {
+        id: 'liquid-lemon-tart',
+        title: 'E-Liquid Lemon Tart 60ml',
+        category: 'Líquidos',
+        description: 'Sabor a tarta de limón recién horneada con merengue dulce.',
+        price: 'S/ 60.00', price_amount: 6000,
+        features: ['VG/PG 70/30'], type: 'physical', cta: 'Agregar al Carrito', color: '#F59E0B', stock_quantity: 5, track_inventory: true, status: 'active',
+        image: 'https://images.unsplash.com/photo-1519915028121-7d3463d20b13?w=800&auto=format&fit=crop&q=80'
     }
 ];
 
-export function getInstantProducts(): CatalogProduct[] {
-    let localSavedProducts: CatalogProduct[] = [];
-    if (typeof window !== 'undefined') {
-        try {
-            localSavedProducts = JSON.parse(localStorage.getItem('admin_products') || '[]');
-        } catch {
-            localSavedProducts = [];
-        }
-    }
-
-    const staticMapped: CatalogProduct[] = localProducts.map(p => ({
-        id: p.id,
-        title: p.title,
-        category: p.category,
-        description: p.description,
-        price: p.price,
-        comparePrice: p.comparePrice,
-        price_amount: p.price ? Math.round(parseFloat(p.price.replace(/[^0-9.]/g, '')) * 100) : 0,
-        compare_at_amount: p.comparePrice ? Math.round(parseFloat(p.comparePrice.replace(/[^0-9.]/g, '')) * 100) : undefined,
-        features: p.features || [],
-        type: p.type,
-        cta: p.cta,
-        highlight: p.highlight,
-        color: p.color,
-        image: p.image,
-        longDescription: p.longDescription,
-        stock_quantity: p.id === 'audifonos-pro' ? 0 : (p.id === 'smartband-v8' ? 4 : 25),
-        track_inventory: true,
-        status: 'active',
-        variants: p.variants,
-    }));
-
-    const combined = [...VAPES_DEMO_PRODUCTS, ...localSavedProducts, ...staticMapped];
-    return combined.filter((prod, index, self) =>
-        index === self.findIndex(p => p.id === prod.id)
-    );
+/** true cuando NO hay Supabase real configurado (modo demo local). */
+function isDemoMode(): boolean {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    return !url || url.includes('your-supabase-project') || url.includes('placeholder');
 }
 
+/**
+ * Productos disponibles de forma síncrona (render instantáneo).
+ * Con Supabase configurado devuelve [] y la fuente de verdad es la base de datos,
+ * así la tienda solo muestra lo que el admin tiene en el panel.
+ */
+export function getInstantProducts(): CatalogProduct[] {
+    return isDemoMode() ? VAPES_DEMO_PRODUCTS : [];
+}
+
+/**
+ * Catálogo público: productos activos desde Supabase (RLS permite leer status = 'active').
+ */
 export async function fetchCatalogProducts(): Promise<CatalogProduct[]> {
-    const instantList = getInstantProducts();
-    let dbMapped: CatalogProduct[] = [];
+    if (isDemoMode()) return VAPES_DEMO_PRODUCTS;
 
     try {
-        const isPlaceholderUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project');
-        if (!isPlaceholderUrl) {
-            const supabase = createBrowserClient();
-
-            // 1.5s timeout so slow networks fallback to instantList gracefully
-            const fetchPromise = supabase
-                .from('products')
-                .select(`
-                    *,
-                    categories ( name, slug )
-                `);
-
-            const timeoutPromise = new Promise<{ data: null }>((resolve) =>
-                setTimeout(() => resolve({ data: null }), 1500)
-            );
-
-            const res = await Promise.race([fetchPromise, timeoutPromise]);
-            const dbProducts = res.data;
-
-            if (dbProducts && dbProducts.length > 0) {
-                dbMapped = (dbProducts as unknown as Record<string, unknown>[]).map(p => {
-                    const meta = (p.metadata as Record<string, unknown>) || {};
-                    const priceCents = Number(p.price_cents || p.price_amount || 0);
-                    const compareCents = p.compare_at_price_cents || p.compare_at_amount ? Number(p.compare_at_price_cents || p.compare_at_amount) : undefined;
-                    const currency = String(p.currency || 'PEN');
-
-                    const categoryObj = p.categories as { name?: string; slug?: string } | undefined;
-                    const catName = categoryObj?.name || (p.category ? String(p.category) : 'General');
-
-                    const imgArr = Array.isArray(p.images) ? p.images : [];
-                    const imgUrl = p.image_url ? String(p.image_url) : (imgArr[0] ? String(imgArr[0]) : (meta.image ? String(meta.image) : '/web-basica-hero.png'));
-
-                    return {
-                        id: String(p.id),
-                        title: String(p.title || p.name || ''),
-                        category: catName,
-                        category_id: p.category_id ? String(p.category_id) : undefined,
-                        description: String(p.short_description || p.description || ''),
-                        short_description: p.short_description ? String(p.short_description) : undefined,
-                        price: formatMoney(priceCents / 100, currency),
-                        comparePrice: compareCents ? formatMoney(compareCents / 100, currency) : undefined,
-                        price_amount: priceCents,
-                        compare_at_amount: compareCents,
-                        features: Array.isArray(meta.features) ? (meta.features as string[]) : [
-                            'Garantía oficial de tienda',
-                            'Envío seguro a todo el país',
-                            'Soporte técnico especializado'
-                        ],
-                        type: ((p.product_type || meta.type || 'physical') as 'digital' | 'service' | 'physical'),
-                        cta: String(meta.cta || 'Agregar al Carrito'),
-                        highlight: Boolean(p.featured),
-                        color: String(meta.color || 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)'),
-                        image: imgUrl,
-                        longDescription: String(p.description || p.short_description || ''),
-                        stock_quantity: Number(p.stock_quantity ?? 0),
-                        track_inventory: Boolean(p.track_inventory),
-                        status: String(p.status || 'active'),
-                        variants: Array.isArray(meta.variants) ? (meta.variants as { id: string; name: string; price: string; stock: number }[]) : undefined,
-                        wholesale_rules: Array.isArray(meta.wholesale_rules) ? (meta.wholesale_rules as Record<string, unknown>[]) : undefined,
-                    };
-                });
-            }
+        const { data, error } = await createBrowserClient()
+            .from('products')
+            .select(PRODUCT_SELECT)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false });
+        if (error) {
+            console.error('[catalog] Error cargando productos:', error.message);
+            return [];
         }
-    } catch {
-        // Safe fallback
+        return (data || []).map(mapDbProduct);
+    } catch (err) {
+        console.error('[catalog] Error cargando productos:', err);
+        return [];
     }
-
-    const combined = [...dbMapped, ...instantList];
-    return combined.filter((prod, index, self) =>
-        index === self.findIndex(p => p.id === prod.id)
-    );
 }

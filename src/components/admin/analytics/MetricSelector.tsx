@@ -24,11 +24,13 @@ export default function MetricSelector({ activeMetric, onMetricChange }: MetricS
 
             <div style={{
                 display: 'inline-flex',
+                flexWrap: 'wrap',
                 background: 'var(--input-bg)',
                 border: '1.5px solid var(--glass-border)',
                 borderRadius: '10px',
                 padding: '3px',
                 gap: '3px',
+                maxWidth: '100%',
             }}>
                 {metrics.map((m) => {
                     const isActive = activeMetric === m.id;

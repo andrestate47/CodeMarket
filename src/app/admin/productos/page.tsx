@@ -3,31 +3,43 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { fetchCatalogProducts, getInstantProducts, CatalogProduct } from '@/modules/catalog/queries';
+import { CatalogProduct } from '@/modules/catalog/queries';
 import { getCategoriesListAction, CategoryRecord } from '@/modules/categories/actions';
-import { supabase } from '@/lib/supabase';
+import {
+    getAdminProductsAction,
+    updateProductsFieldsAction,
+    duplicateProductAction,
+    deleteProductsAction,
+    createProductAction,
+    ProductBulkPatch,
+} from '@/modules/products/actions';
+import { getAccessToken } from '@/lib/auth/session';
 import { formatMoney, parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge';
 import AdminEmptyState from '@/components/admin/AdminEmptyState';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 
 export default function AdminProductsList() {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const urlCategory = searchParams?.get('categoria') || 'all';
 
-    const [productsList, setProductsList] = useState<CatalogProduct[]>(() => getInstantProducts());
+    const [productsList, setProductsList] = useState<CatalogProduct[]>([]);
     const [dbCategories, setDbCategories] = useState<CategoryRecord[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
-    // View Mode (Default: 'list')
+    // View Mode (Default: 'grid' para ver las cards de productos con su switch)
     const [viewMode, setViewMode] = useState<'list' | 'grid'>(() => {
         if (typeof window !== 'undefined') {
             const saved = localStorage.getItem('products_view_mode') as 'list' | 'grid';
             if (saved === 'grid' || saved === 'list') return saved;
         }
-        return 'list';
+        return 'grid';
     });
+
+    const [deleteConfirm, setDeleteConfirm] = useState<{isOpen: boolean; items: string[]}>({isOpen: false, items: []});
 
     // Filtering & Sorting State
     const [searchQuery, setSearchQuery] = useState('');
@@ -70,34 +82,42 @@ export default function AdminProductsList() {
 
     const refreshData = useCallback(async () => {
         setLoading(true);
-        const instant = getInstantProducts();
-        setProductsList(instant);
-
-        const data = await fetchCatalogProducts();
-        if (data.length > 0) {
-            setProductsList(data);
+        try {
+            const token = await getAccessToken();
+            const res = await getAdminProductsAction(token);
+            if (res.success) {
+                setProductsList(res.data);
+                setLoadError(null);
+            } else {
+                setLoadError(res.error);
+            }
+        } catch (err) {
+            setLoadError(err instanceof Error ? err.message : 'No se pudieron cargar los productos.');
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
     useEffect(() => {
-        let isMounted = true;
-        (async () => {
-            if (isMounted) {
-                await refreshData();
-            }
-        })();
-
-        window.addEventListener('storage', refreshData);
-        window.addEventListener('products_updated', refreshData);
-        window.addEventListener('focus', refreshData);
-        return () => {
-            isMounted = false;
-            window.removeEventListener('storage', refreshData);
-            window.removeEventListener('products_updated', refreshData);
-            window.removeEventListener('focus', refreshData);
-        };
+        refreshData();
     }, [pathname, refreshData]);
+
+    /** Ejecuta una acción de admin en el servidor; si falla, recarga la lista y avisa. */
+    const runAdminAction = async (fn: (token: string) => Promise<{ success: boolean; error?: string }>) => {
+        try {
+            const token = await getAccessToken();
+            const res = await fn(token);
+            if (!res.success) throw new Error(res.error || 'No se pudo guardar el cambio.');
+            return true;
+        } catch (err) {
+            alert(`⚠️ ${err instanceof Error ? err.message : 'No se pudo guardar el cambio.'}`);
+            await refreshData();
+            return false;
+        }
+    };
+
+    const patchProducts = (ids: string[], patch: ProductBulkPatch) =>
+        runAdminAction(token => updateProductsFieldsAction(token, ids, patch));
 
     // Categories list for filter dropdown
     const categoriesList = useMemo(() => {
@@ -144,9 +164,13 @@ export default function AdminProductsList() {
                 prodCatId === categoryFilter.toLowerCase() ||
                 prodCat === targetCatName ||
                 prodCat === categoryFilter.toLowerCase();
-            const matchesStatus = statusFilter === 'all' || (prod.status || 'active').toLowerCase() === statusFilter.toLowerCase();
-
             const stock = prod.stock_quantity ?? 10;
+            const matchesStatus =
+                statusFilter === 'all' ? true :
+                statusFilter === 'out' ? stock === 0 :
+                statusFilter === 'low' ? (stock > 0 && stock <= 5) :
+                (prod.status || 'active').toLowerCase() === statusFilter.toLowerCase();
+
             let matchesStock = true;
             if (stockFilter === 'normal') matchesStock = stock > 5;
             if (stockFilter === 'low') matchesStock = stock > 0 && stock <= 5;
@@ -207,75 +231,112 @@ export default function AdminProductsList() {
     const toggleStatus = async (productId: string, currentStatus: string) => {
         const nextStatus = currentStatus === 'active' ? 'draft' : 'active';
         setProductsList(prev => prev.map(p => p.id === productId ? { ...p, status: nextStatus } : p));
-        
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.map(p => p.id === productId ? { ...p, status: nextStatus } : p);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').update({ status: nextStatus }).eq('id', productId);
-        } catch { }
+        await patchProducts([productId], { status: nextStatus });
     };
 
-    const duplicateProduct = (prod: CatalogProduct) => {
-        const duplicated: CatalogProduct = {
-            ...prod,
-            id: `prod-copy-${Date.now()}`,
-            title: `${prod.title} (Copia)`,
-            status: 'draft',
-        };
+    const renderProductSwitch = (prod: CatalogProduct) => {
+        const isActive = (prod.status || 'active') === 'active';
+        return (
+            <button
+                type="button"
+                role="switch"
+                aria-checked={isActive}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleStatus(prod.id, prod.status || 'active');
+                }}
+                title={isActive ? 'Producto encendido en la tienda (Clic para apagar)' : 'Producto apagado y oculto en la tienda (Clic para encender)'}
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '7px',
+                    padding: '4px 8px 4px 6px',
+                    borderRadius: '999px',
+                    background: 'var(--card-bg)',
+                    border: `1px solid ${isActive ? 'rgba(22, 163, 74, 0.35)' : 'var(--glass-border)'}`,
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease',
+                }}
+            >
+                <span
+                    style={{
+                        width: '34px',
+                        height: '19px',
+                        borderRadius: '999px',
+                        background: isActive ? '#16a34a' : '#94a3b8',
+                        position: 'relative',
+                        transition: 'background 0.2s ease',
+                        flexShrink: 0,
+                    }}
+                >
+                    <span
+                        style={{
+                            position: 'absolute',
+                            top: '2px',
+                            left: isActive ? '17px' : '2px',
+                            width: '15px',
+                            height: '15px',
+                            borderRadius: '50%',
+                            background: '#ffffff',
+                            boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                            transition: 'left 0.2s ease',
+                        }}
+                    />
+                </span>
+                <span
+                    style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 800,
+                        color: isActive ? '#16a34a' : '#64748b',
+                        letterSpacing: '0.02em',
+                    }}
+                >
+                    {isActive ? 'ON' : 'OFF'}
+                </span>
+            </button>
+        );
+    };
 
-        const updated = [duplicated, ...productsList];
-        setProductsList(updated);
-
-        try {
-            const localSaved = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            localSaved.unshift(duplicated);
-            localStorage.setItem('admin_products', JSON.stringify(localSaved));
-        } catch { }
-
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new Event('products_updated'));
-        }
+    const duplicateProduct = async (prod: CatalogProduct) => {
+        const token = await getAccessToken().catch(() => null);
+        if (!token) return alert('Tu sesión expiró. Vuelve a iniciar sesión.');
+        const res = await duplicateProductAction(token, prod.id);
+        if (!res.success) return alert(`⚠️ ${res.error}`);
+        setProductsList(prev => [res.data, ...prev]);
     };
 
     const deleteProduct = async (productId: string) => {
-        if (!confirm('¿Estás seguro de que deseas eliminar este producto del catálogo?')) return;
-        
-        setProductsList(prev => prev.filter(p => p.id !== productId));
-        setSelectedIds(prev => prev.filter(id => id !== productId));
-        
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.filter(p => p.id !== productId);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').delete().eq('id', productId);
-        } catch { }
+        setDeleteConfirm({ isOpen: true, items: [productId] });
     };
 
     // Bulk Actions Handlers
     const handleBulkStatusChange = async (nextStatus: 'active' | 'draft') => {
-        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, status: nextStatus } : p));
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, status: nextStatus } : p);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').update({ status: nextStatus }).in('id', selectedIds);
-        } catch { }
+        const ids = [...selectedIds];
+        setProductsList(prev => prev.map(p => ids.includes(p.id) ? { ...p, status: nextStatus } : p));
         setSelectedIds([]);
+        await patchProducts(ids, { status: nextStatus });
     };
 
     const handleBulkCategoryChange = async () => {
-        const newCat = prompt('Ingrese el nuevo nombre de categoría para los productos seleccionados:');
+        if (dbCategories.length === 0) {
+            alert('Primero crea categorías en el módulo de Categorías.');
+            return;
+        }
+        const options = dbCategories.map(c => c.name).join(', ');
+        const newCat = prompt(`Escribe la categoría para los productos seleccionados:\n(${options})`);
         if (!newCat || !newCat.trim()) return;
 
-        const cleanCat = newCat.trim();
-        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, category: cleanCat } : p));
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, category: cleanCat } : p);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-        } catch { }
+        const target = dbCategories.find(c => c.name.toLowerCase() === newCat.trim().toLowerCase());
+        if (!target) {
+            alert(`No existe la categoría "${newCat.trim()}". Opciones: ${options}`);
+            return;
+        }
+
+        const ids = [...selectedIds];
+        setProductsList(prev => prev.map(p => ids.includes(p.id) ? { ...p, category: target.name, category_id: target.id } : p));
         setSelectedIds([]);
+        await patchProducts(ids, { category_id: target.id });
     };
 
     const handleBulkPriceUpdate = async () => {
@@ -289,16 +350,12 @@ export default function AdminProductsList() {
         }
 
         const cents = Math.round(numPrice * 100);
-        const formattedPrice = `S/ ${numPrice.toFixed(2)}`;
+        const formattedPrice = formatMoney(numPrice);
+        const ids = [...selectedIds];
 
-        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, price: formattedPrice, price_amount: cents } : p));
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, price: formattedPrice, price_amount: cents } : p);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').update({ price_amount: cents }).in('id', selectedIds);
-        } catch { }
+        setProductsList(prev => prev.map(p => ids.includes(p.id) ? { ...p, price: formattedPrice, price_amount: cents } : p));
         setSelectedIds([]);
+        await patchProducts(ids, { price_amount: cents });
     };
 
     const handleBulkStockUpdate = async () => {
@@ -311,26 +368,35 @@ export default function AdminProductsList() {
             return;
         }
 
-        setProductsList(prev => prev.map(p => selectedIds.includes(p.id) ? { ...p, stock_quantity: stockNum } : p));
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.map(p => selectedIds.includes(p.id) ? { ...p, stock_quantity: stockNum } : p);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').update({ stock_quantity: stockNum }).in('id', selectedIds);
-        } catch { }
+        const ids = [...selectedIds];
+        setProductsList(prev => prev.map(p => ids.includes(p.id) ? { ...p, stock_quantity: stockNum } : p));
         setSelectedIds([]);
+        await patchProducts(ids, { stock_quantity: stockNum });
     };
 
-    const handleBulkDelete = async () => {
-        if (!confirm(`¿Eliminar los ${selectedIds.length} productos seleccionados?`)) return;
-        setProductsList(prev => prev.filter(p => !selectedIds.includes(p.id)));
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.filter(p => !selectedIds.includes(p.id));
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').delete().in('id', selectedIds);
-        } catch { }
-        setSelectedIds([]);
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        setDeleteConfirm({ isOpen: true, items: selectedIds });
+    };
+
+    const confirmDeleteItems = async () => {
+        const ids = deleteConfirm.items;
+        if (!ids.length) return;
+        setDeleteConfirm({ isOpen: false, items: [] });
+        setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+        setProductsList(prev => prev.filter(p => !ids.includes(p.id)));
+
+        const token = await getAccessToken().catch(() => null);
+        if (!token) return alert('Tu sesión expiró. Vuelve a iniciar sesión.');
+        const res = await deleteProductsAction(token, ids);
+        if (!res.success) {
+            alert(`⚠️ ${res.error}`);
+            await refreshData();
+            return;
+        }
+        if (res.data.archived > 0) {
+            alert(`ℹ️ ${res.data.archived} producto(s) tenían pedidos registrados, así que se archivaron (ya no se ven en la tienda) en lugar de borrarse para conservar tu historial de ventas.`);
+        }
     };
 
     // Export CSV
@@ -368,44 +434,43 @@ export default function AdminProductsList() {
                 return;
             }
 
-            const importedProducts: CatalogProduct[] = [];
+            const rows: { title: string; cents: number; stock: number; categoryName: string }[] = [];
             for (let i = 1; i < lines.length; i++) {
                 const parts = lines[i].split(',').map(p => p.replace(/^"|"$/g, '').trim());
                 if (parts.length >= 2) {
-                    const title = parts[1] || parts[0] || `Producto Importado ${i}`;
-                    const category = parts[2] || 'Físicos';
-                    const rawPrice = parts[3] || '49.00';
-                    const stock = parseInt(parts[4] || '10', 10) || 10;
-                    const cents = parseMoneyToCents(rawPrice);
-
-                    importedProducts.push({
-                        id: `prod-imp-${Date.now()}-${i}`,
-                        title,
-                        category,
-                        description: `Producto importado desde CSV (${title})`,
-                        price: `S/ ${(cents / 100).toFixed(2)}`,
-                        price_amount: cents,
-                        features: ['Producto Físico'],
-                        type: 'physical',
-                        cta: 'Agregar al Carrito',
-                        color: 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
-                        image: '/arepa-hero.jpg',
-                        stock_quantity: stock,
-                        track_inventory: true,
-                        status: 'active',
+                    rows.push({
+                        title: parts[1] || parts[0] || `Producto Importado ${i}`,
+                        categoryName: parts[2] || '',
+                        cents: parseMoneyToCents(parts[3] || '0'),
+                        stock: parseInt(parts[4] || '0', 10) || 0,
                     });
                 }
             }
+            if (rows.length === 0) return;
 
-            if (importedProducts.length > 0) {
-                setProductsList(prev => [...importedProducts, ...prev]);
-                try {
-                    const localSaved = JSON.parse(localStorage.getItem('admin_products') || '[]');
-                    const updated = [...importedProducts, ...localSaved];
-                    localStorage.setItem('admin_products', JSON.stringify(updated));
-                } catch { }
-                alert(`✅ ¡Se importaron ${importedProducts.length} productos con éxito!`);
-            }
+            (async () => {
+                const token = await getAccessToken().catch(() => null);
+                if (!token) return alert('Tu sesión expiró. Vuelve a iniciar sesión.');
+                let ok = 0;
+                const errors: string[] = [];
+                for (const row of rows) {
+                    const cat = dbCategories.find(c => c.name.toLowerCase() === row.categoryName.toLowerCase());
+                    const res = await createProductAction(token, {
+                        name: row.title,
+                        short_description: `Producto importado desde CSV (${row.title})`,
+                        price_amount: row.cents,
+                        product_type: 'physical',
+                        category_id: cat?.id || null,
+                        status: 'draft',
+                        track_inventory: true,
+                        stock_quantity: row.stock,
+                    });
+                    if (res.success) ok++;
+                    else errors.push(`${row.title}: ${res.error}`);
+                }
+                await refreshData();
+                alert(`✅ Se importaron ${ok} de ${rows.length} productos como borrador. Agrega sus fotos y actívalos.${errors.length ? `\n\nErrores:\n${errors.slice(0, 5).join('\n')}` : ''}`);
+            })();
         };
         reader.readAsText(file);
     };
@@ -425,22 +490,26 @@ export default function AdminProductsList() {
     const handleSaveStockModal = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!inventoryModalProduct) return;
-        
-        const updatedList = productsList.map(p => p.id === inventoryModalProduct.id ? { ...p, stock_quantity: newStockInput } : p);
-        setProductsList(updatedList);
+        const id = inventoryModalProduct.id;
 
-        try {
-            const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-            const updatedLocal = localSaved.map(p => p.id === inventoryModalProduct.id ? { ...p, stock_quantity: newStockInput } : p);
-            localStorage.setItem('admin_products', JSON.stringify(updatedLocal));
-            await supabase.from('products').update({ stock_quantity: newStockInput }).eq('id', inventoryModalProduct.id);
-        } catch { }
-
+        setProductsList(prev => prev.map(p => p.id === id ? { ...p, stock_quantity: newStockInput } : p));
         setInventoryModalProduct(null);
+        await patchProducts([id], { stock_quantity: newStockInput });
     };
 
     return (
         <div>
+            <ConfirmDialog 
+                isOpen={deleteConfirm.isOpen}
+                title="Eliminar Productos"
+                message={`¿Estás seguro de que deseas eliminar ${deleteConfirm.items.length === 1 ? 'este producto' : `los ${deleteConfirm.items.length} productos seleccionados`}? Esta acción no se puede deshacer.`}
+                confirmText="Eliminar"
+                cancelText="Cancelar"
+                danger={true}
+                onConfirm={confirmDeleteItems}
+                onCancel={() => setDeleteConfirm({ isOpen: false, items: [] })}
+            />
+
             <input
                 type="file"
                 ref={csvFileInputRef}
@@ -451,142 +520,89 @@ export default function AdminProductsList() {
 
             <AdminPageHeader
                 title={`Gestión de Productos (${totalCount})`}
-                description="Administra el catálogo completo de productos físicos, precios en soles (S/), inventario por variantes y visibilidad."
+                leftAction={
+                    <Link
+                        href="/admin/productos/nuevo"
+                        style={{
+                            padding: '8px 16px',
+                            background: 'var(--robotina-orange, #ff6b00)',
+                            color: '#ffffff',
+                            borderRadius: '8px',
+                            fontWeight: 700,
+                            fontSize: '0.86rem',
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)',
+                        }}
+                    >
+                        + Nuevo Producto
+                    </Link>
+                }
                 action={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        <button
-                            onClick={() => csvFileInputRef.current?.click()}
-                            style={{
-                                padding: '9px 15px',
-                                background: 'var(--card-bg)',
-                                border: '1px solid var(--glass-border)',
-                                borderRadius: '10px',
-                                color: 'var(--foreground)',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            <span>📥</span> Importar CSV
-                        </button>
-
-                        <button
-                            onClick={handleExportCSV}
-                            style={{
-                                padding: '9px 15px',
-                                background: 'var(--card-bg)',
-                                border: '1px solid var(--glass-border)',
-                                borderRadius: '10px',
-                                color: 'var(--foreground)',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            <span>📤</span> Exportar CSV
-                        </button>
-
-                        <Link
-                            href="/admin/productos/nuevo"
-                            style={{
-                                padding: '10px 18px',
-                                background: 'var(--gradient-main)',
-                                color: 'white',
-                                borderRadius: '10px',
-                                fontWeight: 700,
-                                fontSize: '0.9rem',
-                                textDecoration: 'none',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
-                            }}
-                        >
-                            <span>➕</span> Nuevo Producto
-                        </Link>
-                    </div>
+                    <button
+                        onClick={handleExportCSV}
+                        title="Exportar CSV"
+                        aria-label="Exportar CSV"
+                        style={{
+                            width: '38px',
+                            height: '38px',
+                            padding: 0,
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '8px',
+                            color: 'var(--foreground)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                    </button>
                 }
             />
 
-            {/* Filter & Controls Panel */}
-            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '18px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', flexWrap: 'wrap' }}>
-                    {/* Search Input */}
-                    <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
-                        <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>🔍</span>
+            {/* Barra de Filtros y Vista (1 sola fila limpia) */}
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '12px 14px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {/* Buscador */}
+                    <div style={{ position: 'relative', flex: '1 1 240px' }}>
+                        <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>🔍</span>
                         <input
-                            type="text"
+                            type="search"
+                            name="q_search_products"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck={false}
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            placeholder="Buscar por nombre o SKU..."
+                            placeholder="Buscar producto..."
                             style={{
                                 width: '100%',
-                                padding: '10px 14px 10px 38px',
-                                background: 'var(--input-bg)',
+                                padding: '9px 14px 9px 36px',
+                                background: 'var(--card-bg)',
                                 border: '1px solid var(--glass-border)',
-                                borderRadius: '10px',
+                                borderRadius: '8px',
                                 color: 'var(--input-text)',
-                                fontSize: '0.88rem',
+                                fontSize: '0.86rem',
                                 outline: 'none',
                             }}
                         />
                     </div>
 
-                    {/* View mode switcher */}
-                    <div style={{ display: 'flex', background: 'var(--input-bg)', padding: '3px', borderRadius: '10px', border: '1px solid var(--glass-border)' }}>
-                        <button
-                            onClick={() => { setViewMode('list'); localStorage.setItem('products_view_mode', 'list'); }}
-                            style={{
-                                padding: '8px 14px',
-                                borderRadius: '7px',
-                                background: viewMode === 'list' ? 'var(--robotina-orange)' : 'transparent',
-                                color: viewMode === 'list' ? '#ffffff' : 'var(--foreground)',
-                                border: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            ☰ Lista
-                        </button>
-                        <button
-                            onClick={() => { setViewMode('grid'); localStorage.setItem('products_view_mode', 'grid'); }}
-                            style={{
-                                padding: '8px 14px',
-                                borderRadius: '7px',
-                                background: viewMode === 'grid' ? 'var(--robotina-orange)' : 'transparent',
-                                color: viewMode === 'grid' ? '#ffffff' : 'var(--foreground)',
-                                border: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.85rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            🎛️ Cuadrícula
-                        </button>
-                    </div>
-                </div>
-
-                {/* Dropdowns Row (Specific Filter Descriptions) */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                    {/* Categoría */}
                     <select
                         value={categoryFilter}
                         onChange={e => setCategoryFilter(e.target.value)}
-                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
+                        style={{ padding: '9px 12px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
                     >
-                        <option value="all">Todas las categorías</option>
+                        <option value="all">Categoría: Todas</option>
                         {dbCategories.length > 0 ? (
                             dbCategories.map(cat => (
                                 <option key={cat.id} value={cat.id}>
@@ -598,68 +614,85 @@ export default function AdminProductsList() {
                         )}
                     </select>
 
+                    {/* Estado + Stock unificados */}
                     <select
                         value={statusFilter}
                         onChange={e => setStatusFilter(e.target.value)}
-                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
+                        style={{ padding: '9px 12px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
                     >
-                        <option value="all">Todos los estados</option>
-                        <option value="active">Activos</option>
-                        <option value="draft">Borradores</option>
+                        <option value="all">Estado: Todos</option>
+                        <option value="active">Encendidos (ON)</option>
+                        <option value="draft">Apagados (OFF)</option>
+                        <option value="low">Stock bajo (≤5)</option>
+                        <option value="out">Agotados (0)</option>
                     </select>
 
-                    <select
-                        value={stockFilter}
-                        onChange={e => setStockFilter(e.target.value)}
-                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
-                    >
-                        <option value="all">Todo el inventario</option>
-                        <option value="normal">Disponible (&gt;5 un.)</option>
-                        <option value="low">Stock Bajo (&lt;=5 un.)</option>
-                        <option value="out">Agotados (0 un.)</option>
-                    </select>
-
-                    <select
-                        value={variantFilter}
-                        onChange={e => setVariantFilter(e.target.value)}
-                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
-                    >
-                        <option value="all">Todas las variantes</option>
-                        <option value="with">Con variantes</option>
-                        <option value="without">Sin variantes</option>
-                    </select>
-
-                    <select
-                        value={discountFilter}
-                        onChange={e => setDiscountFilter(e.target.value)}
-                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none' }}
-                    >
-                        <option value="all">Todas las ofertas</option>
-                        <option value="with">En oferta</option>
-                        <option value="without">Sin oferta</option>
-                    </select>
-
+                    {/* Ordenar */}
                     <select
                         value={sortBy}
                         onChange={e => setSortBy(e.target.value as typeof sortBy)}
-                        style={{ padding: '8px 12px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.84rem', outline: 'none', marginLeft: 'auto' }}
+                        style={{ padding: '9px 12px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem', outline: 'none', cursor: 'pointer' }}
                     >
-                        <option value="newest">Ordenar: Más Recientes</option>
-                        <option value="name_asc">Nombre: A - Z</option>
-                        <option value="name_desc">Nombre: Z - A</option>
+                        <option value="newest">Ordenar: Recientes</option>
                         <option value="price_asc">Precio: Menor a Mayor</option>
                         <option value="price_desc">Precio: Mayor a Menor</option>
-                        <option value="stock_desc">Stock: Mayor a Menor</option>
+                        <option value="name_asc">Nombre: A - Z</option>
+                        <option value="stock_desc">Mayor Stock</option>
                     </select>
 
-                    {(searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || stockFilter !== 'all' || variantFilter !== 'all' || discountFilter !== 'all' || sortBy !== 'newest') && (
+                    {/* Limpiar (solo cuando hay filtro activo) */}
+                    {(searchQuery || categoryFilter !== 'all' || statusFilter !== 'all' || sortBy !== 'newest') && (
                         <button
                             onClick={clearFilters}
-                            style={{ padding: '8px 12px', background: 'transparent', border: '1px dashed #ef4444', color: '#ef4444', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
+                            style={{ padding: '9px 12px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', color: 'var(--foreground)', borderRadius: '8px', fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer' }}
                         >
-                            🧹 Limpiar Filtros
+                            ✕ Limpiar
                         </button>
                     )}
+
+                    {/* Selector compacto de Vista (solo íconos) */}
+                    <div style={{ display: 'flex', background: 'var(--card-bg)', padding: '3px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                        <button
+                            onClick={() => { setViewMode('grid'); localStorage.setItem('products_view_mode', 'grid'); }}
+                            title="Vista en Cuadrícula (Cards)"
+                            style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                background: viewMode === 'grid' ? 'var(--robotina-orange)' : 'transparent',
+                                color: viewMode === 'grid' ? '#ffffff' : 'var(--foreground)',
+                                border: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            ⊞
+                        </button>
+                        <button
+                            onClick={() => { setViewMode('list'); localStorage.setItem('products_view_mode', 'list'); }}
+                            title="Vista en Lista"
+                            style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                background: viewMode === 'list' ? 'var(--robotina-orange)' : 'transparent',
+                                color: viewMode === 'list' ? '#ffffff' : 'var(--foreground)',
+                                border: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.95rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            ☰
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -736,6 +769,12 @@ export default function AdminProductsList() {
                 </div>
             )}
 
+            {loadError && (
+                <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', color: '#ef4444', padding: '14px 18px', borderRadius: '12px', marginBottom: '20px', fontSize: '0.88rem', fontWeight: 600 }}>
+                    ⚠️ No se pudieron cargar los productos: {loadError}
+                </div>
+            )}
+
             {/* Empty State or Main List / Grid Content */}
             {filteredProducts.length === 0 && !loading ? (
                 <AdminEmptyState
@@ -787,14 +826,19 @@ export default function AdminProductsList() {
                                 const isOut = stock === 0;
                                 const isLow = stock > 0 && stock <= 5;
                                 const variantCount = prod.variants ? prod.variants.length : 0;
+                                const isActive = (prod.status || 'active') === 'active';
 
                                 return (
                                     <tr
                                         key={prod.id}
                                         style={{
                                             borderBottom: '1px solid var(--glass-border)',
-                                            background: isSelected ? 'rgba(255, 107, 0, 0.05)' : 'transparent',
-                                            transition: 'background 0.15s ease',
+                                            background: !isActive
+                                                ? 'rgba(148, 163, 184, 0.12)'
+                                                : isSelected
+                                                    ? 'rgba(255, 107, 0, 0.05)'
+                                                    : 'transparent',
+                                            transition: 'all 0.15s ease',
                                         }}
                                     >
                                         <td style={{ padding: '14px 16px' }}>
@@ -807,7 +851,7 @@ export default function AdminProductsList() {
                                         </td>
 
                                         {/* Product & SKU */}
-                                        <td style={{ padding: '14px 16px' }}>
+                                        <td style={{ padding: '14px 16px', filter: isActive ? 'none' : 'grayscale(100%)', opacity: isActive ? 1 : 0.55 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                                 <div style={{ width: '44px', height: '44px', borderRadius: '8px', overflow: 'hidden', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', flexShrink: 0 }}>
                                                     {prod.image ? (
@@ -831,12 +875,12 @@ export default function AdminProductsList() {
                                         </td>
 
                                         {/* Category */}
-                                        <td style={{ padding: '14px 16px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                        <td style={{ padding: '14px 16px', color: 'var(--text-muted)', fontWeight: 600, opacity: isActive ? 1 : 0.55 }}>
                                             {prod.category}
                                         </td>
 
                                         {/* Price & Offer */}
-                                        <td style={{ padding: '14px 16px' }}>
+                                        <td style={{ padding: '14px 16px', filter: isActive ? 'none' : 'grayscale(100%)', opacity: isActive ? 1 : 0.55 }}>
                                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                                 <span style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '0.92rem' }}>
                                                     {formatMoney(numPrice)}
@@ -855,7 +899,7 @@ export default function AdminProductsList() {
                                         </td>
 
                                         {/* Stock & Status Badge */}
-                                        <td style={{ padding: '14px 16px' }}>
+                                        <td style={{ padding: '14px 16px', filter: isActive ? 'none' : 'grayscale(100%)', opacity: isActive ? 1 : 0.55 }}>
                                             <span style={{
                                                 fontWeight: 800,
                                                 padding: '4px 10px',
@@ -876,12 +920,14 @@ export default function AdminProductsList() {
 
                                         {/* Actions Menu (⋮) */}
                                         <td style={{ padding: '14px 16px', textAlign: 'right', position: 'relative' }}>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setOpenMenuId(isMenuOpen ? null : prod.id);
-                                                }}
-                                                style={{
+                                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                                {renderProductSwitch(prod)}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setOpenMenuId(isMenuOpen ? null : prod.id);
+                                                    }}
+                                                    style={{
                                                     width: '26px',
                                                     height: '26px',
                                                     minWidth: '26px',
@@ -963,6 +1009,7 @@ export default function AdminProductsList() {
                                                     </button>
                                                 </div>
                                             )}
+                                            </div>
                                         </td>
                                     </tr>
                                 );
@@ -987,19 +1034,20 @@ export default function AdminProductsList() {
                         const isOut = stock === 0;
                         const isLow = stock > 0 && stock <= 5;
                         const variantCount = prod.variants ? prod.variants.length : 0;
+                        const isActive = (prod.status || 'active') === 'active';
 
                         return (
                             <div
                                 key={prod.id}
                                 style={{
-                                    background: 'var(--card-bg)',
+                                    background: isActive ? 'var(--card-bg)' : 'rgba(148, 163, 184, 0.14)',
                                     border: isSelected ? '2px solid var(--robotina-orange)' : '1px solid var(--glass-border)',
                                     borderRadius: '16px',
                                     overflow: 'visible',
                                     position: 'relative',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                                    transition: 'all 0.2s ease',
                                 }}
                             >
                                 {/* Checkbox Top Left */}
@@ -1010,6 +1058,11 @@ export default function AdminProductsList() {
                                         onChange={() => handleSelectOne(prod.id)}
                                         style={{ accentColor: 'var(--robotina-orange)', cursor: 'pointer', width: '16px', height: '16px' }}
                                     />
+                                </div>
+
+                                {/* Switch de Encendido / Apagado en la Card */}
+                                <div style={{ position: 'absolute', top: '8px', right: '40px', zIndex: 30 }}>
+                                    {renderProductSwitch(prod)}
                                 </div>
 
                                 {/* Three Dots Menu Button (⋮) Top Right */}
@@ -1110,14 +1163,20 @@ export default function AdminProductsList() {
                                 )}
 
                                 {/* Card Header Image */}
-                                <div style={{ height: '150px', width: '100%', background: 'var(--input-bg)', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
+                                <div style={{ height: '150px', width: '100%', background: 'var(--input-bg)', position: 'relative', overflow: 'hidden', borderTopLeftRadius: '16px', borderTopRightRadius: '16px', filter: isActive ? 'none' : 'grayscale(100%)', opacity: isActive ? 1 : 0.5 }}>
                                     {prod.image ? (
                                         <img src={prod.image} alt={prod.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     ) : (
                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '3rem' }}>📦</div>
                                     )}
 
-                                    {discountPercent > 0 && (
+                                    {!isActive && (
+                                        <span style={{ position: 'absolute', bottom: '8px', right: '8px', background: '#334155', color: '#ffffff', fontSize: '0.68rem', fontWeight: 800, padding: '3px 8px', borderRadius: '4px', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                                            Oculto en tienda
+                                        </span>
+                                    )}
+
+                                    {discountPercent > 0 && isActive && (
                                         <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: '#22c55e', color: 'white', fontSize: '0.72rem', fontWeight: 800, padding: '2px 8px', borderRadius: '4px' }}>
                                             {discountPercent}% OFF
                                         </span>
@@ -1125,7 +1184,7 @@ export default function AdminProductsList() {
                                 </div>
 
                                 {/* Card Content Body */}
-                                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', flex: 1, filter: isActive ? 'none' : 'grayscale(100%)', opacity: isActive ? 1 : 0.58 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                                             {prod.category}

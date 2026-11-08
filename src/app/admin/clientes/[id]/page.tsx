@@ -81,7 +81,7 @@ export default function AdminCustomerDetailPage() {
                 }
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
+            <div className="admin-split-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' }}>
                 {/* Left Card: Customer Profile Summary */}
                 <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', padding: '24px', boxShadow: 'var(--shadow-sm)', height: 'fit-content' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '20px' }}>

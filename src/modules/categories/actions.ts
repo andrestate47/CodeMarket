@@ -35,7 +35,7 @@ export interface CategoryPayload {
 }
 
 // In-Memory fallback store initialized with the Vapes demo categories
-const MEMORY_DEMO_CATEGORIES: CategoryRecord[] = [
+const MEMORY_DEMO_CATEGORIES: CategoryRecord[] = []; /* [
     // 1. DISPOSITIVOS
     {
         id: 'cat-dispositivos',
@@ -320,7 +320,7 @@ const MEMORY_DEMO_CATEGORIES: CategoryRecord[] = [
         sort_order: 5,
         created_at: new Date().toISOString(),
     },
-];
+]; */
 
 import { generateSlug, isDescendant } from './utils';
 
@@ -706,18 +706,25 @@ export async function deleteCategoryAction(
             const adminClient = createAdminClient();
             const isPlaceholderUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project');
             if (!isPlaceholderUrl) {
-                // Reassign products if requested
+                // Reassign or orphan products
                 if (resolution?.productOption === 'reassign' && resolution.targetCategoryId) {
                     await adminClient
                         .from('products')
                         .update({ category_id: resolution.targetCategoryId })
                         .eq('category_id', id);
-                } else if (resolution?.productOption === 'orphan') {
+                } else {
+                    // Always orphan by default to avoid foreign key errors
                     await adminClient
                         .from('products')
                         .update({ category_id: null })
                         .eq('category_id', id);
                 }
+
+                // Orphan subcategories
+                await adminClient
+                    .from('categories')
+                    .update({ parent_id: null })
+                    .eq('parent_id', id);
 
                 await adminClient.from('categories').delete().eq('id', id);
             }

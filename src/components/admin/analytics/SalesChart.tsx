@@ -95,10 +95,10 @@ export default function SalesChart({
             marginTop: '16px',
         }}>
             {/* SVG Chart */}
-            <div style={{ overflowX: 'auto', position: 'relative' }}>
+            <div style={{ overflowX: 'auto', position: 'relative', WebkitOverflowScrolling: 'touch' }}>
                 <svg
                     viewBox={`0 0 ${containerWidth} ${height}`}
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                    style={{ width: '100%', minWidth: '500px', height: 'auto', display: 'block' }}
                 >
                     {/* Horizontal Grid Lines */}
                     {[0, 0.25, 0.5, 0.75, 1].map((pct) => {

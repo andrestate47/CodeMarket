@@ -341,23 +341,27 @@ export default function ProductPage() {
     const [selectedQty, setSelectedQty] = useState<number>(1);
     const [selectedVariant, setSelectedVariant] = useState<{ id: string; name: string; price: string } | null>(null);
 
+    const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+
     React.useEffect(() => {
         let isMounted = true;
         (async () => {
-            if (!product && id) {
-                setLoadingProduct(true);
-                const all = await fetchCatalogProducts();
+            if (!id) return;
+            if (!product) setLoadingProduct(true);
+            const all = await fetchCatalogProducts();
+            if (!isMounted) return;
+            if (!product) {
                 const found = all.find(p => p.id === id || p.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') === id);
-                if (isMounted && found) {
-                    setProduct(found as unknown as Product);
-                }
-                if (isMounted) setLoadingProduct(false);
+                if (found) setProduct(found as unknown as Product);
+                setLoadingProduct(false);
             }
+            setRelatedProducts(all.filter(p => p.id !== id).slice(0, 4) as unknown as Product[]);
         })();
         return () => {
             isMounted = false;
         };
-    }, [id, product]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
     React.useEffect(() => {
         const timer = setInterval(() => {
@@ -444,7 +448,7 @@ export default function ProductPage() {
 
     const handleAddToCart = () => {
         addItem(productToCart, selectedQty, selectedVariant || undefined);
-        toast.success(`Añadido al carrito (${selectedQty}x): ${product.title}`);
+        toast.success(`Añadido al carrito (${selectedQty}x): ${product.title}`, { duration: 2000 });
         try {
             confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 99999 });
         } catch (err) {
@@ -753,8 +757,8 @@ export default function ProductPage() {
                         También te podría <span className="text-gradient">interesar</span>
                     </h2>
                     <div className={styles.grid} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '24px' }}>
-                        {getInstantProducts().filter(p => p.id !== id).slice(0, 4).map(p => (
-                            <ProductCard key={p.id} product={p as unknown as Product} />
+                        {relatedProducts.map(p => (
+                            <ProductCard key={p.id} product={p} />
                         ))}
                     </div>
                 </div>

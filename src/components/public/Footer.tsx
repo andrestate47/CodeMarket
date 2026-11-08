@@ -58,7 +58,7 @@ export default function Footer({ storeName = 'VapeCommerce' }: FooterProps) {
                             <li className={styles.linkItem}><Link href="/#productos">Métodos de pago</Link></li>
                             <li className={styles.linkItem}><Link href="/#productos">Políticas de envío</Link></li>
                             <li className={styles.linkItem}><Link href="/#productos">Términos y condiciones</Link></li>
-                            <li className={styles.linkItem}><Link href="/admin">Acceso Panel Admin</Link></li>
+
                         </ul>
                     </div>
 

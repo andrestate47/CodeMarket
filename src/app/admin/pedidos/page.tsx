@@ -39,17 +39,8 @@ export default function AdminOrdersPage() {
     const [dateRange, setDateRange] = useState<'all' | 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month'>('all');
     const [paymentMethod, setPaymentMethod] = useState('all');
 
-    // Data state
-    const [orders, setOrders] = useState<OrderRecord[]>([]);
-    const [metrics, setMetrics] = useState({
-        total: 0,
-        new: 0,
-        pendingPayment: 0,
-        paid: 0,
-        preparing: 0,
-        shipped: 0,
-        delivered: 0,
-    });
+    // Data state (loaded once and filtered instantaneously on client)
+    const [allOrders, setAllOrders] = useState<OrderRecord[]>([]);
     const [loading, setLoading] = useState(true);
 
     // Selection & Bulk State
@@ -59,37 +50,84 @@ export default function AdminOrdersPage() {
     // Dialog state
     const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null);
 
-    // Debounce search input (300ms)
+    // Sync debouncedSearch for CSV export compatibility
     useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-        }, 300);
-        return () => clearTimeout(handler);
+        setDebouncedSearch(searchQuery);
     }, [searchQuery]);
 
-    // Load orders
-    const fetchOrders = React.useCallback(async () => {
-        setLoading(true);
-        const filterParams: OrderFilterParams = {
-            searchQuery: debouncedSearch,
-            orderStatus,
-            paymentStatus,
-            fulfillmentStatus,
-            source,
-            deliveryType,
-            dateRange,
-            paymentMethod,
-        };
-
-        const res = await getOrdersListAction(filterParams);
+    // Load all orders once (or silently refresh)
+    const fetchOrders = React.useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
+        const res = await getOrdersListAction({ limit: 500 });
         if (res.success) {
-            setOrders(res.orders || []);
-            setMetrics(res.metrics || { total: 0, new: 0, pendingPayment: 0, paid: 0, preparing: 0, shipped: 0, delivered: 0 });
+            setAllOrders(res.orders || []);
         } else {
             showToast(`Error: ${res.error}`);
         }
-        setLoading(false);
-    }, [debouncedSearch, orderStatus, paymentStatus, fulfillmentStatus, source, deliveryType, dateRange, paymentMethod, showToast]);
+        if (!silent) setLoading(false);
+    }, [showToast]);
+
+    useEffect(() => {
+        fetchOrders(false);
+    }, [fetchOrders]);
+
+    useEffect(() => {
+        const handleNewOrder = () => {
+            fetchOrders(true);
+        };
+        window.addEventListener('admin:new-order', handleNewOrder);
+        return () => window.removeEventListener('admin:new-order', handleNewOrder);
+    }, [fetchOrders]);
+
+    // Instant client-side metrics
+    const metrics = React.useMemo(() => ({
+        total: allOrders.length,
+        new: allOrders.filter(o => o.order_status === 'new' || !o.order_status).length,
+        pendingPayment: allOrders.filter(o => o.payment_status === 'pending' || o.payment_status === 'under_review').length,
+        paid: allOrders.filter(o => o.payment_status === 'paid').length,
+        preparing: allOrders.filter(o => o.fulfillment_status === 'preparing' || o.fulfillment_status === 'processing').length,
+        shipped: allOrders.filter(o => o.fulfillment_status === 'shipped').length,
+        delivered: allOrders.filter(o => o.fulfillment_status === 'delivered' || o.fulfillment_status === 'fulfilled').length,
+    }), [allOrders]);
+
+    // Instant client-side filtering (0ms lag on tabs, dropdowns, and search)
+    const orders = React.useMemo(() => {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
+        const last7Days = new Date(startOfToday.getTime() - 7 * 86400000);
+        const last30Days = new Date(startOfToday.getTime() - 30 * 86400000);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const q = searchQuery.trim().toLowerCase();
+
+        return allOrders.filter((o) => {
+            if (orderStatus !== 'all' && o.order_status !== orderStatus) return false;
+            if (paymentStatus !== 'all' && o.payment_status !== paymentStatus) return false;
+            if (fulfillmentStatus !== 'all' && o.fulfillment_status !== fulfillmentStatus) return false;
+            if (source !== 'all' && o.source !== source) return false;
+            if (deliveryType !== 'all' && o.delivery_type !== deliveryType) return false;
+            if (paymentMethod !== 'all' && o.payment_method !== paymentMethod) return false;
+
+            if (dateRange !== 'all' && o.created_at) {
+                const d = new Date(o.created_at);
+                if (dateRange === 'today' && d < startOfToday) return false;
+                if (dateRange === 'yesterday' && (d < startOfYesterday || d >= startOfToday)) return false;
+                if (dateRange === 'last_7_days' && d < last7Days) return false;
+                if (dateRange === 'last_30_days' && d < last30Days) return false;
+                if (dateRange === 'this_month' && d < startOfMonth) return false;
+            }
+
+            if (q) {
+                const match =
+                    (o.order_number && o.order_number.toLowerCase().includes(q)) ||
+                    (o.customer_name && o.customer_name.toLowerCase().includes(q)) ||
+                    (o.customer_email && o.customer_email.toLowerCase().includes(q)) ||
+                    (o.customer_phone && o.customer_phone.toLowerCase().includes(q));
+                if (!match) return false;
+            }
+            return true;
+        });
+    }, [allOrders, orderStatus, paymentStatus, fulfillmentStatus, source, deliveryType, paymentMethod, dateRange, searchQuery]);
 
     const handleClearFilters = () => {
         setSearchQuery('');
@@ -119,13 +157,21 @@ export default function AdminOrdersPage() {
 
     const handleSingleStatusUpdate = async (orderId: string, updates: { orderStatus?: string; paymentStatus?: string; fulfillmentStatus?: string; reason?: string }) => {
         setActiveKebabId(null);
+        // Optimistic UI update
+        setAllOrders(prev => prev.map(o => o.id === orderId ? {
+            ...o,
+            ...(updates.orderStatus ? { order_status: updates.orderStatus } : {}),
+            ...(updates.paymentStatus ? { payment_status: updates.paymentStatus } : {}),
+            ...(updates.fulfillmentStatus ? { fulfillment_status: updates.fulfillmentStatus } : {}),
+        } : o));
         startTransition(async () => {
             const res = await updateOrderStatusAction(orderId, updates);
             if (res.success) {
                 showToast('Estado del pedido actualizado correctamente.');
-                fetchOrders();
+                fetchOrders(true);
             } else {
                 showToast(`Error: ${res.error}`);
+                fetchOrders(true);
             }
         });
     };
@@ -137,7 +183,7 @@ export default function AdminOrdersPage() {
             if (res.success) {
                 showToast(`Acción masiva ejecutada en ${selectedOrderIds.length} pedidos.`);
                 setSelectedOrderIds([]);
-                fetchOrders();
+                fetchOrders(true);
             } else {
                 showToast(`Error: ${res.error}`);
             }
@@ -208,64 +254,53 @@ export default function AdminOrdersPage() {
             {/* Header & Metrics */}
             <AdminPageHeader
                 title="Gestión de Pedidos"
+                leftAction={
+                    <Link
+                        href="/admin/pedidos/nuevo"
+                        style={{
+                            padding: '8px 16px',
+                            background: 'var(--robotina-orange, #ff6b00)',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '0.86rem',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 12px rgba(255, 107, 0, 0.25)',
+                        }}
+                    >
+                        + Pedido manual
+                    </Link>
+                }
                 action={
                     <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <button
-                            onClick={handleCreateTestOrder}
-                            disabled={isPending}
-                            style={{
-                                padding: '8px 14px',
-                                background: 'rgba(255, 107, 0, 0.15)',
-                                color: 'var(--robotina-orange)',
-                                border: '1.5px solid rgba(255, 107, 0, 0.35)',
-                                borderRadius: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                cursor: 'pointer',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                transition: 'all 0.2s ease',
-                            }}
-                        >
-                            ⚡ Simular Pedido de Prueba
-                        </button>
-                        <Link
-                            href="/admin/pedidos/nuevo"
-                            style={{
-                                padding: '8px 16px',
-                                background: 'var(--gradient-main)',
-                                color: 'white',
-                                borderRadius: '10px',
-                                fontSize: '0.88rem',
-                                fontWeight: 700,
-                                textDecoration: 'none',
-                                boxShadow: '0 4px 14px rgba(249, 115, 22, 0.3)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                            }}
-                        >
-                            + Pedido manual
-                        </Link>
-                        <button
                             onClick={handleExportCSV}
                             disabled={isPending}
+                            title="Exportar CSV"
+                            aria-label="Exportar CSV"
                             style={{
-                                padding: '8px 14px',
-                                background: 'var(--input-bg)',
-                                border: '1.5px solid var(--glass-border)',
+                                width: '38px',
+                                height: '38px',
+                                padding: 0,
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
                                 color: 'var(--foreground)',
-                                borderRadius: '10px',
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
+                                borderRadius: '8px',
                                 cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px',
+                                justifyContent: 'center',
                             }}
                         >
-                            📥 Exportar CSV
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="7 10 12 15 17 10" />
+                                <line x1="12" y1="15" x2="12" y2="3" />
+                            </svg>
                         </button>
                     </div>
                 }
@@ -279,256 +314,151 @@ export default function AdminOrdersPage() {
                         bottom: '24px',
                         right: '24px',
                         zIndex: 9999,
-                        background: '#18181b',
-                        color: '#f4f4f5',
+                        background: 'var(--foreground)',
+                        color: 'var(--card-bg)',
                         padding: '12px 20px',
-                        borderRadius: '10px',
-                        border: '1px solid var(--robotina-orange)',
-                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
-                        fontSize: '0.9rem',
+                        borderRadius: '8px',
+                        border: '1px solid var(--glass-border)',
+                        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                        fontSize: '0.88rem',
                         fontWeight: 600,
                     }}
                 >
-                    💬 {toastMessage}
+                    {toastMessage}
                 </div>
             )}
 
-            {/* METRIC CARDS FILTERS */}
+            {/* METRIC CARDS FILTERS (CON COLORES COHERENTES POR ESTADO) */}
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-                    gap: '12px',
-                    marginBottom: '24px',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))',
+                    gap: '10px',
+                    marginBottom: '20px',
                 }}
             >
-                {/* TOTAL */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setOrderStatus('all');
-                        setPaymentStatus('all');
-                        setFulfillmentStatus('all');
-                    }}
-                    style={{
-                        background: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? 'rgba(255, 107, 0, 0.12)' : 'var(--card-bg)',
-                        border: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? '2px solid var(--robotina-orange)' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? '0 4px 14px rgba(255, 107, 0, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: (orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all') ? 'translateY(-2px)' : 'none',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', fontWeight: 700 }}>TOTAL</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--foreground)' }}>{metrics.total}</span>
-                </button>
-
-                {/* NUEVOS */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setOrderStatus('new');
-                        setPaymentStatus('all');
-                        setFulfillmentStatus('all');
-                    }}
-                    style={{
-                        background: orderStatus === 'new' ? 'rgba(37, 99, 235, 0.15)' : 'var(--card-bg)',
-                        border: orderStatus === 'new' ? '2px solid #2563eb' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: orderStatus === 'new' ? '0 4px 14px rgba(37, 99, 235, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: orderStatus === 'new' ? 'translateY(-2px)' : 'none',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: '#2563eb', display: 'block', fontWeight: 700 }}>NUEVOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563eb' }}>{metrics.new}</span>
-                </button>
-
-                {/* PENDIENTES PAGO */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setPaymentStatus('pending');
-                        setOrderStatus('all');
-                        setFulfillmentStatus('all');
-                    }}
-                    style={{
-                        background: paymentStatus === 'pending' ? 'rgba(217, 119, 6, 0.15)' : 'var(--card-bg)',
-                        border: paymentStatus === 'pending' ? '2px solid #d97706' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: paymentStatus === 'pending' ? '0 4px 14px rgba(217, 119, 6, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: paymentStatus === 'pending' ? 'translateY(-2px)' : 'none',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: '#d97706', display: 'block', fontWeight: 700 }}>PENDIENTES PAGO</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#d97706' }}>{metrics.pendingPayment}</span>
-                </button>
-
-                {/* PAGADOS */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setPaymentStatus('paid');
-                        setOrderStatus('all');
-                        setFulfillmentStatus('all');
-                    }}
-                    style={{
-                        background: paymentStatus === 'paid' ? 'rgba(22, 163, 74, 0.15)' : 'var(--card-bg)',
-                        border: paymentStatus === 'paid' ? '2px solid #16a34a' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: paymentStatus === 'paid' ? '0 4px 14px rgba(22, 163, 74, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: paymentStatus === 'paid' ? 'translateY(-2px)' : 'none',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'block', fontWeight: 700 }}>PAGADOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#16a34a' }}>{metrics.paid}</span>
-                </button>
-
-                {/* PREPARANDO */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFulfillmentStatus('preparing');
-                        setOrderStatus('all');
-                        setPaymentStatus('all');
-                    }}
-                    style={{
-                        background: fulfillmentStatus === 'preparing' ? 'rgba(180, 83, 9, 0.15)' : 'var(--card-bg)',
-                        border: fulfillmentStatus === 'preparing' ? '2px solid #b45309' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: fulfillmentStatus === 'preparing' ? '0 4px 14px rgba(180, 83, 9, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: fulfillmentStatus === 'preparing' ? 'translateY(-2px)' : 'none',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: '#b45309', display: 'block', fontWeight: 700 }}>PREPARANDO</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#b45309' }}>{metrics.preparing}</span>
-                </button>
-
-                {/* ENVIADOS */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFulfillmentStatus('shipped');
-                        setOrderStatus('all');
-                        setPaymentStatus('all');
-                    }}
-                    style={{
-                        background: fulfillmentStatus === 'shipped' ? 'rgba(2, 132, 199, 0.15)' : 'var(--card-bg)',
-                        border: fulfillmentStatus === 'shipped' ? '2px solid #0284c7' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: fulfillmentStatus === 'shipped' ? '0 4px 14px rgba(2, 132, 199, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        transform: fulfillmentStatus === 'shipped' ? 'translateY(-2px)' : 'none',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: '#0284c7', display: 'block', fontWeight: 700 }}>ENVIADOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0284c7' }}>{metrics.shipped}</span>
-                </button>
-
-                {/* ENTREGADOS */}
-                <button
-                    type="button"
-                    onClick={() => {
-                        setFulfillmentStatus('delivered');
-                        setOrderStatus('all');
-                        setPaymentStatus('all');
-                    }}
-                    style={{
-                        background: fulfillmentStatus === 'delivered' ? 'rgba(5, 150, 105, 0.15)' : 'var(--card-bg)',
-                        border: fulfillmentStatus === 'delivered' ? '2px solid #059669' : '1.5px solid var(--glass-border)',
-                        borderRadius: '12px',
-                        padding: '14px',
-                        textAlign: 'center',
-                        boxShadow: fulfillmentStatus === 'delivered' ? '0 4px 14px rgba(5, 150, 105, 0.25)' : '0 2px 8px rgba(0,0,0,0.04)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                    }}
-                >
-                    <span style={{ fontSize: '0.75rem', color: '#059669', display: 'block', fontWeight: 700 }}>ENTREGADOS</span>
-                    <span style={{ fontSize: '1.4rem', fontWeight: 800, color: '#059669' }}>{metrics.delivered}</span>
-                </button>
+                {[
+                    {
+                        label: 'TOTAL',
+                        val: metrics.total,
+                        color: '#ff6b00',
+                        bg: 'rgba(255, 107, 0, 0.08)',
+                        border: 'rgba(255, 107, 0, 0.3)',
+                        active: orderStatus === 'all' && paymentStatus === 'all' && fulfillmentStatus === 'all',
+                        onClick: () => { setOrderStatus('all'); setPaymentStatus('all'); setFulfillmentStatus('all'); }
+                    },
+                    {
+                        label: 'PENDIENTES',
+                        val: metrics.new,
+                        color: '#d97706',
+                        bg: 'rgba(245, 158, 11, 0.09)',
+                        border: 'rgba(245, 158, 11, 0.32)',
+                        active: orderStatus === 'new',
+                        onClick: () => { setOrderStatus('new'); setPaymentStatus('all'); setFulfillmentStatus('all'); }
+                    },
+                    {
+                        label: 'PAGO PENDIENTE',
+                        val: metrics.pendingPayment,
+                        color: '#ea580c',
+                        bg: 'rgba(234, 88, 12, 0.09)',
+                        border: 'rgba(234, 88, 12, 0.32)',
+                        active: paymentStatus === 'pending',
+                        onClick: () => { setPaymentStatus('pending'); setOrderStatus('all'); setFulfillmentStatus('all'); }
+                    },
+                    {
+                        label: 'PAGADOS',
+                        val: metrics.paid,
+                        color: '#16a34a',
+                        bg: 'rgba(22, 163, 74, 0.09)',
+                        border: 'rgba(22, 163, 74, 0.32)',
+                        active: paymentStatus === 'paid',
+                        onClick: () => { setPaymentStatus('paid'); setOrderStatus('all'); setFulfillmentStatus('all'); }
+                    },
+                    {
+                        label: 'EN PROCESO',
+                        val: metrics.preparing,
+                        color: '#16a34a',
+                        bg: 'rgba(22, 163, 74, 0.09)',
+                        border: 'rgba(22, 163, 74, 0.32)',
+                        active: fulfillmentStatus === 'preparing',
+                        onClick: () => { setFulfillmentStatus('preparing'); setOrderStatus('all'); setPaymentStatus('all'); }
+                    },
+                    {
+                        label: 'EN RUTA',
+                        val: metrics.shipped,
+                        color: '#2563eb',
+                        bg: 'rgba(37, 99, 235, 0.09)',
+                        border: 'rgba(37, 99, 235, 0.32)',
+                        active: fulfillmentStatus === 'shipped',
+                        onClick: () => { setFulfillmentStatus('shipped'); setOrderStatus('all'); setPaymentStatus('all'); }
+                    },
+                    {
+                        label: 'ENTREGADOS',
+                        val: metrics.delivered,
+                        color: '#15803d',
+                        bg: 'rgba(21, 128, 61, 0.1)',
+                        border: 'rgba(21, 128, 61, 0.35)',
+                        active: fulfillmentStatus === 'delivered',
+                        onClick: () => { setFulfillmentStatus('delivered'); setOrderStatus('all'); setPaymentStatus('all'); }
+                    },
+                ].map((m, idx) => (
+                    <button
+                        key={idx}
+                        type="button"
+                        onClick={m.onClick}
+                        style={{
+                            background: m.active ? m.bg : 'var(--card-bg)',
+                            border: m.active ? `2px solid ${m.color}` : `1px solid ${m.border}`,
+                            borderRadius: '10px',
+                            padding: '14px',
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <span style={{ fontSize: '0.72rem', color: m.color, display: 'block', fontWeight: 800, letterSpacing: '0.03em' }}>
+                            {m.label}
+                        </span>
+                        <span style={{ fontSize: '1.35rem', fontWeight: 800, color: m.color }}>
+                            {m.val}
+                        </span>
+                    </button>
+                ))}
             </div>
 
-            {/* SEARCH & FILTERS BAR */}
-            <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '14px', padding: '18px', marginBottom: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
+            {/* SEARCH & FILTERS BAR (SIMPLIFICADA SIN REDUNDANCIAS) */}
+            <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '12px 14px', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                     {/* Search input with Debounce */}
-                    <div style={{ position: 'relative', flex: '2 1 240px' }}>
+                    <div style={{ position: 'relative', flex: '1 1 280px' }}>
                         <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }}>🔍</span>
                         <input
-                            type="text"
+                            type="search"
+                            name="q_search_orders"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck={false}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Buscar por Nº pedido, cliente, correo, teléfono, doc..."
+                            placeholder="Buscar pedido..."
                             style={{
                                 width: '100%',
-                                padding: '10px 14px 10px 36px',
-                                background: 'var(--input-bg)',
-                                border: '1.5px solid var(--glass-border)',
+                                padding: '9px 14px 9px 36px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
                                 borderRadius: '8px',
                                 color: 'var(--input-text)',
-                                fontSize: '0.88rem',
+                                fontSize: '0.86rem',
                                 outline: 'none',
                             }}
                         />
                     </div>
 
-                    {/* Filter: Estado de Pedido */}
-                    <select
-                        value={orderStatus}
-                        onChange={(e) => setOrderStatus(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
-                    >
-                        <option value="all">Estado Pedido: Todos</option>
-                        <option value="new">Nuevo</option>
-                        <option value="confirmed">Confirmado</option>
-                        <option value="processing">Preparando</option>
-                        <option value="ready">Listo para enviar</option>
-                        <option value="completed">Entregado / Completado</option>
-                        <option value="cancelled">Cancelado</option>
-                    </select>
-
-                    {/* Filter: Estado de Pago */}
-                    <select
-                        value={paymentStatus}
-                        onChange={(e) => setPaymentStatus(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
-                    >
-                        <option value="all">Pago: Todos</option>
-                        <option value="pending">Pendiente</option>
-                        <option value="under_review">En revisión</option>
-                        <option value="paid">Pagado</option>
-                        <option value="partial">Pago parcial</option>
-                        <option value="failed">Fallido</option>
-                        <option value="refunded">Reembolsado</option>
-                    </select>
-
                     {/* Filter: Canal / Source */}
                     <select
                         value={source}
                         onChange={(e) => setSource(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
+                        style={{ flex: '1 1 140px', padding: '9px 12px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem', cursor: 'pointer' }}
                     >
                         <option value="all">Canal: Todos</option>
                         <option value="online_store">Tienda online</option>
@@ -541,26 +471,11 @@ export default function AdminOrdersPage() {
                         <option value="other">Otro</option>
                     </select>
 
-                    {/* Filter: Envío */}
-                    <select
-                        value={fulfillmentStatus}
-                        onChange={(e) => setFulfillmentStatus(e.target.value)}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
-                    >
-                        <option value="all">Envío: Todos</option>
-                        <option value="unfulfilled">Pendiente / Sin enviar</option>
-                        <option value="preparing">Preparando</option>
-                        <option value="ready">Listo</option>
-                        <option value="shipped">En tránsito</option>
-                        <option value="delivered">Entregado</option>
-                        <option value="exception">Incidencia</option>
-                    </select>
-
                     {/* Filter: Fecha */}
                     <select
                         value={dateRange}
                         onChange={(e) => setDateRange(e.target.value as 'all' | 'today' | 'yesterday' | 'last_7_days' | 'last_30_days' | 'this_month')}
-                        style={{ padding: '10px 12px', background: 'var(--input-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem' }}
+                        style={{ flex: '1 1 140px', padding: '9px 12px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', color: 'var(--input-text)', fontSize: '0.85rem', cursor: 'pointer' }}
                     >
                         <option value="all">Fecha: Todas</option>
                         <option value="today">Hoy</option>
@@ -570,22 +485,24 @@ export default function AdminOrdersPage() {
                         <option value="this_month">Este mes</option>
                     </select>
 
-                    {/* Clear Filters Button */}
-                    <button
-                        onClick={handleClearFilters}
-                        style={{
-                            padding: '10px 14px',
-                            background: 'var(--input-bg)',
-                            border: '1.5px solid var(--glass-border)',
-                            borderRadius: '8px',
-                            color: 'var(--text-muted)',
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                        }}
-                    >
-                        Limpiar filtros
-                    </button>
+                    {/* Clear Filters Button (solo aparece cuando hay algún filtro activo) */}
+                    {(searchQuery || orderStatus !== 'all' || paymentStatus !== 'all' || fulfillmentStatus !== 'all' || source !== 'all' || dateRange !== 'all') && (
+                        <button
+                            onClick={handleClearFilters}
+                            style={{
+                                padding: '9px 12px',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '8px',
+                                color: 'var(--foreground)',
+                                fontSize: '0.82rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                            }}
+                        >
+                            ✕ Limpiar
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -593,8 +510,8 @@ export default function AdminOrdersPage() {
             {selectedOrderIds.length > 0 && (
                 <div
                     style={{
-                        background: 'rgba(249, 115, 22, 0.12)',
-                        border: '1px solid rgba(249, 115, 22, 0.4)',
+                        background: 'var(--card-bg)',
+                        border: '1.5px solid var(--foreground)',
                         borderRadius: '10px',
                         padding: '12px 18px',
                         marginBottom: '16px',
@@ -605,7 +522,7 @@ export default function AdminOrdersPage() {
                         gap: '12px',
                     }}
                 >
-                    <span style={{ fontWeight: 700, color: '#f97316', fontSize: '0.9rem' }}>
+                    <span style={{ fontWeight: 700, color: 'var(--foreground)', fontSize: '0.9rem' }}>
                         {selectedOrderIds.length} {selectedOrderIds.length === 1 ? 'pedido seleccionado' : 'pedidos seleccionados'}
                     </span>
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -621,14 +538,14 @@ export default function AdminOrdersPage() {
                             disabled={isPending}
                             style={{ padding: '6px 12px', background: '#d97706', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                         >
-                            📦 Marcar Preparando
+                            Marcar Preparando
                         </button>
                         <button
                             onClick={() => handleBulkAction('ship')}
                             disabled={isPending}
                             style={{ padding: '6px 12px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}
                         >
-                            🚚 Marcar Enviados
+                            Marcar Enviados
                         </button>
                     </div>
                 </div>
@@ -644,8 +561,8 @@ export default function AdminOrdersPage() {
                             href="/admin/pedidos/nuevo"
                             style={{
                                 padding: '10px 18px',
-                                background: 'var(--gradient-main)',
-                                color: 'white',
+                                background: 'var(--foreground)',
+                                color: 'var(--card-bg)',
                                 borderRadius: '8px',
                                 textDecoration: 'none',
                                 fontWeight: 700,
@@ -657,11 +574,108 @@ export default function AdminOrdersPage() {
                     }
                 />
             ) : (
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
+                <>
+                    {/* VISTA TARJETAS MÓVIL (<= 768px) */}
+                    <div className="admin-mobile-only" style={{ marginBottom: '20px' }}>
+                        {loading ? (
+                            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--card-bg)', borderRadius: '14px', border: '1px solid var(--glass-border)' }}>
+                                Cargando pedidos...
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {orders.map((order) => (
+                                    <div
+                                        key={order.id}
+                                        style={{
+                                            background: 'var(--card-bg)',
+                                            border: '1px solid var(--glass-border)',
+                                            borderRadius: '14px',
+                                            padding: '14px 16px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '10px',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <Link
+                                                    href={`/admin/pedidos/${order.id}`}
+                                                    style={{ color: 'var(--foreground)', fontWeight: 800, fontSize: '0.96rem', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                                                >
+                                                    {order.order_number}
+                                                </Link>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                    {new Date(order.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })} · {new Date(order.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--robotina-orange, #ff6b00)' }}>
+                                                {formatMoney(order.total_amount, order.currency)}
+                                            </div>
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ minWidth: 0 }}>
+                                                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {order.customer_name}
+                                                </div>
+                                                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    {order.customer_phone || order.customer_email || 'Sin contacto'}
+                                                </div>
+                                            </div>
+                                            <AdminStatusBadge status={order.source || 'online_store'} />
+                                        </div>
+
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap', paddingTop: '8px', borderTop: '1px solid var(--glass-border)' }}>
+                                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                <AdminStatusBadge status={order.payment_status || 'pending'} />
+                                                <AdminStatusBadge status={order.fulfillment_status || 'unfulfilled'} />
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                                {order.customer_phone && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleContactWhatsApp(order)}
+                                                        style={{
+                                                            padding: '6px 10px',
+                                                            borderRadius: '8px',
+                                                            background: 'rgba(37, 211, 102, 0.12)',
+                                                            border: '1px solid rgba(37, 211, 102, 0.3)',
+                                                            color: '#16a34a',
+                                                            fontSize: '0.76rem',
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
+                                                        WhatsApp
+                                                    </button>
+                                                )}
+                                                <Link
+                                                    href={`/admin/pedidos/${order.id}`}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        background: 'var(--robotina-orange, #ff6b00)',
+                                                        color: '#ffffff',
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: 700,
+                                                        textDecoration: 'none',
+                                                    }}
+                                                >
+                                                    Ver →
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* VISTA TABLA ESCRITORIO (> 768px) */}
+                    <div className="admin-desktop-only" style={{ background: 'var(--card-bg)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', minWidth: '760px', borderCollapse: 'collapse', fontSize: '0.88rem', textAlign: 'left' }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'rgba(255, 255, 255, 0.02)', color: 'var(--text-muted)' }}>
+                                <tr style={{ borderBottom: '1px solid var(--glass-border)', background: 'var(--input-bg)', color: 'var(--text-muted)' }}>
                                     <th style={{ padding: '14px', width: '40px' }}>
                                         <input
                                             type="checkbox"
@@ -684,7 +698,7 @@ export default function AdminOrdersPage() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={10} style={{ padding: '36px', textAlign: 'center', color: '#a1a1aa' }}>
+                                        <td colSpan={10} style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                             Cargando pedidos...
                                         </td>
                                     </tr>
@@ -698,7 +712,7 @@ export default function AdminOrdersPage() {
                                                 key={order.id}
                                                 style={{
                                                     borderBottom: '1px solid var(--glass-border)',
-                                                    background: isChecked ? 'rgba(249, 115, 22, 0.05)' : 'transparent',
+                                                    background: isChecked ? 'var(--input-bg)' : 'transparent',
                                                 }}
                                             >
                                                 <td style={{ padding: '14px' }}>
@@ -714,27 +728,27 @@ export default function AdminOrdersPage() {
                                                 <td style={{ padding: '14px' }}>
                                                     <Link
                                                         href={`/admin/pedidos/${order.id}`}
-                                                        style={{ color: 'var(--robotina-orange)', fontWeight: 800, textDecoration: 'none' }}
+                                                        style={{ color: 'var(--foreground)', fontWeight: 800, textDecoration: 'underline', textUnderlineOffset: '3px' }}
                                                     >
                                                         {order.order_number}
                                                     </Link>
                                                 </td>
 
                                                 {/* Fecha */}
-                                                <td style={{ padding: '14px', color: '#a1a1aa', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
+                                                <td style={{ padding: '14px', color: 'var(--text-muted)', fontSize: '0.82rem', whiteSpace: 'nowrap' }}>
                                                     {new Date(order.created_at).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
                                                     <br />
-                                                    <span style={{ fontSize: '0.75rem', color: '#71717a' }}>
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                         {new Date(order.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
                                                 </td>
 
                                                 {/* Cliente */}
                                                 <td style={{ padding: '14px' }}>
-                                                    <div style={{ fontWeight: 600, color: 'white' }}>{order.customer_name}</div>
-                                                    <div style={{ fontSize: '0.78rem', color: '#71717a' }}>{order.customer_email}</div>
+                                                    <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>{order.customer_name}</div>
+                                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{order.customer_email}</div>
                                                     {order.customer_phone && (
-                                                        <div style={{ fontSize: '0.75rem', color: '#52525b' }}>📱 {order.customer_phone}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.customer_phone}</div>
                                                     )}
                                                 </td>
 
@@ -742,7 +756,7 @@ export default function AdminOrdersPage() {
                                                 <td style={{ padding: '14px' }}>
                                                     <AdminStatusBadge status={order.source || 'online_store'} />
                                                     {order.source_reference && (
-                                                        <div style={{ fontSize: '0.72rem', color: '#a1a1aa', marginTop: '2px' }}>
+                                                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
                                                             {order.source_reference}
                                                         </div>
                                                     )}
@@ -750,7 +764,7 @@ export default function AdminOrdersPage() {
 
                                                 {/* Total */}
                                                 <td style={{ padding: '14px' }}>
-                                                    <div style={{ fontWeight: 800, color: 'white' }}>
+                                                    <div style={{ fontWeight: 800, color: 'var(--foreground)' }}>
                                                         {formatMoney(order.total_amount, order.currency)}
                                                     </div>
                                                 </td>
@@ -898,6 +912,7 @@ export default function AdminOrdersPage() {
                         </table>
                     </div>
                 </div>
+                </>
             )}
 
             {/* Cancel Modal Confirmation */}

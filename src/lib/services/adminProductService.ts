@@ -69,6 +69,12 @@ export class AdminProductService {
      * Delete product
      */
     static async deleteProduct(id: string) {
+        // Eliminar dependencias primero para evitar errores de llave foránea (si no hay CASCADE)
+        await supabase.from('product_images').delete().eq('product_id', id);
+        await supabase.from('product_variants').delete().eq('product_id', id);
+        await supabase.from('inventory_movements').delete().eq('product_id', id);
+        await supabase.from('order_items').delete().eq('product_id', id);
+
         const { error } = await supabase.from('products').delete().eq('id', id);
         if (error) throw error;
         return true;

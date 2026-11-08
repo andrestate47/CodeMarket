@@ -178,12 +178,14 @@ export async function getStoreAppearanceAction(): Promise<{
 
         const adminClient = createAdminClient();
         
-        // Fetch store name & logo
+        // Fetch store name, logo & metadata
         const { data: storeData } = await adminClient
             .from('stores')
-            .select('name, logo_url')
+            .select('name, logo_url, metadata')
             .limit(1)
             .single();
+
+        const metadata = storeData?.metadata || {};
 
         const { data: appData } = await adminClient
             .from('store_appearance')
@@ -197,7 +199,10 @@ export async function getStoreAppearanceAction(): Promise<{
                 appearance: {
                     ...DEFAULT_STORE_APPEARANCE,
                     store_name: storeData?.name || 'Tienda-Vir',
-                    logo_url: storeData?.logo_url || null,
+                    logo_url: metadata.logo_url || storeData?.logo_url || null,
+                    primary_color: metadata.primary_bg || DEFAULT_STORE_APPEARANCE.primary_color,
+                    secondary_color: metadata.secondary_bg || DEFAULT_STORE_APPEARANCE.secondary_color,
+                    text_color: metadata.primary_text === 'Blanco' ? '#FFFFFF' : (metadata.primary_text === 'Negro' ? '#000000' : DEFAULT_STORE_APPEARANCE.text_color),
                 },
             };
         }
@@ -206,17 +211,17 @@ export async function getStoreAppearanceAction(): Promise<{
             id: String(appData.id),
             store_id: appData.store_id ? String(appData.store_id) : undefined,
             store_name: storeData?.name || 'Tienda-Vir',
-            logo_url: storeData?.logo_url || appData.logo_url || null,
+            logo_url: metadata.logo_url || storeData?.logo_url || appData.logo_url || null,
             promo_bar_enabled: appData.promo_bar_enabled ?? true,
             promo_bar_text: appData.promo_bar_text || DEFAULT_STORE_APPEARANCE.promo_bar_text,
             promo_bar_link: appData.promo_bar_link || DEFAULT_STORE_APPEARANCE.promo_bar_link,
             promo_bar_bg_color: appData.promo_bar_bg_color || DEFAULT_STORE_APPEARANCE.promo_bar_bg_color,
             promo_bar_text_color: appData.promo_bar_text_color || DEFAULT_STORE_APPEARANCE.promo_bar_text_color,
-            primary_color: appData.primary_color || DEFAULT_STORE_APPEARANCE.primary_color,
-            secondary_color: appData.secondary_color || DEFAULT_STORE_APPEARANCE.secondary_color,
+            primary_color: metadata.primary_bg || appData.primary_color || DEFAULT_STORE_APPEARANCE.primary_color,
+            secondary_color: metadata.secondary_bg || appData.secondary_color || DEFAULT_STORE_APPEARANCE.secondary_color,
             background_color: appData.background_color || DEFAULT_STORE_APPEARANCE.background_color,
             surface_color: appData.surface_color || DEFAULT_STORE_APPEARANCE.surface_color,
-            text_color: appData.text_color || DEFAULT_STORE_APPEARANCE.text_color,
+            text_color: metadata.primary_text === 'Blanco' ? '#FFFFFF' : (metadata.primary_text === 'Negro' ? '#000000' : (appData.text_color || DEFAULT_STORE_APPEARANCE.text_color)),
         };
 
         appearanceCache = { data: resultAppearance, timestamp: Date.now() };

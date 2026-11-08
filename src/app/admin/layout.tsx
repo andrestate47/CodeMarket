@@ -8,7 +8,7 @@ import AdminTopbar from '@/components/admin/AdminTopbar';
 import AdminMobileDrawer from '@/components/admin/AdminMobileDrawer';
 import AdminBreadcrumbs from '@/components/admin/AdminBreadcrumbs';
 
-import { hasAdminPanelAccess } from '@/lib/auth/permissions';
+import { checkAdminAccessAction } from '@/modules/products/actions';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -25,56 +25,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         (async () => {
             try {
                 const isPlaceholderUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-supabase-project');
-                const hasAdminToken = typeof document !== 'undefined' && (
-                    document.cookie.includes('dev-admin-demo-token') ||
-                    document.cookie.includes('tiendavir-admin-token') ||
-                    document.cookie.includes('sb-access-token')
-                );
-
-                if (isPlaceholderUrl || hasAdminToken) {
-                    if (isMounted) {
-                        setAdminEmail('andresfuigueroa@gmail.com');
-                        setAdminName('Andrés Tate (Admin)');
-                        setAuthorized(true);
-                    }
+                if (isPlaceholderUrl) {
+                    // Modo demo local sin Supabase configurado
+                    if (isMounted) setAuthorized(true);
                     return;
                 }
 
                 const { data: { session } } = await supabase.auth.getSession();
                 if (!session?.user) {
-                    if (isMounted) {
-                        router.push('/login?redirect=/admin');
-                    }
+                    if (isMounted) router.replace('/login?redirect=/admin');
                     return;
                 }
 
-                // Concurrently fetch profile role and pending orders count
-                const [profileRes, pendingOrdersRes] = await Promise.all([
-                    supabase
-                        .from('profiles')
-                        .select('role, full_name, email')
-                        .eq('id', session.user.id)
-                        .single(),
-                    supabase
-                        .from('orders')
-                        .select('id', { count: 'exact', head: true })
-                        .eq('payment_status', 'pending')
-                ]);
+                // Verificación en el servidor: solo correos en ADMIN_EMAILS
+                const access = await checkAdminAccessAction(session.access_token);
+                if (!access.isAdmin) {
+                    if (isMounted) router.replace('/dashboard?error=no-admin');
+                    return;
+                }
 
-                const profile = profileRes.data;
-                const pendingCount = pendingOrdersRes.count || 0;
-
-                const role = profile?.role || (session.user.user_metadata?.role as string) || 'admin';
+                const { count: pendingCount } = await supabase
+                    .from('orders')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('payment_status', 'pending');
 
                 if (isMounted) {
-                    setAdminEmail(profile?.email || session.user.email || 'admin@tiendavir.com');
-                    setAdminName(profile?.full_name || session.user.user_metadata?.full_name || 'Administrador');
-                    setPendingOrdersCount(pendingCount);
+                    setAdminEmail(access.email || session.user.email || '');
+                    setAdminName(access.name || 'Administrador');
+                    setPendingOrdersCount(pendingCount || 0);
                     setAuthorized(true);
                 }
             } catch {
                 if (isMounted) {
-                    router.push('/login');
+                    router.replace('/login');
                 }
             } finally {
                 if (isMounted) {

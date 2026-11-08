@@ -71,12 +71,14 @@ export default function PeriodSelector({
                 <div style={{
                     display: 'flex',
                     alignItems: 'center',
+                    flexWrap: 'wrap',
                     gap: '8px',
                     background: 'var(--card-bg)',
                     border: '1px solid var(--glass-border)',
                     padding: '6px 12px',
                     borderRadius: '8px',
                     fontSize: '0.8rem',
+                    maxWidth: '100%',
                 }}>
                     <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Desde:</span>
                     <input

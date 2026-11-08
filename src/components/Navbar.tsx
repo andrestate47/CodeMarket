@@ -143,10 +143,12 @@ export default function Navbar({ storeName = 'VapeCommerce', logoUrl = '/LogoTie
             <div className={styles.container}>
                 {/* 1. BRAND LOGO (STOREFRONT) */}
                 <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}>
-                    <Image src={logoUrl || '/LogoTienda.png'} alt="Logo" width={60} height={60} style={{ objectFit: 'contain' }} unoptimized priority />
+                    {logoUrl ? (
+                        <Image src={logoUrl} alt={storeName || "Logo"} width={60} height={60} style={{ objectFit: 'contain' }} unoptimized priority />
+                    ) : null}
                     <span style={{ fontSize: '1.3rem', fontWeight: 800 }}>
-                        <span style={{ color: 'var(--foreground)' }}>Vape</span>
-                        <span style={{ color: '#f97316' }}>Commerce</span>
+                        <span style={{ color: 'var(--foreground)' }}>{storeName?.substring(0, Math.ceil(storeName.length / 2))}</span>
+                        <span style={{ color: 'var(--primary)' }}>{storeName?.substring(Math.ceil(storeName.length / 2))}</span>
                     </span>
                 </Link>
                 {/* 2. DESKTOP SEARCH BAR (CENTER) */}

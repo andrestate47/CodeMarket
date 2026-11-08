@@ -393,7 +393,7 @@ export default function AdminReportsPage() {
             </div>
 
             {/* METRICS STAT GRID FOR SELECTED PERIOD */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
+            <div className="admin-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
                 <AdminStatCard
                     title="Ventas del Periodo"
                     value={formatMoney(metrics.totalSales)}
@@ -435,7 +435,7 @@ export default function AdminReportsPage() {
             <SalesPerformance />
 
             {/* CHANNEL BREAKDOWN & TOP PRODUCTS */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+            <div className="admin-panel-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
                 {/* Canal de Ventas */}
                 <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', padding: '24px' }}>
                     <h3 style={{ margin: '0 0 16px 0', fontSize: '1rem', fontWeight: 800, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -27,7 +27,7 @@ export default function CategoryGridSection({ categories }: CategoryGridSectionP
         <section className={styles.section} id="categorias">
             <div className={styles.container}>
                 <div className={styles.header}>
-                    <span className={styles.sectionBadge}>EXPLORA EL CATÁLOGO</span>
+
                     <h2 className={styles.title}>Explora por categoría</h2>
                     <p className={styles.subtitle}>
                         Encuentra rápidamente los productos que buscas seleccionando tu categoría de interés.

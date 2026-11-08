@@ -1,9 +1,9 @@
 .section {
     width: 100%;
     padding: 72px 0;
-    background: var(--background, #070707);
+    background: linear-gradient(180deg, rgba(255, 107, 0, 0.06) 0%, var(--background) 100%);
     color: var(--foreground, #ffffff);
-    border-bottom: 1px solid var(--glass-border, rgba(255, 255, 255, 0.06));
+    border-bottom: 1px solid var(--glass-border);
 }
 
 .container {

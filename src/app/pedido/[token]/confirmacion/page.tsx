@@ -156,7 +156,7 @@ export default function OrderConfirmationPage() {
                     <p className={styles.subtitle}>
                         {isQuote
                             ? 'Hemos registrado tu solicitud. Nuestro equipo revisará los detalles y te responderá en breve.'
-                            : 'Tu pedido ha sido registrado en el sistema. A continuación encontrarás las instrucciones para completar tu pago.'}
+                            : '¡Tu pedido ya fue registrado! Elige cómo deseas finalizar tu compra: puedes pagar de una vez aquí mismo o continuar la compra por WhatsApp.'}
                     </p>
 
                     <div className={styles.orderBadgeRow}>
@@ -166,9 +166,12 @@ export default function OrderConfirmationPage() {
                         {getPaymentStatusBadge()}
                     </div>
 
-                    {/* Instruction Box by Payment Method */}
+                    {/* OPCIÓN 1: PAGAR DE UNA VEZ */}
                     {!isQuote && (
                         <div className={styles.paymentBox}>
+                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--robotina-orange)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
+                                Opción 1 · Pagar de una vez desde aquí
+                            </div>
                             <h3 className={styles.paymentBoxTitle}>
                                 <span>💳</span> Método Seleccionado: {methodConfig?.name || order.payment_method.toUpperCase()}
                             </h3>
@@ -316,14 +319,16 @@ export default function OrderConfirmationPage() {
                             ? order.order_items.map(i => `${i.product_name} (x${i.quantity})`).join(', ')
                             : 'Productos varios';
 
-                        const messageText = `Hola TiendaVir, acabo de realizar una compra:\n\n` +
+                        const messageText = `Hola TiendaVir, acabo de registrar mi pedido en la web y deseo continuar con mi compra:\n\n` +
                             `📋 *Pedido:* ${order.order_number}\n` +
                             `👤 *Cliente:* ${order.customer_name || 'Cliente'}\n` +
                             `📱 *Teléfono:* ${order.customer_phone || 'No especificado'}\n` +
                             `📦 *Productos:* ${itemsSummary}\n` +
                             `💵 *Total:* ${order.total_formatted}\n` +
                             `💳 *Método de Pago:* ${methodConfig?.name || order.payment_method.toUpperCase()}\n\n` +
-                            `Adjunto mi comprobante para proceder con la entrega. ¡Muchas gracias!`;
+                            (receiptUploadedUrl
+                                ? `✅ Ya adjunté mi comprobante de pago en la web para proceder con la entrega. ¡Muchas gracias!`
+                                : `Quedo atento(a) para coordinar el pago y la entrega de mi pedido. ¡Muchas gracias!`);
 
                         const waLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageText)}`;
 
@@ -336,12 +341,15 @@ export default function OrderConfirmationPage() {
                                 padding: '20px',
                                 textAlign: 'center'
                             }}>
+                                <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
+                                    Opción 2 · Atención directa
+                                </div>
                                 <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💬</div>
                                 <h3 style={{ margin: '0 0 6px 0', color: '#22c55e', fontSize: '1.1rem', fontWeight: 800 }}>
-                                    ¡Notifica tu Compra al WhatsApp de la Tienda!
+                                    ¿Prefieres continuar tu compra por WhatsApp?
                                 </h3>
                                 <p style={{ margin: '0 0 16px 0', fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                                    Haz clic en el botón a continuación para enviar los detalles de tu orden directamente a nuestro WhatsApp oficial con 1 solo tap:
+                                    Haz clic en el botón de abajo para enviar tu pedido directamente a nuestro WhatsApp oficial y coordinar el pago o envío con nosotros:
                                 </p>
 
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -359,7 +367,7 @@ export default function OrderConfirmationPage() {
                                             boxShadow: '0 4px 14px rgba(34, 197, 94, 0.35)'
                                         }}
                                     >
-                                        <span>📲 Enviar Pedido a WhatsApp ({order.order_number})</span>
+                                        <span>📲 Continuar compra por WhatsApp ({order.order_number})</span>
                                     </a>
 
                                     <Link href="/" className={styles.homeBtn}>

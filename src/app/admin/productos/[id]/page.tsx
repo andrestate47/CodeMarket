@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { fetchCatalogProducts, getInstantProducts, CatalogProduct } from '@/modules/catalog/queries';
+import { CatalogProduct } from '@/modules/catalog/queries';
+import { getAdminProductAction, updateProductAction } from '@/modules/products/actions';
+import { getAccessToken, uploadProductImage } from '@/lib/auth/session';
 import { parseMoneyToCents } from '@/lib/money';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
 
@@ -19,6 +20,7 @@ export default function AdminEditProductPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMsg, setSuccessMsg] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     // Form fields
     const [name, setName] = useState('');
@@ -51,31 +53,25 @@ export default function AdminEditProductPage() {
 
         const loadProductData = async () => {
             if (!productId) return;
-
-            // 1. Check instant local/cache products first
-            const instantList = getInstantProducts();
-            const foundLocal = instantList.find(p => p.id === productId);
-
-            if (foundLocal && isMounted) {
-                populateForm(foundLocal);
-                setLoading(false);
-                return;
+            try {
+                const token = await getAccessToken();
+                const res = await getAdminProductAction(token, productId);
+                if (!isMounted) return;
+                if (res.success) {
+                    populateForm(res.data);
+                } else {
+                    setError(res.error);
+                }
+            } catch (err) {
+                if (isMounted) setError(err instanceof Error ? err.message : 'No se pudo cargar el producto.');
+            } finally {
+                if (isMounted) setLoading(false);
             }
-
-            // 2. Fallback to catalog fetch
-            const allProducts = await fetchCatalogProducts();
-            const found = allProducts.find(p => p.id === productId);
-
-            if (found && isMounted) {
-                populateForm(found);
-            } else if (isMounted) {
-                setError('No se encontró el producto especificado.');
-            }
-            setLoading(false);
         };
 
         loadProductData();
         return () => { isMounted = false; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [productId]);
 
     const populateForm = (prod: CatalogProduct) => {
@@ -116,130 +112,51 @@ export default function AdminEditProductPage() {
         setWholesaleRules((prod.wholesale_rules as { minQuantity: number; price: string }[]) || []);
     };
 
-    const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
+        e.target.value = '';
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_SIZE = 400;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
-                } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
-
-                const compressed = canvas.toDataURL('image/jpeg', 0.75);
-                setImageUrl(compressed);
-            };
-            if (typeof event.target?.result === 'string') {
-                img.src = event.target.result;
-            }
-        };
-        reader.readAsDataURL(file);
+        setUploadingImage(true);
+        setError(null);
+        try {
+            const url = await uploadProductImage(file);
+            setImageUrl(url);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'No se pudo subir la imagen.');
+        } finally {
+            setUploadingImage(false);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (uploadingImage) return;
         setSaving(true);
         setError(null);
         setSuccessMsg(null);
 
         try {
-            const priceAmount = parseMoneyToCents(price);
-            const compareAtAmount = comparePrice ? parseMoneyToCents(comparePrice) : null;
-            const finalImage = imageUrl || '/web-basica-hero.png';
-
-            const catObj = dbCategories.find(c => c.id === selectedCategoryId);
-            const catName = catObj ? catObj.name : 'General';
-
-            const updatedProduct: CatalogProduct = {
-                id: productId,
-                title: name,
-                category: catName,
-                category_id: selectedCategoryId || undefined,
-                description: shortDescription,
-                longDescription: description,
-                price: `S/ ${parseFloat(price).toFixed(2)}`,
-                comparePrice: comparePrice ? `S/ ${parseFloat(comparePrice).toFixed(2)}` : undefined,
-                price_amount: priceAmount,
-                compare_at_amount: compareAtAmount || undefined,
-                features: [shortDescription],
-                type: productType,
-                cta: productType === 'service' ? 'Cotizar Proyecto' : 'Comprar',
-                highlight: featured,
-                color: 'linear-gradient(135deg, #FF6B00 0%, #FF9D00 100%)',
-                image: finalImage,
-                stock_quantity: trackInventory ? (parseInt(stockQuantity, 10) || 10) : 100,
+            const token = await getAccessToken();
+            const res = await updateProductAction(token, productId, {
+                name,
+                short_description: shortDescription,
+                description,
+                image: imageUrl || undefined,
+                price_amount: parseMoneyToCents(price),
+                compare_at_amount: comparePrice ? parseMoneyToCents(comparePrice) : null,
+                product_type: productType,
+                category_id: selectedCategoryId || null,
+                status,
                 track_inventory: trackInventory,
-                status: status,
+                stock_quantity: trackInventory ? (parseInt(stockQuantity, 10) || 0) : 100,
+                featured,
                 variants,
                 wholesale_rules: wholesaleRules,
-            };
+            });
+            if (!res.success) throw new Error(res.error);
 
-            // 1. Save locally in localStorage
-            try {
-                const localSaved: CatalogProduct[] = JSON.parse(localStorage.getItem('admin_products') || '[]');
-                const existingIndex = localSaved.findIndex(p => p.id === productId);
-
-                if (existingIndex >= 0) {
-                    localSaved[existingIndex] = updatedProduct;
-                } else {
-                    localSaved.unshift(updatedProduct);
-                }
-
-                localStorage.setItem('admin_products', JSON.stringify(localSaved.slice(0, 30)));
-            } catch {
-                // Ignore storage errors
-            }
-
-            // 2. Broadcast updates
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new Event('products_updated'));
-            }
-
-            // 3. Attempt update on Supabase DB
-            try {
-                await supabase.from('products').update({
-                    name,
-                    short_description: shortDescription,
-                    description,
-                    product_type: productType,
-                    status: status,
-                    price_amount: priceAmount,
-                    compare_at_amount: compareAtAmount,
-                    track_inventory: trackInventory,
-                    stock_quantity: trackInventory ? parseInt(stockQuantity, 10) : 100,
-                    featured,
-                    image_url: finalImage,
-                    metadata: {
-                        features: [shortDescription],
-                        cta: productType === 'service' ? 'Cotizar Proyecto' : 'Comprar',
-                        image: finalImage,
-                    }
-                }).eq('id', productId);
-            } catch {
-                // Ignore remote sync errors
-            }
-
-            setSuccessMsg('¡Producto actualizado con éxito!');
+            setSuccessMsg('¡Producto actualizado! Los cambios ya se ven en la tienda.');
             setTimeout(() => {
                 router.push('/admin/productos');
                 router.refresh();
@@ -350,7 +267,7 @@ export default function AdminEditProductPage() {
                                                 cursor: 'pointer',
                                             }}
                                         >
-                                            🔄 Cambiar Foto
+                                            {uploadingImage ? '⏳ Subiendo...' : '🔄 Cambiar Foto'}
                                             <input
                                                 type="file"
                                                 accept="image/*"
@@ -404,7 +321,7 @@ export default function AdminEditProductPage() {
                     ></textarea>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Precio Actual (S/) *</label>
                         <input
@@ -436,7 +353,7 @@ export default function AdminEditProductPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Categoría Comercial *</label>
                         <select
@@ -478,7 +395,7 @@ export default function AdminEditProductPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>Control de Inventario</label>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '45px' }}>
@@ -618,7 +535,7 @@ export default function AdminEditProductPage() {
                             boxShadow: '0 4px 14px rgba(255, 107, 0, 0.35)',
                         }}
                     >
-                        {saving ? 'Guardando Cambios...' : 'Guardar Cambios'}
+                        {uploadingImage ? 'Subiendo imagen...' : saving ? 'Guardando Cambios...' : 'Guardar Cambios'}
                     </button>
                     <Link
                         href="/admin/productos"

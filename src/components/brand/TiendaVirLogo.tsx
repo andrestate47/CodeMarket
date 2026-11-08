@@ -12,6 +12,7 @@ interface TiendaVirLogoProps {
     variant?: 'image' | 'svg';
     storeName?: string;
     logoImage?: string;
+    iconOnly?: boolean;
 }
 
 export default function TiendaVirLogo({
@@ -22,6 +23,7 @@ export default function TiendaVirLogo({
     variant = 'image',
     storeName = 'TiendaVir',
     logoImage,
+    iconOnly = false,
 }: TiendaVirLogoProps) {
     const sizeClass = size === 'small' ? styles.sizeSmall : size === 'large' ? styles.sizeLarge : styles.sizeMedium;
 
@@ -82,18 +84,20 @@ export default function TiendaVirLogo({
             </div>
 
             {/* TYPOGRAPHY BRAND NAME & TAGLINE */}
-            <div className={styles.textGroup}>
-                <div className={styles.mainTitle}>
-                    <span className={styles.wordTienda}>{word1}</span>
-                    <span className={styles.wordVir}>{word2}</span>
-                    <span className={styles.trademark}>™</span>
-                </div>
-                {showTagline && (
-                    <div className={styles.tagline}>
-                        {isTiendaVir ? 'Todo lo que querés, en un solo lugar' : 'La tienda oficial de vapeo'}
+            {!iconOnly && (
+                <div className={styles.textGroup}>
+                    <div className={styles.mainTitle}>
+                        <span className={styles.wordTienda}>{word1}</span>
+                        <span className={styles.wordVir}>{word2}</span>
+                        <span className={styles.trademark}>™</span>
                     </div>
-                )}
-            </div>
+                    {showTagline && (
+                        <div className={styles.tagline}>
+                            {isTiendaVir ? 'Todo lo que querés, en un solo lugar' : 'La tienda oficial de vapeo'}
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 

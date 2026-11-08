@@ -10,6 +10,8 @@ import { getProductPricing } from '@/lib/pricing';
 import ProductBadges from './ProductBadges';
 import ProductPrice from './ProductPrice';
 import styles from './ProductCard.module.css';
+import { toast } from 'sonner';
+import { fireAddToCartConfetti } from '@/lib/confetti';
 
 interface CatalogProductCardProps {
     product: PublicProductItem;
@@ -46,6 +48,8 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
             image: product.image_url,
             color: '#181818',
         } as unknown as Product);
+        fireAddToCartConfetti(e);
+        toast.success(`Añadido al carrito: ${product.title}`, { duration: 2000 });
     };
 
     return (

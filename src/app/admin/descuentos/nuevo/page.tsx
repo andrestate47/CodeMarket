@@ -162,7 +162,7 @@ export default function AdminNewDiscountPage() {
                 </div>
 
                 {/* Discount Type & Value */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>
                             Tipo de Descuento *
@@ -213,7 +213,7 @@ export default function AdminNewDiscountPage() {
                 </div>
 
                 {/* Restrictions: Minimum Purchase & Max Uses */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="admin-grid-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 700, marginBottom: '8px', color: 'var(--foreground)' }}>
                             Compra Mínima (S/)

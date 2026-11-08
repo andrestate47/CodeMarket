@@ -106,9 +106,6 @@ export default function ProductCollectionSection({
                 {/* 1. SECTION HEADER */}
                 <div className={styles.sectionHeader}>
                     <div className={styles.titleGroup}>
-                        <span className={styles.sectionBadge}>
-                            {isOffersMode ? 'DESCUENTOS Y PROMOCIONES' : 'CATÁLOGO COMPLETO'}
-                        </span>
                         <h2 className={styles.sectionTitle}>
                             {isOffersMode ? (
                                 <>OFERTAS <span className="text-gradient">ESPECIALES</span></>
@@ -125,13 +122,6 @@ export default function ProductCollectionSection({
                         onSelectCategory={handleSelectCategory}
                         onOpenMobileFilter={() => setMobileDrawerOpen(true)}
                     />
-                </div>
-
-                {/* 2. TOOLBAR (PRODUCT COUNT + SORT SELECTOR) */}
-                <div className={styles.toolbar}>
-                    <ProductCount count={totalCount} categoryName={activeCategoryName} />
-
-                    <ProductSort value={sortBy} onChange={handleSelectSort} />
                 </div>
 
                 {/* 3. MAIN CATALOG GRID / STATES */}

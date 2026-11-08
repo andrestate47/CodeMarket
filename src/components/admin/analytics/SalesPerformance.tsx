@@ -123,9 +123,6 @@ export default function SalesPerformance({
                     <h2 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--foreground)' }}>
                         Rendimiento de Ventas
                     </h2>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-                        Métricas reales de facturación pagada, pedidos y ticket promedio.
-                    </p>
                 </div>
 
                 <PeriodSelector
