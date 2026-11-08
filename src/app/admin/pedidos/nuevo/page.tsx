@@ -1251,8 +1251,9 @@ export default function NewManualOrderPage() {
                         <button
                             type="button"
                             onClick={() => setStep(1)}
+                            title="Volver a Productos"
                             style={{
-                                padding: '9px 16px',
+                                padding: '9px 14px',
                                 background: 'var(--card-bg)',
                                 border: '1.5px solid var(--structural-border, var(--glass-border))',
                                 borderRadius: '10px',
@@ -1262,13 +1263,16 @@ export default function NewManualOrderPage() {
                                 fontWeight: 700,
                                 display: 'inline-flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '8px',
                                 boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
+                                flexShrink: 0,
                             }}
                         >
-                            ← Volver a Productos
+                            <span style={{ fontSize: '1.05rem', fontWeight: 800 }}>←</span>
+                            <span className="admin-desktop-only">Volver a Productos</span>
                         </button>
-                        <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                        <span style={{ fontSize: '0.84rem', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.3 }}>
                             Completa los datos del cliente, canal y entrega para finalizar el pedido.
                         </span>
                     </div>
