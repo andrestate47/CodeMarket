@@ -12,10 +12,11 @@
 
 .card {
     background: var(--card-bg, #121212);
-    border: 1px solid var(--glass-border, #27272a);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
     border-radius: 24px;
     padding: 40px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
 }
 
 .headerIcon {
@@ -25,82 +26,167 @@
 }
 
 .title {
-    font-size: 2rem;
+    font-size: 2.1rem;
     font-weight: 900;
     text-align: center;
     margin: 0 0 12px 0;
     color: var(--foreground);
+    letter-spacing: -0.5px;
 }
 
 .subtitle {
     text-align: center;
     color: var(--text-muted);
-    font-size: 0.95rem;
-    margin: 0 0 24px 0;
+    font-size: 0.96rem;
+    margin: 0 0 28px 0;
+    line-height: 1.5;
 }
 
 .orderBadgeRow {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     flex-wrap: wrap;
     margin-bottom: 32px;
 }
 
 .orderNumberTag {
-    background: rgba(255, 107, 0, 0.12);
-    color: var(--robotina-orange, #FF6B00);
-    border: 1px solid rgba(255, 107, 0, 0.3);
-    padding: 8px 18px;
+    background: var(--background, #f8fafc);
+    color: var(--foreground, #0f172a);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #e2e8f0));
+    padding: 8px 20px;
     border-radius: 999px;
-    font-size: 1.1rem;
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.orderNumberLabel {
+    color: var(--text-muted, #64748b);
+    font-weight: 700;
+}
+
+.orderNumberValue {
+    color: var(--robotina-orange, #FF6B00);
     font-weight: 900;
-    letter-spacing: 0.5px;
 }
 
 .statusTag {
-    padding: 6px 14px;
+    padding: 8px 18px;
     border-radius: 999px;
     font-size: 0.85rem;
     font-weight: 800;
     text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
+/* Estado: Pago Pendiente */
 .statusPending {
-    background: rgba(250, 204, 21, 0.15);
-    color: #facc15;
-    border: 1px solid rgba(250, 204, 21, 0.3);
+    background: #fef3c7;
+    color: #92400e;
+    border: 1.5px solid #fde68a;
 }
 
+/* Estado: En Revisión */
 .statusUnderReview {
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1.5px solid #bae6fd;
 }
 
+/* Estado: Pagado */
 .statusPaid {
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: #dcfce7;
+    color: #166534;
+    border: 1.5px solid #bbf7d0;
 }
 
+/* Ajustes automáticos para Dark Mode en Badges */
+:global([data-theme='dark']) .statusPending,
+:global(.dark) .statusPending {
+    background: rgba(245, 158, 11, 0.16);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.35);
+}
+
+:global([data-theme='dark']) .statusUnderReview,
+:global(.dark) .statusUnderReview {
+    background: rgba(59, 130, 246, 0.16);
+    color: #60a5fa;
+    border-color: rgba(59, 130, 246, 0.35);
+}
+
+:global([data-theme='dark']) .statusPaid,
+:global(.dark) .statusPaid {
+    background: rgba(34, 197, 94, 0.16);
+    color: #4ade80;
+    border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* Tarjeta de Instrucciones de Pago */
 .paymentBox {
-    background: rgba(24, 24, 27, 0.8);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
+    background: var(--background, #f8fafc);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #e2e8f0));
+    border-radius: 20px;
     padding: 28px;
     margin-bottom: 32px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.paymentBoxBadge {
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: var(--robotina-orange, #FF6B00);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 107, 0, 0.08);
+    border: 1px solid rgba(255, 107, 0, 0.2);
+    padding: 4px 10px;
+    border-radius: 20px;
 }
 
 .paymentBoxTitle {
-    font-size: 1.1rem;
-    font-weight: 800;
+    font-size: 1.2rem;
+    font-weight: 900;
     color: var(--foreground);
-    margin: 0 0 16px 0;
+    margin: 8px 0 12px 0;
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+.paymentTotalRow {
+    font-size: 0.98rem;
+    color: var(--foreground);
+    margin: 0 0 18px 0;
+    line-height: 1.5;
+}
+
+.paymentTotalAmount {
+    color: var(--robotina-orange, #FF6B00);
+    font-size: 1.25rem;
+    font-weight: 900;
+    margin-left: 4px;
+}
+
+.paymentInstructions {
+    font-size: 0.92rem;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
 }
 
 .qrContainer {
@@ -112,78 +198,108 @@
 }
 
 .qrImage {
-    border-radius: 12px;
-    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    border: 1.5px solid var(--structural-border, var(--glass-border));
     background: white;
-    padding: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+    flex-shrink: 0;
 }
 
 .paymentMetaList {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
+    min-width: 260px;
 }
 
 .metaItem {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(0, 0, 0, 0.2);
-    padding: 10px 14px;
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: var(--card-bg, #ffffff);
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1.5px solid var(--structural-border, var(--glass-border, #e2e8f0));
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+    gap: 12px;
+}
+
+.metaLabel {
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    font-weight: 700;
+}
+
+.metaValue {
+    font-size: 0.95rem;
+    color: var(--foreground);
+    font-weight: 800;
 }
 
 .copyBtn {
-    background: var(--input-bg);
-    border: 1px solid var(--glass-border);
-    color: var(--foreground);
-    padding: 4px 10px;
-    border-radius: 6px;
+    background: rgba(255, 107, 0, 0.08);
+    border: 1px solid rgba(255, 107, 0, 0.25);
+    color: var(--robotina-orange, #FF6B00);
+    padding: 5px 12px;
+    border-radius: 8px;
     font-size: 0.78rem;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .copyBtn:hover {
-    border-color: var(--robotina-orange);
-    color: var(--robotina-orange);
+    background: var(--robotina-orange, #FF6B00);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(255, 107, 0, 0.3);
 }
 
 .banksGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
+    gap: 16px;
     margin-top: 16px;
 }
 
 .bankCard {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
-    padding: 14px;
+    background: var(--card-bg, #ffffff);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #e2e8f0));
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .bankName {
-    font-weight: 800;
-    color: var(--robotina-orange);
-    margin-bottom: 8px;
+    font-weight: 900;
+    font-size: 1rem;
+    color: var(--robotina-orange, #FF6B00);
+    margin-bottom: 10px;
+}
+
+.bankDetails {
+    font-size: 0.88rem;
+    color: var(--foreground);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 /* Upload Receipt Section */
 .receiptSection {
-    background: rgba(255, 107, 0, 0.06);
-    border: 1px dashed rgba(255, 107, 0, 0.3);
-    border-radius: 16px;
+    background: rgba(255, 107, 0, 0.04);
+    border: 1.5px dashed rgba(255, 107, 0, 0.35);
+    border-radius: 18px;
     padding: 24px;
     margin-bottom: 32px;
 }
 
 .receiptTitle {
     font-size: 1.05rem;
-    font-weight: 800;
+    font-weight: 900;
     margin: 0 0 8px 0;
     color: var(--foreground);
 }
@@ -196,34 +312,39 @@
 }
 
 .fileInput {
-    background: var(--background);
-    border: 1px solid var(--glass-border);
-    border-radius: 8px;
+    background: var(--card-bg, #ffffff);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #e2e8f0));
+    border-radius: 10px;
     padding: 10px 14px;
     color: var(--foreground);
     font-size: 0.9rem;
+    width: 100%;
 }
 
 .uploadBtn {
-    background: var(--robotina-orange, #FF6B00);
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8A00 100%);
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 12px 20px;
+    border-radius: 10px;
+    padding: 12px 22px;
     font-weight: 800;
     font-size: 0.95rem;
     cursor: pointer;
     align-self: flex-start;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(255, 107, 0, 0.35);
 }
 
 .uploadBtn:hover {
-    background: #FF8A00;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(255, 107, 0, 0.45);
 }
 
 .uploadBtn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .actionsRow {
@@ -234,34 +355,66 @@
 }
 
 .homeBtn {
-    background: var(--input-bg);
-    border: 1px solid var(--glass-border);
+    background: var(--card-bg, #ffffff);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #e2e8f0));
     color: var(--foreground);
-    padding: 14px 24px;
+    padding: 14px 26px;
     border-radius: 12px;
     font-weight: 800;
     text-decoration: none;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .homeBtn:hover {
-    border-color: var(--foreground);
+    border-color: var(--robotina-orange);
+    color: var(--robotina-orange);
+    transform: translateY(-1px);
 }
 
 .whatsappBtn {
     background: #25D366;
     color: white;
     border: none;
-    padding: 14px 24px;
+    padding: 14px 26px;
     border-radius: 12px;
     font-weight: 800;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(37, 211, 102, 0.35);
 }
 
 .whatsappBtn:hover {
     background: #1da851;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(37, 211, 102, 0.45);
+}
+
+@media (max-width: 600px) {
+    .card {
+        padding: 24px 16px;
+        border-radius: 18px;
+    }
+    .paymentBox {
+        padding: 20px 14px;
+    }
+    .title {
+        font-size: 1.6rem;
+    }
+    .metaItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .actionsRow {
+        flex-direction: column;
+    }
+    .homeBtn, .whatsappBtn {
+        width: 100%;
+        text-align: center;
+        justify-content: center;
+    }
 }

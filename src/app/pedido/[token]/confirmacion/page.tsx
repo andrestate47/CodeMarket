@@ -161,7 +161,8 @@ export default function OrderConfirmationPage() {
 
                     <div className={styles.orderBadgeRow}>
                         <div className={styles.orderNumberTag}>
-                            Número: {order.order_number}
+                            <span className={styles.orderNumberLabel}>Número:</span>
+                            <span className={styles.orderNumberValue}>{order.order_number}</span>
                         </div>
                         {getPaymentStatusBadge()}
                     </div>
@@ -169,21 +170,21 @@ export default function OrderConfirmationPage() {
                     {/* OPCIÓN 1: PAGAR DE UNA VEZ */}
                     {!isQuote && (
                         <div className={styles.paymentBox}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--robotina-orange)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '6px' }}>
-                                Opción 1 · Pagar de una vez desde aquí
+                            <div className={styles.paymentBoxBadge}>
+                                ⚡ Opción 1 · Pagar de una vez desde aquí
                             </div>
                             <h3 className={styles.paymentBoxTitle}>
                                 <span>💳</span> Método Seleccionado: {methodConfig?.name || order.payment_method.toUpperCase()}
                             </h3>
 
-                            <p style={{ margin: '0 0 16px 0', fontSize: '0.92rem', color: '#ccc', lineHeight: '1.5' }}>
-                                Total a pagar: <strong style={{ color: 'var(--robotina-orange)', fontSize: '1.1rem' }}>{order.total_formatted}</strong>
+                            <p className={styles.paymentTotalRow}>
+                                Total a pagar: <strong className={styles.paymentTotalAmount}>{order.total_formatted}</strong>
                             </p>
 
                             {/* YAPE / PLIN Instructions */}
                             {(order.payment_method === 'yape' || order.payment_method === 'plin') && (
                                 <div>
-                                    <p style={{ fontSize: '0.9rem', color: '#bbb', marginBottom: '14px' }}>
+                                    <p className={styles.paymentInstructions}>
                                         {methodConfig?.instructions || 'Realiza la transferencia por la aplicación móvil usando los datos especificados.'}
                                     </p>
                                     <div className={styles.qrContainer}>
@@ -200,9 +201,9 @@ export default function OrderConfirmationPage() {
                                         )}
                                         <div className={styles.paymentMetaList}>
                                             <div className={styles.metaItem}>
-                                                <span>Número {methodConfig?.name || 'Yape'}:</span>
+                                                <span className={styles.metaLabel}>Número {methodConfig?.name || 'Yape'}:</span>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <strong>{methodConfig?.number || '+51 999 999 999'}</strong>
+                                                    <strong className={styles.metaValue}>{methodConfig?.number || '+51 999 999 999'}</strong>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCopy(methodConfig?.number || '+51999999999', 'Número')}
@@ -214,14 +215,14 @@ export default function OrderConfirmationPage() {
                                             </div>
 
                                             <div className={styles.metaItem}>
-                                                <span>Titular:</span>
-                                                <strong>{methodConfig?.holder || 'CodeMarket Perú'}</strong>
+                                                <span className={styles.metaLabel}>Titular:</span>
+                                                <strong className={styles.metaValue}>{methodConfig?.holder || 'CodeMarket Perú'}</strong>
                                             </div>
 
                                             <div className={styles.metaItem}>
-                                                <span>Concepto / Nota:</span>
+                                                <span className={styles.metaLabel}>Concepto / Nota:</span>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                    <strong style={{ color: 'var(--robotina-orange)' }}>{order.order_number}</strong>
+                                                    <strong className={styles.orderNumberValue}>{order.order_number}</strong>
                                                     <button
                                                         type="button"
                                                         onClick={() => handleCopy(order.order_number, 'Número de pedido')}
@@ -239,7 +240,7 @@ export default function OrderConfirmationPage() {
                             {/* BANK TRANSFER Instructions */}
                             {order.payment_method === 'bank_transfer' && (
                                 <div>
-                                    <p style={{ fontSize: '0.9rem', color: '#bbb', marginBottom: '14px' }}>
+                                    <p className={styles.paymentInstructions}>
                                         {methodConfig?.instructions || 'Transfiere a cualquiera de nuestras cuentas e incluye tu número de pedido en la glosa.'}
                                     </p>
                                     <div className={styles.banksGrid}>
@@ -249,7 +250,7 @@ export default function OrderConfirmationPage() {
                                         ]).map((b: { bank: string; account: string; cci?: string; holder: string }, idx: number) => (
                                             <div key={idx} className={styles.bankCard}>
                                                 <div className={styles.bankName}>Banco {b.bank}</div>
-                                                <div style={{ fontSize: '0.85rem', color: '#ccc', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                <div className={styles.bankDetails}>
                                                     <div>Cuenta: <strong>{b.account}</strong></div>
                                                     {b.cci && <div>CCI: <strong style={{ fontSize: '0.8rem' }}>{b.cci}</strong></div>}
                                                     <div>Titular: {b.holder}</div>
@@ -271,7 +272,7 @@ export default function OrderConfirmationPage() {
                             {/* CASH ON DELIVERY Instructions */}
                             {order.payment_method === 'cash_on_delivery' && (
                                 <div>
-                                    <p style={{ fontSize: '0.92rem', color: '#ddd', margin: 0, lineHeight: 1.6 }}>
+                                    <p style={{ fontSize: '0.94rem', color: 'var(--foreground)', margin: 0, lineHeight: 1.6 }}>
                                         🛵 <strong>Pago contra entrega confirmado.</strong> Nuestro repartidor llevará tu pedido a la dirección indicada. Recuerda tener listo el monto exacto de <strong style={{ color: 'var(--robotina-orange)' }}>{order.total_formatted}</strong> en efectivo o pagar con tarjeta mediante POS móvil.
                                     </p>
                                 </div>
