@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import AdminPageHeader from '@/components/admin/AdminPageHeader';
@@ -11,6 +11,169 @@ import {
     PaymentMethodSetting,
     ShippingMethodSetting,
 } from '@/modules/config/storeSettingsActions';
+
+const COUNTRY_DIAL_CODES = [
+    { iso: 'pe', name: 'Perú', dial: '+51' },
+    { iso: 'cl', name: 'Chile', dial: '+56' },
+    { iso: 'co', name: 'Colombia', dial: '+57' },
+    { iso: 'ec', name: 'Ecuador', dial: '+593' },
+    { iso: 'bo', name: 'Bolivia', dial: '+591' },
+    { iso: 'ar', name: 'Argentina', dial: '+54' },
+    { iso: 'mx', name: 'México', dial: '+52' },
+    { iso: 'us', name: 'Estados Unidos', dial: '+1' },
+    { iso: 'es', name: 'España', dial: '+34' },
+    { iso: 'br', name: 'Brasil', dial: '+55' },
+    { iso: 'uy', name: 'Uruguay', dial: '+598' },
+    { iso: 'py', name: 'Paraguay', dial: '+595' },
+    { iso: 've', name: 'Venezuela', dial: '+58' },
+    { iso: 'pa', name: 'Panamá', dial: '+507' },
+    { iso: 'cr', name: 'Costa Rica', dial: '+506' },
+    { iso: 'gt', name: 'Guatemala', dial: '+502' },
+    { iso: 'sv', name: 'El Salvador', dial: '+503' },
+    { iso: 'hn', name: 'Honduras', dial: '+504' },
+    { iso: 'ni', name: 'Nicaragua', dial: '+505' },
+    { iso: 'do', name: 'Rep. Dominicana', dial: '+1' },
+];
+
+interface CountryPickerProps {
+    value: string;
+    onChange: (code: string) => void;
+}
+
+function CountryDialPicker({ value, onChange }: CountryPickerProps) {
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const ref = useRef<HTMLDivElement>(null);
+
+    const current = useMemo(() => {
+        return COUNTRY_DIAL_CODES.find(c => c.dial === value) || COUNTRY_DIAL_CODES[0];
+    }, [value]);
+
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const filtered = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return COUNTRY_DIAL_CODES;
+        return COUNTRY_DIAL_CODES.filter(c => c.name.toLowerCase().includes(q) || c.dial.includes(q) || c.iso.includes(q));
+    }, [search]);
+
+    return (
+        <div ref={ref} style={{ position: 'relative' }}>
+            <button
+                type="button"
+                onClick={() => { setOpen(prev => !prev); setSearch(''); }}
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '4px 6px',
+                    borderRadius: '6px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'var(--card-bg)',
+                    color: 'var(--foreground)',
+                    cursor: 'pointer',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    outline: 'none',
+                    userSelect: 'none',
+                }}
+            >
+                <img
+                    src={`https://flagcdn.com/w40/${current.iso}.png`}
+                    alt={current.name}
+                    style={{ width: '18px', height: '13px', objectFit: 'cover', borderRadius: '2px', boxShadow: '0 0 0 1px rgba(0,0,0,0.1)' }}
+                />
+                <span>{current.dial}</span>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>▾</span>
+            </button>
+
+            {open && (
+                <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 6px)',
+                    left: 0,
+                    width: '260px',
+                    maxHeight: '260px',
+                    background: 'var(--card-bg)',
+                    border: '1.5px solid var(--structural-border, var(--glass-border))',
+                    borderRadius: '10px',
+                    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.25)',
+                    zIndex: 100,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                }}>
+                    <div style={{ padding: '8px', borderBottom: '1px solid var(--glass-border)', background: 'var(--background)' }}>
+                        <input
+                            type="search"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Buscar país o código (+51)..."
+                            autoFocus
+                            style={{
+                                width: '100%',
+                                padding: '6px 10px',
+                                fontSize: '0.78rem',
+                                borderRadius: '6px',
+                                border: '1px solid var(--glass-border)',
+                                background: 'var(--card-bg)',
+                                color: 'var(--foreground)',
+                                outline: 'none',
+                            }}
+                        />
+                    </div>
+                    <div style={{ overflowY: 'auto', flex: 1 }}>
+                        {filtered.map(c => {
+                            const isSelected = c.dial === current.dial && c.iso === current.iso;
+                            return (
+                                <button
+                                    key={c.iso}
+                                    type="button"
+                                    onClick={() => { onChange(c.dial); setOpen(false); }}
+                                    style={{
+                                        width: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '7px 10px',
+                                        border: 'none',
+                                        borderBottom: '1px solid var(--glass-border)',
+                                        background: isSelected ? 'rgba(255, 107, 0, 0.08)' : 'transparent',
+                                        color: isSelected ? 'var(--robotina-orange, #ff6b00)' : 'var(--foreground)',
+                                        cursor: 'pointer',
+                                        fontSize: '0.8rem',
+                                        fontWeight: isSelected ? 800 : 500,
+                                        textAlign: 'left',
+                                    }}
+                                >
+                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                        <img
+                                            src={`https://flagcdn.com/w40/${c.iso}.png`}
+                                            alt={c.name}
+                                            style={{ width: '18px', height: '13px', objectFit: 'cover', borderRadius: '2px', boxShadow: '0 0 0 1px rgba(0,0,0,0.1)' }}
+                                        />
+                                        <span>{c.name}</span>
+                                    </span>
+                                    <span style={{ fontSize: '0.78rem', color: isSelected ? 'var(--robotina-orange, #ff6b00)' : 'var(--text-muted)', fontWeight: 700 }}>
+                                        {c.dial}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 // Componente principal envuelto para evitar problemas con useSearchParams en Next.js
 export default function AdminSettingsPage() {
@@ -199,87 +362,255 @@ function SettingsContent() {
                             </div>
                     
                             {/* Información de la tienda */}
-                            <div>
-                                <h4 style={{ margin: '0 0 16px 0', fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>Información de la tienda</h4>
+                            <div style={{
+                                background: 'var(--card-bg)',
+                                border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                borderRadius: '14px',
+                                padding: '20px 22px',
+                                boxShadow: 'var(--shadow-sm)',
+                                marginBottom: '20px',
+                            }}>
+                                <div style={{ marginBottom: '18px', paddingBottom: '12px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                            Información de la tienda
+                                        </h4>
+                                        <p style={{ margin: '4px 0 0 0', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                                            Datos de contacto, teléfonos y preferencias operativas de tu negocio
+                                        </p>
+                                    </div>
+                                    <span style={{ fontSize: '0.72rem', background: 'rgba(255, 107, 0, 0.1)', color: 'var(--robotina-orange, #ff6b00)', padding: '3px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                                        General
+                                    </span>
+                                </div>
                                 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Nombre del Propietario</div>
-                                        <input type="text" value={settings.ownerName || ''} onChange={(e) => setSettings(prev => ({ ...prev, ownerName: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }} placeholder="Tu nombre" />
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+                                    {/* Nombre del Propietario */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            Nombre del Propietario
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={settings.ownerName || ''}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, ownerName: e.target.value }))}
+                                            style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px', fontWeight: 600 }}
+                                            placeholder="Tu nombre"
+                                        />
                                     </div>
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Nombre de tienda</div>
-                                        <input type="text" value={settings.storeName} onChange={(e) => setSettings(prev => ({ ...prev, storeName: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }} />
+
+                                    {/* Nombre de tienda */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            Nombre de tienda
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={settings.storeName}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, storeName: e.target.value }))}
+                                            style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px', fontWeight: 600 }}
+                                        />
                                     </div>
                                     
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>E-mail</div>
-                                        <input type="email" value={settings.supportEmail} onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px' }} />
+                                    {/* E-mail */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            E-mail
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={settings.supportEmail}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, supportEmail: e.target.value }))}
+                                            style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', marginTop: '2px', fontWeight: 600 }}
+                                        />
                                     </div>
                                     
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Teléfono</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                                            <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                                                <span role="img" aria-label="Peru flag">🇵🇪</span> (51) <span style={{ fontSize: '0.6rem' }}>▼</span>
-                                            </span>
-                                            <div style={{ width: '1px', height: '14px', background: 'var(--glass-border)' }}></div>
-                                            <input type="text" value={settings.storePhone || ''} onChange={(e) => setSettings(prev => ({ ...prev, storePhone: e.target.value }))} placeholder="926738921" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)' }} />
+                                    {/* Teléfono con Country Dial Picker */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            Teléfono
+                                        </label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                                            <CountryDialPicker
+                                                value={(() => {
+                                                    const match = (settings.storePhone || '').match(/^\+(\d{1,4})/);
+                                                    return match ? `+${match[1]}` : '+51';
+                                                })()}
+                                                onChange={(dial) => {
+                                                    const cleanNum = (settings.storePhone || '').replace(/^\+\d{1,4}\s*/, '');
+                                                    setSettings(prev => ({ ...prev, storePhone: `${dial} ${cleanNum}`.trim() }));
+                                                }}
+                                            />
+                                            <div style={{ width: '1px', height: '16px', background: 'var(--glass-border)' }}></div>
+                                            <input
+                                                type="text"
+                                                value={(settings.storePhone || '').replace(/^\+\d{1,4}\s*/, '')}
+                                                onChange={(e) => {
+                                                    const match = (settings.storePhone || '').match(/^\+(\d{1,4})/);
+                                                    const dial = match ? `+${match[1]}` : '+51';
+                                                    setSettings(prev => ({ ...prev, storePhone: `${dial} ${e.target.value}`.trim() }));
+                                                }}
+                                                placeholder="926 738 921"
+                                                style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}
+                                            />
                                         </div>
                                     </div>
                     
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>WhatsApp</div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
-                                            <span style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                                                <span role="img" aria-label="Peru flag">🇵🇪</span> (51) <span style={{ fontSize: '0.6rem' }}>▼</span>
-                                            </span>
-                                            <div style={{ width: '1px', height: '14px', background: 'var(--glass-border)' }}></div>
-                                            <input type="text" value={settings.whatsappPhone?.replace(/^\+?51\s*/, '')} onChange={(e) => setSettings(prev => ({ ...prev, whatsappPhone: '+51 ' + e.target.value }))} placeholder="926738921" style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)' }} />
+                                    {/* WhatsApp con Country Dial Picker */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            WhatsApp
+                                        </label>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px' }}>
+                                            <CountryDialPicker
+                                                value={(() => {
+                                                    const match = (settings.whatsappPhone || '').match(/^\+(\d{1,4})/);
+                                                    return match ? `+${match[1]}` : '+51';
+                                                })()}
+                                                onChange={(dial) => {
+                                                    const cleanNum = (settings.whatsappPhone || '').replace(/^\+\d{1,4}\s*/, '');
+                                                    setSettings(prev => ({ ...prev, whatsappPhone: `${dial} ${cleanNum}`.trim() }));
+                                                }}
+                                            />
+                                            <div style={{ width: '1px', height: '16px', background: 'var(--glass-border)' }}></div>
+                                            <input
+                                                type="text"
+                                                value={(settings.whatsappPhone || '').replace(/^\+\d{1,4}\s*/, '')}
+                                                onChange={(e) => {
+                                                    const match = (settings.whatsappPhone || '').match(/^\+(\d{1,4})/);
+                                                    const dial = match ? `+${match[1]}` : '+51';
+                                                    setSettings(prev => ({ ...prev, whatsappPhone: `${dial} ${e.target.value}`.trim() }));
+                                                }}
+                                                placeholder="900 000 000"
+                                                style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}
+                                            />
                                         </div>
                                     </div>
                     
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)', position: 'relative' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Rubro de la tienda</div>
-                                        <select value={settings.storeCategory || 'Hogar y Cocina'} onChange={(e) => setSettings(prev => ({ ...prev, storeCategory: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer' }}>
+                                    {/* Rubro de la tienda */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        position: 'relative',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            Rubro de la tienda
+                                        </label>
+                                        <select
+                                            value={settings.storeCategory || 'Hogar y Cocina'}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, storeCategory: e.target.value }))}
+                                            style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer', fontWeight: 600 }}
+                                        >
+                                            <option value="Vape & E-Liquids">Vape & E-Liquids</option>
                                             <option value="Hogar y Cocina">Hogar y Cocina</option>
                                             <option value="Ropa y Accesorios">Ropa y Accesorios</option>
                                             <option value="Tecnología">Tecnología</option>
                                             <option value="Salud y Belleza">Salud y Belleza</option>
+                                            <option value="Alimentos y Bebidas">Alimentos y Bebidas</option>
                                             <option value="Otro">Otro</option>
                                         </select>
-                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.6rem', pointerEvents: 'none', color: 'var(--foreground)' }}>▼</span>
+                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.65rem', pointerEvents: 'none', color: 'var(--text-muted)' }}>▼</span>
                                     </div>
                     
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)', position: 'relative' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>País de origen</div>
-                                        <select value={settings.storeCountry || 'Peru'} onChange={(e) => setSettings(prev => ({ ...prev, storeCountry: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer' }}>
-                                            <option value="Peru">Perú</option>
-                                            <option value="Argentina">Argentina</option>
-                                            <option value="Chile">Chile</option>
-                                            <option value="Colombia">Colombia</option>
+                                    {/* País de origen con banderas */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        position: 'relative',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            País de origen
+                                        </label>
+                                        <select
+                                            value={settings.storeCountry || 'Peru'}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, storeCountry: e.target.value }))}
+                                            style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer', fontWeight: 600 }}
+                                        >
+                                            <option value="Peru">🇵🇪 Perú</option>
+                                            <option value="Chile">🇨🇱 Chile</option>
+                                            <option value="Colombia">🇨🇴 Colombia</option>
+                                            <option value="Ecuador">🇪🇨 Ecuador</option>
+                                            <option value="Bolivia">🇧🇴 Bolivia</option>
+                                            <option value="Argentina">🇦🇷 Argentina</option>
+                                            <option value="Mexico">🇲🇽 México</option>
+                                            <option value="Estados Unidos">🇺🇸 Estados Unidos</option>
+                                            <option value="Espana">🇪🇸 España</option>
                                         </select>
-                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.6rem', pointerEvents: 'none', color: 'var(--foreground)' }}>▼</span>
+                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.65rem', pointerEvents: 'none', color: 'var(--text-muted)' }}>▼</span>
                                     </div>
                     
-                                    <div style={{ border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '6px 12px', background: 'var(--background)', position: 'relative' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Moneda</div>
-                                        <select value={settings.currency || 'PEN'} onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))} style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer' }}>
-                                            <option value="PEN">PEN - Sol Peruano</option>
-                                            <option value="USD">USD - Dólar Estadounidense</option>
-                                            <option value="ARS">ARS - Peso Argentino</option>
+                                    {/* Moneda */}
+                                    <div style={{
+                                        border: '1.5px solid var(--structural-border, var(--glass-border))',
+                                        borderRadius: '10px',
+                                        padding: '8px 12px',
+                                        background: 'var(--input-bg)',
+                                        position: 'relative',
+                                        transition: 'all 0.15s ease',
+                                    }}>
+                                        <label style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block' }}>
+                                            Moneda
+                                        </label>
+                                        <select
+                                            value={settings.currency || 'PEN'}
+                                            onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
+                                            style={{ border: 'none', background: 'transparent', outline: 'none', width: '100%', fontSize: '0.9rem', color: 'var(--foreground)', appearance: 'none', marginTop: '2px', cursor: 'pointer', fontWeight: 600 }}
+                                        >
+                                            <option value="PEN">PEN - Sol Peruano (S/)</option>
+                                            <option value="USD">USD - Dólar Estadounidense ($)</option>
+                                            <option value="ARS">ARS - Peso Argentino ($)</option>
+                                            <option value="CLP">CLP - Peso Chileno ($)</option>
+                                            <option value="COP">COP - Peso Colombiano ($)</option>
+                                            <option value="MXN">MXN - Peso Mexicano ($)</option>
+                                            <option value="EUR">EUR - Euro (€)</option>
                                         </select>
-                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.6rem', pointerEvents: 'none', color: 'var(--foreground)' }}>▼</span>
+                                        <span style={{ position: 'absolute', right: '12px', top: '22px', fontSize: '0.65rem', pointerEvents: 'none', color: 'var(--text-muted)' }}>▼</span>
                                     </div>
                                 </div>
 
-                                <div style={{ marginTop: '24px' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+                                <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
+                                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 700, fontSize: '0.86rem', color: 'var(--foreground)' }}>
                                         <input
                                             type="checkbox"
                                             checked={settings.enableAutoWhatsappRedirect}
                                             onChange={(e) => setSettings(prev => ({ ...prev, enableAutoWhatsappRedirect: e.target.checked }))}
-                                            style={{ width: '16px', height: '16px', accentColor: '#6366f1' }}
+                                            style={{ width: '18px', height: '18px', accentColor: 'var(--robotina-orange, #ff6b00)', cursor: 'pointer' }}
                                         />
                                         <span>Ofrecer redirección rápida a WhatsApp al finalizar la compra</span>
                                     </label>
