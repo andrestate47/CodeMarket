@@ -350,10 +350,6 @@ export default function CheckoutPage() {
                         <span>Volver a la Tienda</span>
                     </Link>
                     <h1 className={styles.pageTitle}>Finalizar Pedido</h1>
-                    <div className={styles.sslBadge}>
-                        <span>🔒</span>
-                        <span>Checkout Seguro SSL 256-bit</span>
-                    </div>
                 </header>
 
                 <form onSubmit={handleSubmit}>
