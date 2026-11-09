@@ -11,6 +11,7 @@ import { processCheckoutAction, CheckoutPayload } from '@/modules/checkout/actio
 import { getCheckoutSettingsAction, CheckoutSettings } from '@/modules/checkout/checkoutSettingsActions';
 import { getSavedCustomersForAutocompleteAction, SavedCustomerRecord } from '@/modules/orders/actions';
 import CheckoutOrderSummary from '@/components/checkout/CheckoutOrderSummary';
+import CountryDialPicker from '@/components/ui/CountryDialPicker';
 import styles from './page.module.css';
 
 const FALLBACK_CHECKOUT_SETTINGS: CheckoutSettings = {
@@ -345,11 +346,13 @@ export default function CheckoutPage() {
                 {/* CHECKOUT HEADER */}
                 <header className={styles.checkoutHeader}>
                     <Link href="/" className={styles.backBtn}>
-                        ← Volver a la Tienda
+                        <span>←</span>
+                        <span>Volver a la Tienda</span>
                     </Link>
                     <h1 className={styles.pageTitle}>Finalizar Pedido</h1>
-                    <div style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        🔒 Checkout Seguro SSL
+                    <div className={styles.sslBadge}>
+                        <span>🔒</span>
+                        <span>Checkout Seguro SSL 256-bit</span>
                     </div>
                 </header>
 
@@ -360,20 +363,17 @@ export default function CheckoutPage() {
 
                             {/* STEP 1: DATOS DEL CLIENTE */}
                             <div className={styles.stepCard} ref={step1CardRef} style={{ position: 'relative' }}>
-                                <div className={styles.stepHeader} style={{ justifyContent: 'space-between' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div className={styles.stepHeader}>
+                                    <div className={styles.stepHeaderLeft}>
                                         <div className={styles.stepNumber}>1</div>
                                         <h2 className={styles.stepTitle}>Datos del Cliente</h2>
                                     </div>
-                                    <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                                        💡 Haz clic para autocompletar datos guardados
-                                    </span>
                                 </div>
 
                                 <div className={styles.formGrid}>
                                     <div className={`${styles.formGroup} ${styles.fullWidth}`}>
                                         <label className={styles.label}>
-                                            Nombre Completo<span className={styles.requiredStar}>*</span>
+                                            <span>👤</span> Nombre Completo<span className={styles.requiredStar}>*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -393,22 +393,18 @@ export default function CheckoutPage() {
 
                                     <div className={styles.formGroup}>
                                         <label className={styles.label}>
-                                            Teléfono / WhatsApp<span className={styles.requiredStar}>*</span>
+                                            <span>📱</span> Teléfono / WhatsApp<span className={styles.requiredStar}>*</span>
                                         </label>
                                         <div className={styles.phoneGroup}>
-                                            <select
-                                                name="countryPrefix"
+                                            <CountryDialPicker
                                                 value={formData.countryPrefix}
-                                                onChange={handleInputChange}
-                                                className={`${styles.select} ${styles.prefixSelect}`}
-                                            >
-                                                <option value="+51">🇵🇪 +51</option>
-                                                <option value="+57">🇨🇴 +57</option>
-                                                <option value="+52">🇲🇽 +52</option>
-                                                <option value="+56">🇨🇱 +56</option>
-                                                <option value="+54">🇦🇷 +54</option>
-                                                <option value="+1">🇺🇸 +1</option>
-                                            </select>
+                                                onChange={(prefix) => {
+                                                    setFormData(prev => ({ ...prev, countryPrefix: prefix }));
+                                                    if (fieldErrors.customerPhone) {
+                                                        setFieldErrors(prev => ({ ...prev, customerPhone: '' }));
+                                                    }
+                                                }}
+                                            />
                                             <input
                                                 type="tel"
                                                 name="customerPhone"
@@ -419,7 +415,7 @@ export default function CheckoutPage() {
                                                     setActiveSuggestField('phone');
                                                 }}
                                                 placeholder="987 654 321"
-                                                className={`${styles.input} ${fieldErrors.customerPhone ? styles.inputError : ''}`}
+                                                className={`${styles.input} ${styles.phoneInput} ${fieldErrors.customerPhone ? styles.inputError : ''}`}
                                                 required
                                             />
                                         </div>
@@ -428,7 +424,7 @@ export default function CheckoutPage() {
 
                                     <div className={styles.formGroup}>
                                         <label className={styles.label}>
-                                            Correo Electrónico{settings?.require_email && <span className={styles.requiredStar}>*</span>}
+                                            <span>✉️</span> Correo Electrónico{settings?.require_email && <span className={styles.requiredStar}>*</span>}
                                         </label>
                                         <input
                                             type="email"
@@ -541,12 +537,14 @@ export default function CheckoutPage() {
                                     })()}
 
                                     <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                                        <label className={styles.label}>Notas o Indicaciones Especiales</label>
+                                        <label className={styles.label}>
+                                            <span>📝</span> Notas o Indicaciones Especiales (Opcional)
+                                        </label>
                                         <textarea
                                             name="notes"
                                             value={formData.notes}
                                             onChange={handleInputChange}
-                                            placeholder="Ej: Entregar en portería o llamar antes de llegar..."
+                                            placeholder="Ej: Entregar en recepción, llamar antes de llegar..."
                                             rows={2}
                                             className={styles.textarea}
                                         />
@@ -557,44 +555,57 @@ export default function CheckoutPage() {
                             {/* STEP 2: ENTREGA */}
                             <div className={styles.stepCard}>
                                 <div className={styles.stepHeader}>
-                                    <div className={styles.stepNumber}>2</div>
-                                    <h2 className={styles.stepTitle}>Método de Entrega</h2>
+                                    <div className={styles.stepHeaderLeft}>
+                                        <div className={styles.stepNumber}>2</div>
+                                        <h2 className={styles.stepTitle}>Método de Entrega</h2>
+                                    </div>
                                 </div>
 
                                 <div className={styles.optionsList}>
-                                    {(settings?.shipping_methods || []).map(method => (
-                                        <label
-                                            key={method.id}
-                                            className={`${styles.optionCard} ${formData.shippingMethodId === method.id ? styles.selected : ''}`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="shippingMethodId"
-                                                value={method.id}
-                                                checked={formData.shippingMethodId === method.id}
-                                                onChange={handleInputChange}
-                                                className={styles.radioInput}
-                                            />
-                                            <div className={styles.optionDetails}>
-                                                <div className={styles.optionHeaderRow}>
-                                                    <span className={styles.optionName}>{method.name}</span>
-                                                    <span className={styles.optionPrice}>
-                                                        {method.price_amount === 0 ? 'Gratis' : method.price_formatted}
-                                                    </span>
+                                    {(settings?.shipping_methods || []).map(method => {
+                                        const shippingIcon = method.id.includes('pickup') || method.id.includes('recojo')
+                                            ? '🏬'
+                                            : method.id.includes('national') || method.id.includes('provincia')
+                                            ? '📦'
+                                            : '🛵';
+
+                                        return (
+                                            <label
+                                                key={method.id}
+                                                className={`${styles.optionCard} ${formData.shippingMethodId === method.id ? styles.selected : ''}`}
+                                            >
+                                                <input
+                                                    type="radio"
+                                                    name="shippingMethodId"
+                                                    value={method.id}
+                                                    checked={formData.shippingMethodId === method.id}
+                                                    onChange={handleInputChange}
+                                                    className={styles.radioInput}
+                                                />
+                                                <div className={styles.optionIconWrapper}>
+                                                    {shippingIcon}
                                                 </div>
-                                                {method.estimated_days && (
-                                                    <div className={styles.optionSubtext}>
-                                                        ⏱️ Tiempo estimado: {method.estimated_days}
+                                                <div className={styles.optionDetails}>
+                                                    <div className={styles.optionHeaderRow}>
+                                                        <span className={styles.optionName}>{method.name}</span>
+                                                        <span className={method.price_amount === 0 ? styles.optionPriceFree : styles.optionPrice}>
+                                                            {method.price_amount === 0 ? 'Gratis' : method.price_formatted}
+                                                        </span>
                                                     </div>
-                                                )}
-                                                {!method.requires_address && method.address_details && (
-                                                    <div className={styles.optionSubtext} style={{ color: '#22c55e', fontWeight: 600 }}>
-                                                        📍 Dirección de recojo: {method.address_details}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </label>
-                                    ))}
+                                                    {method.estimated_days && (
+                                                        <div className={styles.optionSubtext}>
+                                                            ⏱️ Tiempo estimado: {method.estimated_days}
+                                                        </div>
+                                                    )}
+                                                    {!method.requires_address && method.address_details && (
+                                                        <div className={styles.optionSubtext} style={{ color: '#16a34a', fontWeight: 700 }}>
+                                                            📍 Dirección de recojo: {method.address_details}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </label>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* ADDRESS FORM (ONLY IF SHIPPING REQUIRES ADDRESS) */}
@@ -704,8 +715,10 @@ export default function CheckoutPage() {
                             {/* STEP 3: MÉTODO DE PAGO */}
                             <div className={styles.stepCard}>
                                 <div className={styles.stepHeader}>
-                                    <div className={styles.stepNumber}>3</div>
-                                    <h2 className={styles.stepTitle}>Método de Pago</h2>
+                                    <div className={styles.stepHeaderLeft}>
+                                        <div className={styles.stepNumber}>3</div>
+                                        <h2 className={styles.stepTitle}>Método de Pago</h2>
+                                    </div>
                                 </div>
 
                                 {fieldErrors.paymentMethod && (
@@ -719,6 +732,16 @@ export default function CheckoutPage() {
                                         const isDisabled = method.allowed_shipping_methods &&
                                             method.allowed_shipping_methods.length > 0 &&
                                             !method.allowed_shipping_methods.includes(formData.shippingMethodId);
+
+                                        const payIcon = method.id === 'yape'
+                                            ? '🟣'
+                                            : method.id === 'plin'
+                                            ? '🔵'
+                                            : method.id === 'bank_transfer'
+                                            ? '🏦'
+                                            : method.id === 'cash_on_delivery'
+                                            ? '💵'
+                                            : '💳';
 
                                         return (
                                             <label
@@ -735,6 +758,9 @@ export default function CheckoutPage() {
                                                     onChange={handleInputChange}
                                                     className={styles.radioInput}
                                                 />
+                                                <div className={styles.optionIconWrapper}>
+                                                    {payIcon}
+                                                </div>
                                                 <div className={styles.optionDetails}>
                                                     <div className={styles.optionHeaderRow}>
                                                         <span className={styles.optionName}>{method.name}</span>
@@ -745,10 +771,10 @@ export default function CheckoutPage() {
                                                         </div>
                                                     ) : (
                                                         <div className={styles.optionSubtext}>
-                                                            {method.id === 'yape' && 'Verás el QR, número oficial e instrucciones inmediatas al confirmar.'}
+                                                            {method.id === 'yape' && 'Verás el código QR oficial e instrucciones al confirmar.'}
                                                             {method.id === 'plin' && 'Transfiere desde tu app Plin utilizando tu número de pedido.'}
                                                             {method.id === 'bank_transfer' && 'Cuentas BCP, BBVA e Interbank disponibles al finalizar.'}
-                                                            {method.id === 'cash_on_delivery' && 'Paga al repartidor en efectivo o tarjeta en la puerta de tu domicilio.'}
+                                                            {method.id === 'cash_on_delivery' && 'Paga al repartidor en efectivo o tarjeta al recibir tu pedido.'}
                                                         </div>
                                                     )}
                                                 </div>
@@ -761,8 +787,10 @@ export default function CheckoutPage() {
                             {/* STEP 4: CONFIRMACIÓN Y TÉRMINOS */}
                             <div className={styles.stepCard}>
                                 <div className={styles.stepHeader}>
-                                    <div className={styles.stepNumber}>4</div>
-                                    <h2 className={styles.stepTitle}>Confirmación</h2>
+                                    <div className={styles.stepHeaderLeft}>
+                                        <div className={styles.stepNumber}>4</div>
+                                        <h2 className={styles.stepTitle}>Confirmación y Finalización</h2>
+                                    </div>
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

@@ -1,11 +1,11 @@
 .summaryCard {
     background: var(--card-bg, #121212);
-    border: 1px solid var(--glass-border, #27272a);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
     border-radius: 20px;
     padding: 24px;
     position: sticky;
-    top: 90px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    top: 96px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -16,11 +16,11 @@
     align-items: center;
     justify-content: space-between;
     padding-bottom: 16px;
-    border-bottom: 1px solid var(--glass-border);
+    border-bottom: 1.5px solid var(--structural-border, var(--glass-border));
 }
 
 .title {
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: 900;
     margin: 0;
     color: var(--foreground);
@@ -29,20 +29,21 @@
 }
 
 .editCartBtn {
-    background: transparent;
-    border: 1px solid var(--glass-border);
+    background: rgba(255, 107, 0, 0.08);
+    border: 1px solid rgba(255, 107, 0, 0.25);
     color: var(--robotina-orange, #FF6B00);
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 5px 12px;
+    border-radius: 8px;
     font-size: 0.8rem;
-    font-weight: 700;
+    font-weight: 800;
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .editCartBtn:hover {
-    background: rgba(255, 107, 0, 0.15);
+    background: rgba(255, 107, 0, 0.16);
     border-color: var(--robotina-orange);
+    transform: translateY(-1px);
 }
 
 .itemsList {

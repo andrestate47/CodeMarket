@@ -16,34 +16,58 @@
     justify-content: space-between;
     margin-bottom: 32px;
     padding-bottom: 20px;
-    border-bottom: 1px solid var(--glass-border, #27272a);
+    border-bottom: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .backBtn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: var(--text-muted);
+    color: var(--foreground);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 700;
-    transition: color 0.2s ease;
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: var(--card-bg, #18181b);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .backBtn:hover {
     color: var(--robotina-orange, #FF6B00);
+    border-color: var(--robotina-orange, #FF6B00);
+    transform: translateX(-2px);
 }
 
 .pageTitle {
-    font-size: 1.8rem;
+    font-size: 1.85rem;
     font-weight: 900;
     margin: 0;
     letter-spacing: -0.5px;
+    color: var(--foreground);
+}
+
+.sslBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #16a34a;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 6px 14px;
+    border-radius: 20px;
+    white-space: nowrap;
 }
 
 .grid {
     display: grid;
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 400px;
     gap: 36px;
     align-items: start;
 }
@@ -56,45 +80,69 @@
 
 .stepCard {
     background: var(--card-bg, #121212);
-    border: 1px solid var(--glass-border, #27272a);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
     border-radius: 20px;
     padding: 28px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .stepHeader {
     display: flex;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
     margin-bottom: 24px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.stepHeaderLeft {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .stepNumber {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     border-radius: 50%;
-    background: var(--robotina-orange, #FF6B00);
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8A00 100%);
     color: white;
     font-weight: 900;
     font-size: 0.95rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 10px rgba(255, 107, 0, 0.3);
+    flex-shrink: 0;
 }
 
 .stepTitle {
     font-size: 1.15rem;
-    font-weight: 800;
+    font-weight: 900;
     margin: 0;
     color: var(--foreground);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
+.suggestBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--robotina-orange, #FF6B00);
+    background: rgba(255, 107, 0, 0.08);
+    border: 1px solid rgba(255, 107, 0, 0.2);
+    padding: 4px 12px;
+    border-radius: 20px;
+}
+
 .formGrid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 18px;
 }
 
 .formGroup {
@@ -108,28 +156,40 @@
 }
 
 .label {
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--text-muted, #71717a);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .requiredStar {
     color: var(--robotina-orange, #FF6B00);
-    margin-left: 3px;
+    margin-left: 2px;
+    font-weight: 900;
 }
 
 .input, .select, .textarea {
-    background: var(--background, #09090b);
-    border: 1px solid var(--glass-border, #27272a);
-    border-radius: 10px;
-    padding: 12px 14px;
+    background: var(--card-bg, #ffffff);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
+    border-radius: 12px;
+    padding: 12px 16px;
+    height: 48px;
     color: var(--foreground);
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: all 0.2s ease;
     width: 100%;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.textarea {
+    height: auto;
+    min-height: 80px;
+    resize: vertical;
 }
 
 .input:focus, .select:focus, .textarea:focus {
@@ -137,24 +197,35 @@
     box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.15);
 }
 
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover, 
+.input:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--foreground);
+    -webkit-box-shadow: 0 0 0px 1000px var(--card-bg, #ffffff) inset;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
 .inputError {
     border-color: #ef4444 !important;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
 }
 
 .errorText {
     font-size: 0.78rem;
     color: #ef4444;
     font-weight: 700;
+    margin-top: 2px;
 }
 
 .phoneGroup {
     display: flex;
+    align-items: center;
     gap: 8px;
+    width: 100%;
 }
 
-.prefixSelect {
-    width: 90px;
-    flex-shrink: 0;
+.phoneInput {
+    flex: 1;
 }
 
 /* Shipping & Payment Options Styling */
@@ -166,53 +237,81 @@
 
 .optionCard {
     display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 16px;
-    background: var(--background);
-    border: 1px solid var(--glass-border);
-    border-radius: 12px;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background: var(--card-bg, #121212);
+    border: 1.5px solid var(--structural-border, var(--glass-border, #27272a));
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
 }
 
 .optionCard:hover {
     border-color: rgba(255, 107, 0, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .optionCard.selected {
-    border-color: var(--robotina-orange);
-    background: rgba(255, 107, 0, 0.08);
+    border-color: var(--robotina-orange, #FF6B00);
+    background: rgba(255, 107, 0, 0.04);
+    box-shadow: 0 0 0 1px var(--robotina-orange, #FF6B00);
 }
 
 .radioInput {
-    margin-top: 3px;
-    accent-color: var(--robotina-orange);
-    width: 18px;
-    height: 18px;
+    margin: 0;
+    accent-color: var(--robotina-orange, #FF6B00);
+    width: 20px;
+    height: 20px;
     cursor: pointer;
+    flex-shrink: 0;
+}
+
+.optionIconWrapper {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--structural-header, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
 }
 
 .optionDetails {
     flex: 1;
+    min-width: 0;
 }
 
 .optionHeaderRow {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 12px;
 }
 
 .optionName {
     font-weight: 800;
-    font-size: 0.95rem;
+    font-size: 0.96rem;
     color: var(--foreground);
 }
 
 .optionPrice {
     font-weight: 900;
-    color: var(--robotina-orange);
-    font-size: 0.95rem;
+    color: var(--robotina-orange, #FF6B00);
+    font-size: 0.98rem;
+    white-space: nowrap;
+}
+
+.optionPriceFree {
+    font-weight: 900;
+    color: #16a34a;
+    font-size: 0.98rem;
+    white-space: nowrap;
 }
 
 .optionSubtext {
@@ -226,29 +325,31 @@
 .checkboxGroup {
     display: flex;
     align-items: flex-start;
-    gap: 10px;
+    gap: 12px;
     cursor: pointer;
+    user-select: none;
 }
 
 .checkboxInput {
-    accent-color: var(--robotina-orange);
+    accent-color: var(--robotina-orange, #FF6B00);
     width: 18px;
     height: 18px;
-    margin-top: 2px;
+    margin-top: 3px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .checkboxLabel {
     font-size: 0.88rem;
     color: var(--foreground);
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 /* Submit Action Button */
 .submitBtn {
     width: 100%;
-    padding: 18px;
-    background: var(--robotina-orange, #FF6B00);
+    padding: 18px 24px;
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8A00 100%);
     color: white;
     border: none;
     border-radius: 14px;
@@ -256,7 +357,7 @@
     font-weight: 900;
     letter-spacing: 0.5px;
     cursor: pointer;
-    box-shadow: 0 8px 25px rgba(255, 107, 0, 0.4);
+    box-shadow: 0 10px 25px rgba(255, 107, 0, 0.38);
     transition: all 0.2s ease;
     display: flex;
     align-items: center;
@@ -265,22 +366,24 @@
 }
 
 .submitBtn:hover {
-    background: #FF8A00;
+    background: linear-gradient(135deg, #FF7B1A 0%, #FF991A 100%);
     transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(255, 107, 0, 0.45);
 }
 
 .submitBtn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
     transform: none;
+    box-shadow: none;
 }
 
 /* Separate Quote Box */
 .quoteBox {
-    background: rgba(59, 130, 246, 0.08);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.06);
+    border: 1.5px solid rgba(59, 130, 246, 0.25);
     border-radius: 16px;
-    padding: 20px;
+    padding: 20px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -290,7 +393,7 @@
 
 .quoteTitle {
     font-weight: 800;
-    color: #3b82f6;
+    color: #2563eb;
     font-size: 0.95rem;
     margin: 0 0 4px 0;
 }
@@ -303,18 +406,19 @@
 
 .quoteBtn {
     background: transparent;
-    border: 1px solid #3b82f6;
-    color: #3b82f6;
+    border: 1.5px solid #2563eb;
+    color: #2563eb;
     padding: 10px 18px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 800;
     font-size: 0.88rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 .quoteBtn:hover {
-    background: #3b82f6;
+    background: #2563eb;
     color: white;
 }
 
@@ -326,11 +430,11 @@
     left: 0;
     right: 0;
     background: var(--card-bg, #121212);
-    border-top: 1px solid var(--glass-border);
+    border-top: 1.5px solid var(--structural-border, var(--glass-border));
     padding: 12px 16px;
     padding-bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 150;
-    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 -10px 25px rgba(0, 0, 0, 0.15);
 }
 
 @media (max-width: 900px) {
@@ -364,6 +468,6 @@
         font-size: 16px; /* Prevents auto-zoom on iOS Safari */
     }
     .pageTitle {
-        font-size: 1.4rem;
+        font-size: 1.45rem;
     }
 }
