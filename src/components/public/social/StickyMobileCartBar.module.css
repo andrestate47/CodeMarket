@@ -1,0 +1,139 @@
+.stickyWrapper {
+    position: fixed;
+    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    z-index: 950;
+    max-width: 520px;
+    margin: 0 auto;
+    pointer-events: none;
+    animation: slideUpBar 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpBar {
+    from {
+        transform: translateY(30px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.bar {
+    pointer-events: auto;
+    background: rgba(18, 18, 22, 0.95);
+    backdrop-filter: blur(14px);
+    border: 1.5px solid rgba(255, 107, 0, 0.45);
+    border-radius: 18px;
+    padding: 10px 12px 10px 16px;
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    color: #ffffff;
+}
+
+.leftInfo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+}
+
+.bagBadge {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(255, 107, 0, 0.18);
+    border: 1px solid rgba(255, 107, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+
+.countPill {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: var(--robotina-orange, #ff6b00);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 900;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.totalsText {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.subLabel {
+    font-size: 0.72rem;
+    color: #a1a1aa;
+    font-weight: 700;
+}
+
+.totalAmount {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+}
+
+.actionsGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.viewCartBtn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    padding: 10px 12px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.viewCartBtn:hover {
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.checkoutBtn {
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8A00 100%);
+    color: #ffffff;
+    border: none;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 900;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(255, 107, 0, 0.4);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.checkoutBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(255, 107, 0, 0.55);
+}

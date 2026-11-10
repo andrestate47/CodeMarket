@@ -12,7 +12,7 @@ export interface CartItem extends Product {
 interface CartContextType {
     items: CartItem[];
     isOpen: boolean;
-    addItem: (product: Product, quantity?: number, selectedVariant?: { id: string; name: string; price: string }) => void;
+    addItem: (product: Product, quantity?: number, selectedVariant?: { id: string; name: string; price: string }, options?: { silent?: boolean }) => void;
     removeItem: (cartId: string) => void;
     updateQuantity: (cartId: string, delta: number) => void;
     setQuantity: (cartId: string, quantity: number) => void;
@@ -69,7 +69,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const addItem = (
         product: Product, 
         qtyToAdd: number = 1, 
-        selectedVariant?: { id: string; name: string; price: string }
+        selectedVariant?: { id: string; name: string; price: string },
+        options?: { silent?: boolean }
     ) => {
         const addAmount = Math.max(1, qtyToAdd);
         setItems((prev) => {
@@ -99,7 +100,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 return [...prev, newItem];
             }
         });
-        setIsOpen(true);
+        if (!options?.silent) {
+            setIsOpen(true);
+        }
     };
 
     const updateQuantity = (cartId: string, delta: number) => {

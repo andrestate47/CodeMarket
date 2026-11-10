@@ -628,7 +628,7 @@ function processLocalDemoProducts(
         };
     });
 
-    const combined: PublicProductItem[] = [];
+    const combined: PublicProductItem[] = [...DEMO_PUBLIC_PRODUCTS, ...mappedLocal];
     // Deduplicate by ID
     let unique = combined.filter((p, index, self) => index === self.findIndex(t => t.id === p.id));
 

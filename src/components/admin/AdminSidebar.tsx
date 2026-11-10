@@ -230,6 +230,16 @@ function AdminSidebarContent({ onLogout, pendingOrdersCount, className, onNavIte
                     ]
                 },
                 {
+                    label: 'Mini-Tienda Social',
+                    href: '/admin/social',
+                    icon: (
+                        <svg {...iconProps}>
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                            <line x1="12" y1="18" x2="12.01" y2="18" />
+                        </svg>
+                    ),
+                },
+                {
                     label: 'Ver Tienda',
                     href: '/',
                     icon: (

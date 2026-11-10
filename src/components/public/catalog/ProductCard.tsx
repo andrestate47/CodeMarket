@@ -15,9 +15,10 @@ import { fireAddToCartConfetti } from '@/lib/confetti';
 
 interface CatalogProductCardProps {
     product: PublicProductItem;
+    onOpenQuickSheet?: (product: PublicProductItem) => void;
 }
 
-export default function CatalogProductCard({ product }: CatalogProductCardProps) {
+export default function CatalogProductCard({ product, onOpenQuickSheet }: CatalogProductCardProps) {
     const { addItem, items } = useCart();
 
     const isAddedToCart = items.some(item => item.id === product.id);
@@ -47,7 +48,7 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
             cta: product.cta,
             image: product.image_url,
             color: '#181818',
-        } as unknown as Product);
+        } as unknown as Product, 1, undefined, { silent: true });
         fireAddToCartConfetti(e);
         toast.success(`Añadido al carrito: ${product.title}`, { duration: 2000 });
     };
@@ -122,9 +123,23 @@ export default function CatalogProductCard({ product }: CatalogProductCardProps)
                             Ver producto
                         </Link>
                     ) : product.has_variants ? (
-                        <Link href={`/productos/${product.id}`} className={styles.optionsBtn}>
-                            Ver opciones →
-                        </Link>
+                        onOpenQuickSheet ? (
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onOpenQuickSheet(product);
+                                }}
+                                className={styles.optionsBtn}
+                            >
+                                Elegir opción →
+                            </button>
+                        ) : (
+                            <Link href={`/productos/${product.id}`} className={styles.optionsBtn}>
+                                Ver opciones →
+                            </Link>
+                        )
                     ) : (
                         <button
                             onClick={handleAddToCart}

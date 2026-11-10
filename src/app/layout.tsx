@@ -18,12 +18,35 @@ import { getStoreAppearanceAction } from "@/modules/appearance/actions";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { appearance } = await getStoreAppearanceAction();
+  const storeName = appearance?.store_name || "TiendaVirt";
+  const logoUrl = appearance?.logo_url || "/LogoTienda.png";
+  const description = `🛍️ Compra en línea en ${storeName}. Catálogo interactivo con pagos por Yape, Plin, Tarjeta y atención directa por WhatsApp.`;
+
   return {
-    title: appearance?.store_name || "Tienda Vir",
-    description: `Bienvenido a ${appearance?.store_name || "Tienda Vir"}`,
+    title: `${storeName} · Tienda Oficial`,
+    description,
     icons: {
-      icon: appearance?.logo_url || "/favicon.ico",
-    }
+      icon: logoUrl,
+    },
+    openGraph: {
+      title: `🛍️ ${storeName} · Ver Catálogo Oficial`,
+      description,
+      type: "website",
+      images: [
+        {
+          url: logoUrl,
+          width: 800,
+          height: 800,
+          alt: storeName,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `🛍️ ${storeName}`,
+      description,
+      images: [logoUrl],
+    },
   };
 }
 

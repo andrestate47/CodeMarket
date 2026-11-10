@@ -294,19 +294,20 @@
 
 .actionButtonsRow {
     display: flex;
+    flex-direction: column;
     gap: 10px;
     margin-top: 4px;
 }
 
 .checkoutBtn {
-    flex: 1;
+    width: 100%;
     padding: 14px;
-    background: var(--robotina-orange, #FF6B00);
+    background: linear-gradient(135deg, #FF6B00 0%, #FF8A00 100%);
     color: white;
     border: none;
-    border-radius: 10px;
+    border-radius: 12px;
     font-weight: 900;
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     letter-spacing: 0.5px;
     cursor: pointer;
     box-shadow: 0 4px 14px rgba(255, 107, 0, 0.35);
@@ -316,6 +317,35 @@
 .checkoutBtn:hover {
     background: #FF8A00;
     transform: translateY(-1px);
+}
+
+.whatsappCartBtn {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(37, 211, 102, 0.12);
+    border: 1.5px solid rgba(37, 211, 102, 0.35);
+    color: #16a34a;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+:global([data-theme='dark']) .whatsappCartBtn,
+:global(.dark) .whatsappCartBtn {
+    color: #4ade80;
+    background: rgba(37, 211, 102, 0.16);
+}
+
+.whatsappCartBtn:hover {
+    background: #25D366;
+    color: #ffffff;
 }
 
 /* RESPONSIVE MOBILE DRAWER */
