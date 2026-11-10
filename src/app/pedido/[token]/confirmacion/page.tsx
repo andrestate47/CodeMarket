@@ -388,7 +388,7 @@ export default function OrderConfirmationPage() {
                                         }}
                                     >
                                         <WhatsAppIcon size={22} />
-                                        <span>Continuar compra por WhatsApp ({order.order_number})</span>
+                                        <span>Continuar compra por WhatsApp</span>
                                     </a>
 
                                     <Link href="/" className={styles.homeBtn}>
