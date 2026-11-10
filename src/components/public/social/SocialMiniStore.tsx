@@ -156,7 +156,6 @@ export default function SocialMiniStore({
                             <span className={styles.liveDot} />
                             Abierto ahora
                         </span>
-                        <span className={styles.trustPill}>⚡ Compra en 30 seg</span>
                         <span className={styles.trustPill}>🛵 Delivery & Envíos</span>
                     </div>
                 </div>
