@@ -364,12 +364,9 @@ export default function OrderConfirmationPage() {
                                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
                                     <WhatsAppIcon size={46} />
                                 </div>
-                                <h3 style={{ margin: '0 0 6px 0', color: '#15803d', fontSize: '1.15rem', fontWeight: 900 }}>
+                                <h3 style={{ margin: '0 0 16px 0', color: '#15803d', fontSize: '1.15rem', fontWeight: 900 }}>
                                     ¿Prefieres continuar tu compra por WhatsApp?
                                 </h3>
-                                <p style={{ margin: '0 0 18px 0', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                                    Haz clic en el botón de abajo para enviar tu pedido directamente a nuestro WhatsApp oficial y coordinar el pago o envío con nosotros:
-                                </p>
 
                                 <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
                                     <a
