@@ -17,6 +17,7 @@
   z-index: 50;
   user-select: none;
   box-shadow: 2px 0 12px rgba(15, 23, 42, 0.04);
+  overscroll-behavior: contain;
 }
 
 .sidebarCollapsed {
@@ -118,6 +119,7 @@
 .navContainer {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px 10px;
   display: flex;
   flex-direction: column;

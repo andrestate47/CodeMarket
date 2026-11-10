@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import styles from './AdminSidebar.module.css';
@@ -301,8 +301,43 @@ function AdminSidebarContent({ onLogout, pendingOrdersCount, className, onNavIte
         }
     };
 
+    const sidebarRef = useRef<HTMLElement>(null);
+    const navRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const sidebarEl = sidebarRef.current;
+        if (!sidebarEl) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            const navEl = navRef.current;
+            if (!navEl) {
+                e.preventDefault();
+                return;
+            }
+            const { scrollTop, scrollHeight, clientHeight } = navEl;
+            const canScroll = scrollHeight > clientHeight;
+            if (!canScroll) {
+                e.preventDefault();
+                return;
+            }
+            if (!navEl.contains(e.target as Node)) {
+                navEl.scrollTop += e.deltaY;
+                e.preventDefault();
+                return;
+            }
+            const isAtTop = scrollTop <= 0 && e.deltaY < 0;
+            const isAtBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight && e.deltaY > 0;
+            if (isAtTop || isAtBottom) {
+                e.preventDefault();
+            }
+        };
+
+        sidebarEl.addEventListener('wheel', handleWheel, { passive: false });
+        return () => sidebarEl.removeEventListener('wheel', handleWheel);
+    }, []);
+
     const asideContent = (
-        <aside className={`${styles.sidebar} ${isMobileDrawer ? styles.mobileSidebar : ''} ${collapsed ? styles.sidebarCollapsed : ''} ${className || ''}`}>
+        <aside ref={sidebarRef} className={`${styles.sidebar} ${isMobileDrawer ? styles.mobileSidebar : ''} ${collapsed ? styles.sidebarCollapsed : ''} ${className || ''}`}>
             {/* Header */}
             <div className={styles.header}>
                 <div onClick={onNavItemClick} style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
@@ -320,7 +355,7 @@ function AdminSidebarContent({ onLogout, pendingOrdersCount, className, onNavIte
             </div>
 
             {/* Nav List */}
-            <div className={styles.navContainer}>
+            <div ref={navRef} className={styles.navContainer}>
                 {sections.map((section, sIdx) => (
                     <div key={sIdx} className={styles.section}>
                         {!collapsed && <div className={styles.sectionTitle}>{section.title}</div>}
