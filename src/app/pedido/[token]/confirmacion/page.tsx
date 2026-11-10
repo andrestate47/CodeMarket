@@ -175,7 +175,7 @@ export default function OrderConfirmationPage() {
                     <p className={styles.subtitle}>
                         {isQuote
                             ? 'Hemos registrado tu solicitud. Nuestro equipo revisará los detalles y te responderá en breve.'
-                            : '¡Tu pedido ya fue registrado! Elige cómo deseas finalizar tu compra: puedes pagar de una vez aquí mismo o continuar la compra por WhatsApp.'}
+                            : '¡Tu pedido ya fue registrado! A continuación encontrarás los datos e instrucciones para realizar el pago de tu compra.'}
                     </p>
 
                     <div className={styles.orderBadgeRow}>
@@ -186,12 +186,9 @@ export default function OrderConfirmationPage() {
                         {getPaymentStatusBadge()}
                     </div>
 
-                    {/* OPCIÓN 1: PAGAR DE UNA VEZ */}
+                    {/* INSTRUCCIONES DE PAGO */}
                     {!isQuote && (
                         <div className={styles.paymentBox}>
-                            <div className={styles.paymentBoxBadge}>
-                                ⚡ Opción 1 · Pagar de una vez desde aquí
-                            </div>
                             <h3 className={styles.paymentBoxTitle}>
                                 <span>💳</span> Método Seleccionado: {methodConfig?.name || order.payment_method.toUpperCase()}
                             </h3>
@@ -362,7 +359,7 @@ export default function OrderConfirmationPage() {
                                 textAlign: 'center'
                             }}>
                                 <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#16a34a', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '8px' }}>
-                                    Opción 2 · Atención directa
+                                    Atención directa
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
                                     <WhatsAppIcon size={46} />
