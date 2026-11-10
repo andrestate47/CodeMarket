@@ -847,24 +847,6 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            {/* SEPARATE QUOTE REQUEST BOX (SECTION 18) */}
-                            <div className={styles.quoteBox}>
-                                <div>
-                                    <h4 className={styles.quoteTitle}>📋 ¿Necesitas una cotización formal?</h4>
-                                    <p className={styles.quoteText}>
-                                        Si requieres una propuesta comercial previa o factura corporativa antes de comprar.
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={handleRequestQuote}
-                                    disabled={submitting}
-                                    className={styles.quoteBtn}
-                                >
-                                    Solicitar Cotización
-                                </button>
-                            </div>
-
                         </div>
 
                         {/* RIGHT COLUMN: STICKY ORDER SUMMARY */}
