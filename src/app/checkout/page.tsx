@@ -188,7 +188,7 @@ export default function CheckoutPage() {
         }
     };
 
-    const validateFrontend = (): { valid: boolean; firstError?: string } => {
+    const validateFrontend = (): { valid: boolean; firstError?: string; firstKey?: string } => {
         const errors: Record<string, string> = {};
 
         if (!formData.customerName.trim()) {
@@ -219,8 +219,9 @@ export default function CheckoutPage() {
         }
 
         setFieldErrors(errors);
+        const firstKey = Object.keys(errors)[0];
         const firstError = Object.values(errors)[0];
-        return { valid: Object.keys(errors).length === 0, firstError };
+        return { valid: Object.keys(errors).length === 0, firstError, firstKey };
     };
 
     const buildPayload = (orderType: 'order' | 'quote' = 'order'): CheckoutPayload => {
@@ -252,8 +253,10 @@ export default function CheckoutPage() {
         };
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.SyntheticEvent) => {
+        if (e && typeof e.preventDefault === 'function') {
+            e.preventDefault();
+        }
 
         if (items.length === 0) {
             toast.error('Tu carrito está vacío.');
@@ -263,6 +266,15 @@ export default function CheckoutPage() {
         const validation = validateFrontend();
         if (!validation.valid) {
             toast.error(validation.firstError || 'Por favor completa los campos requeridos marcados en rojo.');
+            if (validation.firstKey) {
+                const targetEl = document.querySelector(`[name="${validation.firstKey}"]`);
+                if (targetEl) {
+                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    (targetEl as HTMLElement).focus?.();
+                } else if (step1CardRef.current) {
+                    step1CardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
             return;
         }
 
@@ -293,19 +305,33 @@ export default function CheckoutPage() {
             // ignore
         }
 
-        const payload = buildPayload('order');
-        const res = await processCheckoutAction(payload);
-        setSubmitting(false);
+        try {
+            const payload = buildPayload('order');
+            const res = await processCheckoutAction(payload);
+            setSubmitting(false);
 
-        if (res.success && res.redirectUrl) {
-            clearCart();
-            toast.success(`¡Pedido ${res.orderNumber} creado exitosamente!`);
-            router.push(res.redirectUrl);
-        } else {
-            if (res.fieldErrors) {
-                setFieldErrors(res.fieldErrors);
+            if (res.success && res.redirectUrl) {
+                clearCart();
+                toast.success(`¡Pedido ${res.orderNumber} creado exitosamente!`);
+                router.push(res.redirectUrl);
+            } else {
+                if (res.fieldErrors) {
+                    setFieldErrors(res.fieldErrors);
+                    const firstField = Object.keys(res.fieldErrors)[0];
+                    if (firstField) {
+                        const targetEl = document.querySelector(`[name="${firstField}"]`);
+                        if (targetEl) {
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            (targetEl as HTMLElement).focus?.();
+                        }
+                    }
+                }
+                toast.error(res.error || 'No pudimos crear tu pedido. Revisa tus datos e inténtalo nuevamente.');
             }
-            toast.error(res.error || 'No pudimos crear tu pedido. Revisa tus datos e inténtalo nuevamente.');
+        } catch (err: any) {
+            setSubmitting(false);
+            console.error('Checkout error:', err);
+            toast.error(err?.message || 'Ocurrió un error inesperado al procesar el pedido.');
         }
     };
 
@@ -352,7 +378,7 @@ export default function CheckoutPage() {
                     <h1 className={styles.pageTitle}>Finalizar Pedido</h1>
                 </header>
 
-                <form onSubmit={handleSubmit}>
+                <form id="checkout-form" onSubmit={handleSubmit}>
                     <div className={styles.grid}>
                         {/* LEFT COLUMN: 4 STEPS FORM */}
                         <div className={styles.formColumn}>
@@ -792,7 +818,9 @@ export default function CheckoutPage() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                                     <button
                                         type="submit"
+                                        form="checkout-form"
                                         disabled={submitting}
+                                        onClick={handleSubmit}
                                         className={styles.submitBtn}
                                     >
                                         {submitting ? 'Procesando pedido...' : `REALIZAR PEDIDO · ${finalTotalFormatted}`}
@@ -871,11 +899,13 @@ export default function CheckoutPage() {
                     </div>
                     <button
                         type="submit"
+                        form="checkout-form"
                         disabled={submitting}
+                        onClick={handleSubmit}
                         className={styles.submitBtn}
                         style={{ padding: '12px 20px', fontSize: '0.95rem', width: 'auto' }}
                     >
-                        {submitting ? 'Procesando...' : 'Realizar Pedido'}
+                        {submitting ? 'Procesando pedido...' : 'Realizar Pedido'}
                     </button>
                 </div>
             </div>
