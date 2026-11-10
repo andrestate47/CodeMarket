@@ -30,6 +30,7 @@ export interface CheckoutPayload {
         productId: string;
         quantity: number;
         variantId?: string;
+        variantName?: string;
     }[];
 }
 
@@ -156,8 +157,9 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
         const orderItemsToInsert: {
             store_id: string;
             product_id?: string;
-            product_name: string;
+            variant_id?: string;
             variant_name?: string;
+            product_name: string;
             unit_price_amount: number;
             quantity: number;
             total_amount: number;
@@ -183,6 +185,8 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
                 orderItemsToInsert.push({
                     store_id: storeId,
                     product_id: product.id,
+                    variant_id: item.variantId || undefined,
+                    variant_name: item.variantName || undefined,
                     product_name: product.name,
                     unit_price_amount: priceAmount,
                     quantity: item.quantity,
@@ -194,6 +198,8 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
                 subtotalAmount += itemTotal;
                 orderItemsToInsert.push({
                     store_id: storeId,
+                    variant_id: item.variantId || undefined,
+                    variant_name: item.variantName || undefined,
                     product_name: `Producto Demo (${item.productId})`,
                     unit_price_amount: 4500,
                     quantity: item.quantity,
@@ -271,6 +277,15 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
             accept_terms: Boolean(acceptTerms),
             accept_marketing: Boolean(acceptMarketing),
             is_age_confirmed: Boolean(isAgeConfirmed),
+            items_snapshot: orderItemsToInsert.map(i => ({
+                product_id: i.product_id,
+                variant_id: i.variant_id,
+                variant_name: i.variant_name,
+                product_name: i.product_name,
+                quantity: i.quantity,
+                unit_price_amount: i.unit_price_amount,
+                total_amount: i.total_amount,
+            })),
         };
 
         const { data: createdOrder, error: orderErr } = await adminClient
@@ -307,7 +322,10 @@ export async function processCheckoutAction(payload: CheckoutPayload): Promise<C
             order_id: createdOrder.id,
         }));
 
-        await adminClient.from('order_items').insert(itemsWithOrderId);
+        const { error: itemsErr } = await adminClient.from('order_items').insert(itemsWithOrderId);
+        if (itemsErr) {
+            console.error('Failed to insert order items:', itemsErr);
+        }
 
         // 8. Record Order Created Timeline Event with full metadata
         await adminClient.from('order_events').insert({

@@ -426,10 +426,8 @@ export async function getOrdersListAction(params: OrderFilterParams): Promise<Or
             console.warn('DB fetch orders warning, using memory fallback:', dbErr);
         }
 
-        // Combine DB orders FIRST, followed by MEMORY_DEMO_ORDERS
-        const allCombinedOrders = [...dbOrdersList, ...MEMORY_DEMO_ORDERS].filter(
-            (ord, idx, self) => idx === self.findIndex((o) => o.id === ord.id || o.order_number === ord.order_number)
-        );
+        // Use DB orders if available, only fallback to MEMORY_DEMO_ORDERS if database is empty
+        const allCombinedOrders = dbOrdersList.length > 0 ? dbOrdersList : MEMORY_DEMO_ORDERS;
 
         // Filter combined orders
         const filtered = allCombinedOrders.filter((o: OrderRecord) => {
@@ -1598,16 +1596,12 @@ export async function getSingleOrderAction(orderId: string) {
             targetOrder = memoOrder;
         }
 
-        if (!targetOrder && MEMORY_DEMO_ORDERS.length > 0) {
-            targetOrder = MEMORY_DEMO_ORDERS[0];
-        }
-
         if (!targetOrder) {
             return { success: false, error: 'Pedido no encontrado.' };
         }
 
-        // Demo items fallback if empty
-        if (!items || items.length === 0) {
+        // Demo items fallback if empty only when viewing a demo order
+        if ((!items || items.length === 0) && memoOrder) {
             items = [
                 {
                     id: `item-${targetOrder.id}-1`,

@@ -248,7 +248,8 @@ export default function CheckoutPage() {
             items: items.map(i => ({
                 productId: i.id,
                 quantity: i.quantity || 1,
-                variantId: i.selectedVariant?.id
+                variantId: i.selectedVariant?.id,
+                variantName: i.selectedVariant?.name
             }))
         };
     };

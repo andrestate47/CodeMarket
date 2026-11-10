@@ -203,7 +203,7 @@ export default function AdminNotifications() {
         setReadIds(next);
         saveReadIds(next);
         setIsOpen(false);
-        router.push(`/admin/pedidos`);
+        router.push(`/admin/pedidos/${orderId}`);
     };
 
     return (

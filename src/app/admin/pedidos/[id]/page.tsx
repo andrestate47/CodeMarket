@@ -630,6 +630,85 @@ export default function AdminOrderDetailPage() {
                 {/* 70% LEFT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+                    {/* SECTION 0: PRODUCTOS DEL PEDIDO */}
+                    <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
+                        <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderBottom: '1px solid var(--glass-border)' }}>
+                            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--foreground)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span>🛍️</span> Productos del Pedido
+                            </h3>
+                            <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                {items.reduce((acc, i) => acc + (i.quantity || 1), 0)} {items.reduce((acc, i) => acc + (i.quantity || 1), 0) === 1 ? 'unidad' : 'unidades'}
+                            </span>
+                        </div>
+
+                        <div style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {items.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '24px 12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                                    No se encontraron productos registrados en este pedido.
+                                </div>
+                            ) : (
+                                items.map((item, idx) => (
+                                    <div
+                                        key={item.id || idx}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: '14px',
+                                            padding: '12px 16px',
+                                            background: 'var(--input-bg, rgba(0,0,0,0.02))',
+                                            border: '1px solid var(--glass-border)',
+                                            borderRadius: '12px',
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+                                            {(item.image || item.image_url) ? (
+                                                <img
+                                                    src={item.image || item.image_url}
+                                                    alt={item.product_name}
+                                                    style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--glass-border)' }}
+                                                />
+                                            ) : (
+                                                <div style={{ width: '48px', height: '48px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', flexShrink: 0 }}>
+                                                    ITEM
+                                                </div>
+                                            )}
+                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                <div style={{ fontWeight: 800, fontSize: '0.94rem', color: 'var(--foreground)' }}>
+                                                    {item.product_name}
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '3px', flexWrap: 'wrap' }}>
+                                                    {item.variant_name && (
+                                                        <span style={{ fontSize: '0.78rem', background: 'rgba(255,107,0,0.1)', color: 'var(--robotina-orange, #ff6b00)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                                                            {item.variant_name}
+                                                        </span>
+                                                    )}
+                                                    {item.sku && (
+                                                        <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                                            SKU: {item.sku}
+                                                        </span>
+                                                    )}
+                                                    <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                                        Precio unit: {formatMoney(item.unit_price_amount || (item.total_amount / (item.quantity || 1)))}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                                Cant: <strong style={{ color: 'var(--foreground)' }}>{item.quantity}</strong>
+                                            </div>
+                                            <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--foreground)', marginTop: '2px' }}>
+                                                {formatMoney(item.total_amount)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
                     {/* SECTION 1: INFORMACIÓN DEL CLIENTE */}
                     <div style={{ background: 'var(--card-bg)', border: '1.5px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 10px rgba(0,0,0,0.04)' }}>
                         <div className="copy-field-row" style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
@@ -944,26 +1023,36 @@ export default function AdminOrderDetailPage() {
                         {/* Itemized List Summary */}
                         <div style={{ maxHeight: '320px', overflowY: 'auto', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px' }}>
                             {items.map((item, idx) => (
-                                <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.84rem', color: 'var(--foreground)', gap: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden', flex: 1 }}>
+                                <div key={item.id || idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.84rem', color: 'var(--foreground)', gap: '10px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
                                         {(item.image || item.image_url) ? (
                                             <img
                                                 src={item.image || item.image_url}
                                                 alt={item.product_name}
-                                                style={{ width: '36px', height: '36px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--glass-border)' }}
+                                                style={{ width: '40px', height: '40px', borderRadius: '6px', objectFit: 'cover', flexShrink: 0, border: '1px solid var(--glass-border)' }}
                                             />
                                         ) : (
-                                            <div style={{ width: '36px', height: '36px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
+                                            <div style={{ width: '40px', height: '40px', borderRadius: '6px', background: 'var(--input-bg)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, flexShrink: 0 }}>
                                                 ITEM
                                             </div>
                                         )}
-                                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                            <span style={{ fontWeight: 700 }}>{item.product_name}</span>
-                                            {item.variant_name && <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> ({item.variant_name})</span>}
-                                            <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> × {item.quantity}</span>
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                            <div style={{ fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.3, color: 'var(--foreground)', wordBreak: 'break-word' }}>
+                                                {item.product_name}
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+                                                {item.variant_name && (
+                                                    <span style={{ color: 'var(--robotina-orange)', fontSize: '0.75rem', fontWeight: 700 }}>
+                                                        {item.variant_name}
+                                                    </span>
+                                                )}
+                                                <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem', fontWeight: 600 }}>
+                                                    {item.quantity} {item.quantity === 1 ? 'ud.' : 'uds.'}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <span style={{ fontWeight: 800, flexShrink: 0 }}>{formatMoney(item.total_amount)}</span>
+                                    <span style={{ fontWeight: 800, flexShrink: 0, fontSize: '0.9rem' }}>{formatMoney(item.total_amount)}</span>
                                 </div>
                             ))}
                         </div>
